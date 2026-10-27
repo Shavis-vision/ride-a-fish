@@ -180,7 +180,8 @@ local tameBarBack = UIKit.Frame(tamePanel, {
 local tameFill = UIKit.Frame(tameBarBack, { Size = UDim2.fromScale(0, 1), Color = UIKit.White, Corner = 10 })
 local tameGradient = UIKit.Gradient(tameFill, UIKit.Colors.Green[1], UIKit.Colors.Green[2], 90)
 local buckMarker = UIKit.Frame(tameBarBack, { Size = UDim2.new(0, 4, 1, 8), Position = UDim2.fromScale(1, -0.13), Color = Color3.fromRGB(255, 70, 60), Corner = 2 })
-local tameStatus = UIKit.Text(tamePanel, { Text = "", Size = UDim2.new(1, 0, 0, 28), Position = UDim2.fromOffset(0, 74), Max = 26 })
+local tameStatus = UIKit.Text(tamePanel, { Text = "", Size = UDim2.new(1, 0, 0, 28), Position = UDim2.fromOffset(0, 40), Max = 26 })
+tameBarBack.Visible = false -- agora a doma aparece nos anéis ao lado do jogador
 
 local hint = UIKit.Text(gui, {
 	Text = "",
@@ -271,68 +272,98 @@ end
 -- Uma roda verde ao lado do jogador que esvazia enquanto ele está em cima do peixe.
 -- Desenho: duas metades com corte (ClipsDescendants) e um UIGradient com degrau no meio; girar
 -- o degrau mostra só a fatia certa de cada metade.
-local wheel = Instance.new("BillboardGui")
-wheel.Name = "RodaDeStamina"
-wheel.Size = UDim2.fromOffset(74, 74)
-wheel.StudsOffset = Vector3.new(3.2, 1.6, 0)
-wheel.AlwaysOnTop = true
-wheel.LightInfluence = 0
-wheel.Enabled = false
-local wheelBack = UIKit.Frame(wheel, { Size = UDim2.fromScale(1, 1), Color = Color3.fromRGB(20, 25, 20), Transparency = 0.35, Corner = 999, Stroke = 3 })
 local STEP = NumberSequence.new({
 	NumberSequenceKeypoint.new(0, 1),
 	NumberSequenceKeypoint.new(0.499, 1),
 	NumberSequenceKeypoint.new(0.5, 0),
 	NumberSequenceKeypoint.new(1, 0),
 })
-local function wheelHalf(isRight)
-	local clip = Instance.new("Frame")
-	clip.BackgroundTransparency = 1
-	clip.ClipsDescendants = true
-	clip.Size = UDim2.fromScale(0.5, 1)
-	clip.Position = UDim2.fromScale(isRight and 0.5 or 0, 0)
-	clip.ZIndex = 2
-	clip.Parent = wheelBack
-	local circle = Instance.new("Frame")
-	circle.BorderSizePixel = 0
-	circle.Size = UDim2.fromScale(2, 1)
-	circle.Position = UDim2.fromScale(isRight and -1 or 0, 0)
-	circle.BackgroundColor3 = Color3.fromRGB(90, 230, 70)
-	circle.ZIndex = 2
-	UIKit.Corner(circle, 999)
-	local gradient = Instance.new("UIGradient")
-	gradient.Transparency = STEP
-	gradient.Parent = circle
-	circle.Parent = clip
-	return circle, gradient
-end
-local wheelRight, wheelRightGradient = wheelHalf(true)
-local wheelLeft, wheelLeftGradient = wheelHalf(false)
-UIKit.Frame(wheelBack, { -- furo do meio (deixa a roda em forma de anel)
-	Size = UDim2.fromScale(0.58, 0.58),
-	Position = UDim2.fromScale(0.5, 0.5),
-	AnchorPoint = Vector2.new(0.5, 0.5),
-	Color = Color3.fromRGB(20, 25, 20),
-	Transparency = 0.1,
-	Corner = 999,
-	ZIndex = 3,
-})
 
--- fraction: 1 = cheia, 0 = vazia (some no sentido horário a partir do topo)
-local function setWheel(fraction)
-	fraction = math.clamp(fraction, 0, 1)
-	local angle = fraction * 360
-	if fraction >= 0.5 then
-		wheelRightGradient.Rotation = 0
-		wheelLeft.Visible = true
-		wheelLeftGradient.Rotation = angle - 180
-	else
-		wheelRightGradient.Rotation = angle - 180
-		wheelLeft.Visible = false
+-- Anel que enche/esvazia (fraction 1 = cheio). Devolve uma função set(fraction, color).
+local function makeRing(parent, pixels, position, color, hole)
+	local back = UIKit.Frame(parent, {
+		Size = UDim2.fromOffset(pixels, pixels),
+		Position = position,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Color = Color3.fromRGB(18, 20, 18),
+		Transparency = 0.3,
+		Corner = 999,
+		Stroke = 3,
+	})
+	local function half(isRight)
+		local clip = Instance.new("Frame")
+		clip.BackgroundTransparency = 1
+		clip.ClipsDescendants = true
+		clip.Size = UDim2.fromScale(0.5, 1)
+		clip.Position = UDim2.fromScale(isRight and 0.5 or 0, 0)
+		clip.ZIndex = 2
+		clip.Parent = back
+		local circle = Instance.new("Frame")
+		circle.BorderSizePixel = 0
+		circle.Size = UDim2.fromScale(2, 1)
+		circle.Position = UDim2.fromScale(isRight and -1 or 0, 0)
+		circle.BackgroundColor3 = color
+		circle.ZIndex = 2
+		UIKit.Corner(circle, 999)
+		local gradient = Instance.new("UIGradient")
+		gradient.Transparency = STEP
+		gradient.Parent = circle
+		circle.Parent = clip
+		return circle, gradient
 	end
-	local color = fraction > 0.3 and Color3.fromRGB(90, 230, 70) or Color3.fromRGB(255, 90 + 120 * fraction, 50)
-	wheelRight.BackgroundColor3 = color
-	wheelLeft.BackgroundColor3 = color
+	local right, rightGradient = half(true)
+	local left, leftGradient = half(false)
+	UIKit.Frame(back, { -- furo do meio (deixa em forma de anel)
+		Size = UDim2.fromScale(hole, hole),
+		Position = UDim2.fromScale(0.5, 0.5),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Color = Color3.fromRGB(18, 20, 18),
+		Transparency = 0.1,
+		Corner = 999,
+		ZIndex = 3,
+	})
+	return function(fraction, newColor)
+		fraction = math.clamp(fraction, 0, 1)
+		local angle = fraction * 360
+		if fraction >= 0.5 then
+			rightGradient.Rotation = 0
+			left.Visible = true
+			leftGradient.Rotation = angle - 180
+		else
+			rightGradient.Rotation = angle - 180
+			left.Visible = false
+		end
+		if newColor then
+			right.BackgroundColor3 = newColor
+			left.BackgroundColor3 = newColor
+		end
+	end, back
+end
+
+-- Anéis ao lado do jogador: o VERDE grande é a stamina (esvazia), o ROSA pequeno é o
+-- progresso da doma (enche até o peixe ser domado).
+local wheel = Instance.new("BillboardGui")
+wheel.Name = "AneisDaDoma"
+wheel.Size = UDim2.fromOffset(150, 96)
+wheel.StudsOffset = Vector3.new(3.6, 1.4, 0)
+wheel.AlwaysOnTop = true
+wheel.LightInfluence = 0
+wheel.Enabled = false
+local setStaminaRing = makeRing(wheel, 84, UDim2.fromScale(0.66, 0.5), Color3.fromRGB(90, 230, 70), 0.5)
+local setTameRing, tameRingBack = makeRing(wheel, 42, UDim2.fromScale(0.15, 0.5), Color3.fromRGB(255, 110, 200), 0.42)
+
+local function setWheel(fraction)
+	local color = fraction > 0.3 and Color3.fromRGB(90, 230, 70) or Color3.fromRGB(255, 90 + 120 * math.max(fraction, 0), 50)
+	setStaminaRing(fraction, color)
+end
+
+local function setTameProgress(fraction)
+	if fraction then
+		tameRingBack.Visible = true
+		setTameRing(fraction)
+	else
+		tameRingBack.Visible = false
+	end
 end
 
 local function showBanner(text, color)
@@ -452,41 +483,49 @@ local function stateColor(required)
 	return Progression.StateColors[s], Progression.StateIcons[s]
 end
 
+-- Etiqueta em cima do peixe (estilo da referência): etiquetas da variação, a raridade em
+-- destaque, o nome e "Precisa: ⚡ 265K" com o número verde/amarelo/vermelho.
 local function makeLabel(obj)
 	local species = obj.Species
 	local rarity = Fish.Rarities[species.Rarity]
 	local labelGui = Instance.new("BillboardGui")
 	labelGui.Name = "Etiqueta"
-	labelGui.Size = UDim2.new(9, 0, 3.2, 0)
-	labelGui.StudsOffsetWorldSpace = Vector3.new(0, obj.Height / 2 + 3.2, 0)
+	labelGui.Size = UDim2.new(10, 0, 4.4, 0)
+	labelGui.StudsOffsetWorldSpace = Vector3.new(0, obj.Height / 2 + 4, 0)
 	labelGui.MaxDistance = RIDE.LABEL_DISTANCE
 	labelGui.LightInfluence = 0
 	labelGui.Parent = obj.Root
-	UIKit.Text(labelGui, { Text = species.Name, Size = UDim2.fromScale(1, 0.38), Color = rarity.Color, Stroke = 2 })
-	local tags = Fish.Tags(obj.Data)
-	if tags ~= "" then
+	local tags = {}
+	if obj.Data.M ~= "Normal" then
+		table.insert(tags, string.upper(Fish.Mutations[obj.Data.M].Name))
+	end
+	if obj.Data.Z ~= "Normal" then
+		table.insert(tags, string.upper(Fish.Sizes[obj.Data.Z].Name))
+	end
+	if #tags > 0 then
 		UIKit.Text(labelGui, {
-			Text = tags,
-			Size = UDim2.fromScale(1, 0.26),
-			Position = UDim2.fromScale(0, 0.36),
-			Color = Fish.Mutations[obj.Data.M].Color,
+			Text = table.concat(tags, "  "),
+			Size = UDim2.fromScale(1, 0.2),
+			Color = obj.Data.M ~= "Normal" and Fish.Mutations[obj.Data.M].Color or Color3.fromRGB(255, 200, 120),
 			Stroke = 2,
 		})
 	end
+	UIKit.Text(labelGui, { Text = rarity.Name, Size = UDim2.fromScale(1, 0.3), Position = UDim2.fromScale(0, 0.18), Color = rarity.Color, Stroke = 3 })
+	UIKit.Text(labelGui, { Text = species.Name, Size = UDim2.fromScale(1, 0.24), Position = UDim2.fromScale(0, 0.47), Stroke = 2.5 })
 	obj.StaminaLabel = UIKit.Text(labelGui, {
 		Text = "",
-		Size = UDim2.fromScale(1, 0.36),
-		Position = UDim2.fromScale(0, 0.64),
-		Stroke = 2,
+		Rich = true,
+		Size = UDim2.fromScale(1, 0.28),
+		Position = UDim2.fromScale(0, 0.72),
+		Stroke = 2.5,
 	})
 	obj.Label = labelGui
 end
 
 local function refreshLabel(obj)
 	if obj.StaminaLabel then
-		local color, icon = stateColor(obj.Required)
-		obj.StaminaLabel.Text = "⚡ " .. NumberFormat.Abbreviate(obj.Required) .. " " .. icon
-		obj.StaminaLabel.TextColor3 = color
+		local color = stateColor(obj.Required)
+		obj.StaminaLabel.Text = ('<i>Precisa:</i> ⚡ <font color="#%s">%s</font>'):format(color:ToHex(), NumberFormat.Abbreviate(obj.Required))
 	end
 end
 
@@ -988,6 +1027,11 @@ local function updateHud(now)
 			fraction = 1 - spent / stamina
 		end
 		setWheel(fraction)
+		if obj.Tamed then
+			setTameProgress(nil)
+		else
+			setTameProgress((now - rider.MountAt) / obj.Species.TameTime)
+		end
 		if wheel.Parent ~= root then
 			wheel.Parent = root
 		end

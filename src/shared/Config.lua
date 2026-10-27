@@ -39,19 +39,20 @@ Config.AQUARIUM = {
 -- Corrida ----------------------------------------------------------------------------------
 Config.RIDE = {
 	HARPOON_RANGE = 46, -- distância máxima do arpão até o próximo peixe
-	-- Salto com mira (estilo Rodeo Stampede): ESPAÇO salta do peixe, o tempo fica lento e
-	-- aparece o círculo amarelo EMBAIXO de você (A/D move você e o círculo para os lados).
-	-- ESPAÇO de novo lança o arpão no peixe que estiver no círculo.
-	SLOWMO = 0.35, -- velocidade do mundo durante o salto (35%)
-	SLOWMO_TIME = 2.4, -- segundos (reais) de câmera lenta
+	-- Salto com mira (estilo Rodeo Stampede): ESPAÇO salta do peixe, o tempo fica um pouco
+	-- lento e o peixe mais perto fica amarelo. ESPAÇO de novo lança o arpão na hora; se não
+	-- apertar, ele sai sozinho depois de AUTO_HARPOON_AFTER segundos.
+	SLOWMO = 0.6, -- velocidade do mundo durante o salto (60%: só um respiro, não arrasta)
+	SLOWMO_TIME = 1.1, -- segundos (reais) de câmera lenta
+	AUTO_HARPOON_AFTER = 0.45, -- o arpão sai sozinho no alvo depois disto (nil = só apertando)
 	-- Assistência de mira: pega o peixe MAIS PERTO dentro do alcance do arpão (HARPOON_RANGE)
 	ASSIST_BEHIND = 15, -- aceita peixes até esta distância para trás
 	ASSIST_OBSTACLE_AHEAD = 60, -- evita peixes com uma pedra a menos disto na frente
 	RETICLE_SIZE = 10, -- tamanho do círculo (studs)
-	HARPOON_TIME = 0.32, -- segundos voando pela corda até o peixe
-	GRAVITY = 40, -- "gravidade" debaixo d'água (mais leve que a normal)
-	JUMP_UP = 20, -- impulso para cima ao pular sem alvo
-	BUCK_UP = 24, -- impulso para cima quando o peixe derruba
+	HARPOON_TIME = 0.2, -- segundos voando pela corda até o peixe (rápido, como nos vídeos)
+	GRAVITY = 75, -- "gravidade" do pulo (mais alta = pulo mais curto e rápido)
+	JUMP_UP = 26, -- impulso para cima ao pular
+	BUCK_UP = 30, -- impulso para cima quando o peixe derruba
 	DIVE_UP = 10, -- impulso ao mergulhar na zona de início
 	DIVE_FORWARD = 30,
 	STEER_SPEED = 28, -- velocidade de lado (esquerda/direita) montado
@@ -171,6 +172,17 @@ Config.LIGHTING = {
 		Glare = 0.15,
 		ColorCorrection = nil,
 	},
+}
+
+-- Ícones do HUD -----------------------------------------------------------------------------
+-- As imagens estão em assets/icons/ (PNG). Envie cada uma no Studio (Ver > Gerenciador de
+-- Ativos > Importar) e cole aqui o número (ID) dela. Com 0 aparece o emoji no lugar.
+Config.ICONS = {
+	Loja = 0, -- assets/icons/loja.png
+	Indice = 0, -- assets/icons/indice.png
+	Aquario = 0, -- assets/icons/aquario.png
+	Stamina = 0, -- assets/icons/stamina.png
+	Dinheiro = 0, -- assets/icons/dinheiro.png
 }
 
 -- Placar -----------------------------------------------------------------------------------

@@ -38,6 +38,7 @@ UIKit.Button(left, {
 	Name = "Shop",
 	Text = "Loja",
 	Icon = "🎁",
+	IconKey = "Loja",
 	Color = "Pink",
 	Style = "Hud",
 	Size = UDim2.fromOffset(270, 88),
@@ -56,6 +57,7 @@ local indexButton = UIKit.Button(left, {
 	Name = "Index",
 	Text = "Índex",
 	Icon = "📘",
+	IconKey = "Indice",
 	Color = "Blue",
 	Style = "Hud",
 	Size = UDim2.fromOffset(270, 88),
@@ -81,6 +83,7 @@ local offerButton = UIKit.Button(left, {
 	Name = "OfertaEsteira",
 	Text = "",
 	Icon = "⚡",
+	IconKey = "Stamina",
 	Color = "Cyan",
 	Style = "Hud",
 	Size = UDim2.fromOffset(270, 88),
@@ -149,7 +152,7 @@ local aquariumButton = UIKit.Button(right, {
 		end
 	end,
 })
-UIKit.Text(aquariumButton, { Text = "🐟", Size = UDim2.fromScale(0.86, 0.86), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 3, Stroke = 3 })
+UIKit.Icon(aquariumButton, "Aquario", "🐟", { Size = UDim2.fromScale(0.86, 0.86), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 3, Stroke = 3 })
 local badge = UIKit.Frame(aquariumButton, {
 	Name = "Badge",
 	Size = UDim2.fromOffset(34, 34),
@@ -176,7 +179,7 @@ local stats = UIKit.Frame(gui, {
 UIKit.AutoScale(stats)
 
 -- barra cinza com ícone grande à esquerda e o "+" verde ao lado (igual à referência)
-local function statBar(y, icon, color, onPlus)
+local function statBar(y, icon, iconKey, color, onPlus)
 	local bar = UIKit.Frame(stats, {
 		Size = UDim2.fromOffset(234, 66),
 		Position = UDim2.fromOffset(0, y),
@@ -188,8 +191,7 @@ local function statBar(y, icon, color, onPlus)
 	})
 	UIKit.Gradient(bar, Color3.fromRGB(120, 120, 124), Color3.fromRGB(72, 72, 78), 90)
 	UIKit.Studs(bar, Vector2.new(234, 66), { Spacing = 22, Transparency = 0.9, EdgeTransparency = 0.85 })
-	local iconLabel = UIKit.Text(bar, { Text = icon, Size = UDim2.fromOffset(62, 62), Position = UDim2.new(0, -10, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5), Stroke = 3, ZIndex = 2 })
-	iconLabel:FindFirstChildOfClass("UIStroke").Color = Color3.new(0, 0, 0)
+	UIKit.Icon(bar, iconKey, icon, { Size = UDim2.fromOffset(66, 66), Position = UDim2.new(0, -14, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5), Stroke = 3, ZIndex = 2 })
 	local value = UIKit.Text(bar, {
 		Name = "Value",
 		Text = "0",
@@ -214,10 +216,10 @@ local function statBar(y, icon, color, onPlus)
 	return bar, value
 end
 
-local staminaBar, staminaText = statBar(0, "⚡", UIKit.White, function()
+local staminaBar, staminaText = statBar(0, "⚡", "Stamina", UIKit.White, function()
 	UIKit.OpenWindow("Shop", "Gamepasses")
 end)
-local _, moneyText = statBar(82, "💵", UIKit.MoneyGreen, function()
+local _, moneyText = statBar(82, "💵", "Dinheiro", UIKit.MoneyGreen, function()
 	UIKit.OpenWindow("Shop", "Dinheiro")
 end)
 local rateText = UIKit.Text(staminaBar, {

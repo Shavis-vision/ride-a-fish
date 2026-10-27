@@ -23,6 +23,42 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 local UIKit = {}
 
+local Config = require(Shared:WaitForChild("Config"))
+
+-- Ícone: a imagem de Config.ICONS[key] se já tiver ID, senão o emoji.
+-- props: Size, Position, AnchorPoint, ZIndex, Stroke (só para o emoji)
+function UIKit.Icon(parent, key, emoji, props)
+	props = props or {}
+	local id = key and Config.ICONS and Config.ICONS[key] or 0
+	if id and id ~= 0 then
+		local image = Instance.new("ImageLabel")
+		image.Name = props.Name or "Icon"
+		image.BackgroundTransparency = 1
+		image.Image = "rbxassetid://" .. tostring(id)
+		image.ScaleType = Enum.ScaleType.Fit
+		image.Size = props.Size or UDim2.fromScale(1, 1)
+		image.Position = props.Position or UDim2.new()
+		image.AnchorPoint = props.AnchorPoint or Vector2.new()
+		image.ZIndex = props.ZIndex or 1
+		image.Parent = parent
+		return image
+	end
+	local label = UIKit.Text(parent, {
+		Name = props.Name or "Icon",
+		Text = emoji or "",
+		Size = props.Size,
+		Position = props.Position,
+		AnchorPoint = props.AnchorPoint,
+		ZIndex = props.ZIndex,
+		Stroke = props.Stroke or 2,
+	})
+	local outline = label:FindFirstChildOfClass("UIStroke")
+	if outline then
+		outline.Color = Color3.new(0, 0, 0)
+	end
+	return label
+end
+
 UIKit.Font = Enum.Font.FredokaOne
 UIKit.Dark = Color3.fromRGB(14, 14, 20)
 UIKit.Panel = Color3.fromRGB(34, 34, 42)
@@ -290,9 +326,7 @@ function UIKit.Button(parent, props)
 
 	local textLeft = 0
 	if props.Icon then
-		local icon = UIKit.Text(button, {
-			Name = "Icon",
-			Text = props.Icon,
+		local icon = UIKit.Icon(button, props.IconKey, props.Icon, {
 			Size = UDim2.new(0, 0, 0.8, 0),
 			Position = hud and UDim2.new(0, -10, 0.5, 0) or UDim2.new(0, 8, 0.1, 0),
 			AnchorPoint = hud and Vector2.new(0, 0.5) or Vector2.new(),

@@ -681,6 +681,7 @@ end
 
 -- começa a mira: tempo lento e o círculo amarelo à frente
 local function startAim()
+	rider.AirStart = os.clock()
 	rider.SlowUntil = os.clock() + RIDE.SLOWMO_TIME
 	reticle.Enabled = true
 end
@@ -1216,6 +1217,12 @@ RunService.RenderStepped:Connect(function(dt)
 	-- alvo do arpão: só no ar, o peixe dentro do círculo
 	if state == "Airborne" then
 		target = chooseTarget(now)
+		-- arpão automático (como nos vídeos de referência): se você não apertar de novo, o
+		-- arpão sai sozinho no peixe escolhido logo depois do pulo
+		if target and RIDE.AUTO_HARPOON_AFTER and rider.AirStart and now - rider.AirStart >= RIDE.AUTO_HARPOON_AFTER then
+			harpoon(target)
+			target = nil
+		end
 	else
 		target = nil
 	end

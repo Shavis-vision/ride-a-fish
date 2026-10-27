@@ -44,6 +44,8 @@ UIKit.Colors = {
 	Teal = { Color3.fromRGB(110, 240, 230), Color3.fromRGB(20, 160, 170) },
 	Lime = { Color3.fromRGB(190, 255, 80), Color3.fromRGB(80, 200, 30) },
 	Lavender = { Color3.fromRGB(215, 205, 255), Color3.fromRGB(150, 140, 230) },
+	Pink = { Color3.fromRGB(255, 135, 145), Color3.fromRGB(228, 48, 72) }, -- botão Loja da referência
+	Cyan = { Color3.fromRGB(150, 235, 255), Color3.fromRGB(40, 175, 235) }, -- oferta da esteira
 }
 
 UIKit.PanelTransparency = 0.14 -- fundo das janelas um pouco transparente (dá para ver o jogo atrás)
@@ -225,23 +227,66 @@ function UIKit.Button(parent, props)
 	button.BorderSizePixel = 0
 	button.LayoutOrder = props.LayoutOrder or 0
 	button.ZIndex = props.ZIndex or 1
-	UIKit.Corner(button, props.Corner or 10)
-	UIKit.Stroke(button, props.StrokeThickness or 3, UIKit.Dark, Enum.ApplyStrokeMode.Border)
+	-- Style = "Hud": o visual dos botões grandes da tela (contorno preto grosso, cantos
+	-- quase retos, faixas de brilho na diagonal e ícone grande saindo pela esquerda)
+	local hud = props.Style == "Hud"
+	local corner = props.Corner or (hud and 6 or 10)
+	UIKit.Corner(button, corner)
+	UIKit.Stroke(button, props.StrokeThickness or (hud and 4.5 or 3), Color3.new(0, 0, 0), Enum.ApplyStrokeMode.Border)
 	local colors = UIKit.Colors[props.Color or "Blue"] or UIKit.Colors.Blue
-	local fill = UIKit.Gradient(button, colors[1], colors[2], 90)
+	local fill = UIKit.Gradient(button, colors[1], colors[2], hud and 70 or 90)
 	fill.Name = "Fill"
 
-	-- brilho na metade de cima
-	local shine = Instance.new("Frame")
-	shine.Name = "Shine"
-	shine.BackgroundColor3 = UIKit.White
-	shine.BackgroundTransparency = 0.82
-	shine.BorderSizePixel = 0
-	shine.Size = UDim2.new(1, -8, 0.42, 0)
-	shine.Position = UDim2.fromOffset(4, 3)
-	shine.ZIndex = button.ZIndex
-	UIKit.Corner(shine, math.max(2, (props.Corner or 10) - 3))
-	shine.Parent = button
+	if hud then
+		-- duas faixas claras inclinadas do lado direito (feitas com gradiente de transparência,
+		-- assim respeitam os cantos e não precisam de recorte)
+		local stripes = Instance.new("Frame")
+		stripes.Name = "Shine"
+		stripes.BackgroundColor3 = UIKit.White
+		stripes.BorderSizePixel = 0
+		stripes.Size = UDim2.fromScale(1, 1)
+		stripes.ZIndex = button.ZIndex
+		UIKit.Corner(stripes, corner)
+		local band = Instance.new("UIGradient")
+		band.Rotation = -62
+		band.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.64, 1),
+			NumberSequenceKeypoint.new(0.645, 0.72),
+			NumberSequenceKeypoint.new(0.76, 0.72),
+			NumberSequenceKeypoint.new(0.765, 1),
+			NumberSequenceKeypoint.new(0.81, 1),
+			NumberSequenceKeypoint.new(0.815, 0.8),
+			NumberSequenceKeypoint.new(0.87, 0.8),
+			NumberSequenceKeypoint.new(0.875, 1),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		band.Parent = stripes
+		stripes.Parent = button
+		-- linha clara fina em cima (borda de plástico)
+		local rim = Instance.new("Frame")
+		rim.Name = "Rim"
+		rim.BackgroundColor3 = UIKit.White
+		rim.BackgroundTransparency = 0.55
+		rim.BorderSizePixel = 0
+		rim.Size = UDim2.new(1, -10, 0, 3)
+		rim.Position = UDim2.fromOffset(5, 3)
+		rim.ZIndex = button.ZIndex
+		UIKit.Corner(rim, 2)
+		rim.Parent = button
+	else
+		-- brilho na metade de cima
+		local shine = Instance.new("Frame")
+		shine.Name = "Shine"
+		shine.BackgroundColor3 = UIKit.White
+		shine.BackgroundTransparency = 0.82
+		shine.BorderSizePixel = 0
+		shine.Size = UDim2.new(1, -8, 0.42, 0)
+		shine.Position = UDim2.fromOffset(4, 3)
+		shine.ZIndex = button.ZIndex
+		UIKit.Corner(shine, math.max(2, corner - 3))
+		shine.Parent = button
+	end
 
 	local textLeft = 0
 	if props.Icon then
@@ -249,15 +294,16 @@ function UIKit.Button(parent, props)
 			Name = "Icon",
 			Text = props.Icon,
 			Size = UDim2.new(0, 0, 0.8, 0),
-			Position = UDim2.new(0, 8, 0.1, 0),
+			Position = hud and UDim2.new(0, -10, 0.5, 0) or UDim2.new(0, 8, 0.1, 0),
+			AnchorPoint = hud and Vector2.new(0, 0.5) or Vector2.new(),
 			ZIndex = button.ZIndex + 1,
-			Stroke = 1.5,
+			Stroke = hud and 3 or 1.5,
 		})
 		local ratio = Instance.new("UIAspectRatioConstraint")
 		ratio.AspectRatio = 1
 		ratio.DominantAxis = Enum.DominantAxis.Height
 		ratio.Parent = icon
-		icon.Size = UDim2.fromScale(1, 0.8)
+		icon.Size = UDim2.fromScale(1, hud and 1.12 or 0.8)
 		textLeft = props.IconWidth or 0.32
 	end
 
@@ -268,8 +314,15 @@ function UIKit.Button(parent, props)
 		Position = UDim2.new(textLeft, 6, 0.11, 0),
 		Max = props.Max or 42,
 		ZIndex = button.ZIndex + 1,
-		Stroke = props.TextStroke or 2.5,
+		Stroke = props.TextStroke or (hud and 3.5 or 2.5),
 	})
+	if hud then
+		label.TextColor3 = UIKit.White
+		local outline = label:FindFirstChildOfClass("UIStroke")
+		if outline then
+			outline.Color = Color3.new(0, 0, 0)
+		end
+	end
 
 	if props.Studs and button.Size.X.Offset > 0 then
 		UIKit.Studs(button, Vector2.new(button.Size.X.Offset, button.Size.Y.Offset), { Spacing = 22, Transparency = 0.82, EdgeTransparency = 0.8 })

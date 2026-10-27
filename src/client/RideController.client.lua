@@ -987,20 +987,40 @@ end
 
 -- Peixe que o círculo pega (assistência de mira): o MAIS PERTO de você que o arpão alcança,
 -- em qualquer direção (até um pouco para trás).
+-- peixe que vai bater numa pedra logo depois de você montar (não é uma boa escolha)
+local function aboutToHit(obj)
+	for _, ob in ipairs(Track.Obstacles) do
+		local ahead = ob.Dist - obj.Dist
+		if ahead > -ob.Radius and ahead < RIDE.ASSIST_OBSTACLE_AHEAD and math.abs(ob.X - obj.X) < ob.Radius + obj.Width * 0.5 + 2 then
+			return true
+		end
+	end
+	return false
+end
+
+-- Mira: o peixe MAIS PERTO dentro do alcance. Peixes prestes a bater numa pedra só são
+-- escolhidos se não houver outro.
 local function chooseTarget(now)
 	local best, bestDistance = nil, math.huge
+	local fallback, fallbackDistance = nil, math.huge
 	for _, obj in ipairs(run.Active) do
 		if obj.Model and obj ~= rider.Mount and not obj.Escaped and now >= obj.TargetableAt then
 			local ahead = obj.Dist - rider.Dist
 			if ahead > -RIDE.ASSIST_BEHIND then
 				local distance = (obj.Root.Position - rider.Pos).Magnitude
-				if distance < RIDE.HARPOON_RANGE and distance < bestDistance then
-					best, bestDistance = obj, distance
+				if distance < RIDE.HARPOON_RANGE then
+					if aboutToHit(obj) then
+						if distance < fallbackDistance then
+							fallback, fallbackDistance = obj, distance
+						end
+					elseif distance < bestDistance then
+						best, bestDistance = obj, distance
+					end
 				end
 			end
 		end
 	end
-	return best
+	return best or fallback
 end
 
 local function updateReticle(dt)

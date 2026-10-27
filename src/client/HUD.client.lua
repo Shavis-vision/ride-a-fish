@@ -2,7 +2,8 @@
 -- Fica em: StarterPlayerScripts > Client > HUD
 --
 -- A tela fixa do jogo, no estilo das referências:
---   * à esquerda, os botões grandes LOJA (vermelho) e ÍNDEX (azul);
+--   * à esquerda, os botões grandes LOJA (rosa) e ÍNDEX (azul). Na esteira, o ÍNDEX vira a
+--     oferta do multiplicador de stamina por Robux (Config.TREADMILL_OFFER);
 --   * embaixo à esquerda, a stamina (⚡) e o dinheiro (💵), cada um com o botão verde "+";
 --   * à direita, o botão laranja do AQUÁRIO (seus peixes);
 --   * em cima, os avisos que o servidor manda.
@@ -21,10 +22,13 @@ local player = Players.LocalPlayer
 local gui = UIKit.Gui("HUD", 2)
 
 -- Botões da esquerda ---------------------------------------------------------------------
+local Config = require(Shared:WaitForChild("Config"))
+local ROBUX = utf8.char(0xE002)
+
 local left = UIKit.Frame(gui, {
 	Name = "Left",
-	Size = UDim2.fromOffset(270, 196),
-	Position = UDim2.new(0, 14, 0.5, -20),
+	Size = UDim2.fromOffset(280, 196),
+	Position = UDim2.new(0, 22, 0.5, -20),
 	AnchorPoint = Vector2.new(0, 0.5),
 	Transparency = 1,
 	Corner = false,
@@ -34,10 +38,11 @@ UIKit.Button(left, {
 	Name = "Shop",
 	Text = "Loja",
 	Icon = "🎁",
-	Color = "Red",
+	Color = "Pink",
+	Style = "Hud",
 	Size = UDim2.fromOffset(270, 88),
 	Studs = true,
-	Max = 52,
+	Max = 50,
 	IconWidth = 0.3,
 	OnClick = function()
 		if UIKit.IsOpen("Shop") then
@@ -52,10 +57,11 @@ local indexButton = UIKit.Button(left, {
 	Text = "Índex",
 	Icon = "📘",
 	Color = "Blue",
+	Style = "Hud",
 	Size = UDim2.fromOffset(270, 88),
 	Studs = true,
 	Position = UDim2.fromOffset(0, 104),
-	Max = 52,
+	Max = 50,
 	IconWidth = 0.3,
 	OnClick = function()
 		if UIKit.IsOpen("Index") then
@@ -66,11 +72,64 @@ local indexButton = UIKit.Button(left, {
 	end,
 })
 
+-- Oferta da esteira: enquanto você treina, o botão do Índex vira o atalho para comprar o
+-- multiplicador de stamina por Robux (como na referência "x8 Stamina ONLY 24").
+-- Qual passe aparece está em Config.TREADMILL_OFFER.
+local offerPass
+for _, pass in ipairs(Config.GAMEPASSES) do
+	if pass.Key == Config.TREADMILL_OFFER then
+		offerPass = pass
+	end
+end
+local offerButton = UIKit.Button(left, {
+	Name = "OfertaEsteira",
+	Text = "",
+	Icon = "⚡",
+	Color = "Cyan",
+	Style = "Hud",
+	Size = UDim2.fromOffset(270, 88),
+	Studs = true,
+	Position = UDim2.fromOffset(0, 104),
+	IconWidth = 0.3,
+	OnClick = function()
+		if offerPass then
+			ClientState.Request("BuyPass", offerPass.Key)
+		end
+	end,
+})
+offerButton.Visible = false
+local offerLabel = offerButton:FindFirstChild("Label")
+offerLabel.Size = UDim2.new(0.7, -10, 0.5, 0)
+offerLabel.Position = UDim2.new(0.3, 4, 0.06, 0)
+offerLabel.Text = offerPass and offerPass.Name:gsub("Stamina x(%d+)", "x%1 Stamina") or ""
+local offerPrice = UIKit.Text(offerButton, {
+	Name = "Preco",
+	Text = offerPass and ("SÓ " .. ROBUX .. " " .. offerPass.Price) or "",
+	Size = UDim2.new(0.7, -10, 0.4, 0),
+	Position = UDim2.new(0.3, 4, 0.54, 0),
+	Color = UIKit.MoneyGreen,
+	Max = 40,
+	Stroke = 3.5,
+	ZIndex = offerButton.ZIndex + 1,
+})
+offerPrice:FindFirstChildOfClass("UIStroke").Color = Color3.new(0, 0, 0)
+
+local function updateOffer()
+	local training = player:GetAttribute("Training") == true
+	local data = ClientState.Data
+	local owned = offerPass == nil or (data and data.Passes and data.Passes[offerPass.Key]) == true
+	local show = training and not owned
+	offerButton.Visible = show
+	indexButton.Visible = not show
+end
+ClientState.Changed.Event:Connect(updateOffer)
+updateOffer()
+
 -- Botão do aquário (direita) -------------------------------------------------------------
 local right = UIKit.Frame(gui, {
 	Name = "Right",
-	Size = UDim2.fromOffset(100, 124),
-	Position = UDim2.new(1, -14, 0.5, -20),
+	Size = UDim2.fromOffset(100, 110),
+	Position = UDim2.new(1, -22, 0.5, -20),
 	AnchorPoint = Vector2.new(1, 0.5),
 	Transparency = 1,
 	Corner = false,
@@ -80,9 +139,9 @@ local aquariumButton = UIKit.Button(right, {
 	Name = "Aquarium",
 	Text = "",
 	Color = "Orange",
-	Size = UDim2.fromOffset(100, 100),
+	Style = "Hud",
+	Size = UDim2.fromOffset(96, 106),
 	Studs = true,
-	Corner = 12,
 	OnClick = function()
 		if UIKit.IsOpen("Aquarium") then
 			UIKit.Windows.Aquarium.Close()
@@ -91,8 +150,7 @@ local aquariumButton = UIKit.Button(right, {
 		end
 	end,
 })
-UIKit.Text(aquariumButton, { Text = "🐟", Size = UDim2.fromScale(0.8, 0.8), Position = UDim2.fromScale(0.1, 0.06), ZIndex = 3, Stroke = 1 })
-UIKit.Text(right, { Text = "Aquário", Size = UDim2.new(1, 20, 0, 26), Position = UDim2.new(0.5, 0, 1, 0), AnchorPoint = Vector2.new(0.5, 1), Max = 24 })
+UIKit.Text(aquariumButton, { Text = "🐟", Size = UDim2.fromScale(0.86, 0.86), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 3, Stroke = 3 })
 local badge = UIKit.Frame(aquariumButton, {
 	Name = "Badge",
 	Size = UDim2.fromOffset(34, 34),
@@ -100,7 +158,8 @@ local badge = UIKit.Frame(aquariumButton, {
 	AnchorPoint = Vector2.new(1, 0),
 	Color = Color3.fromRGB(230, 40, 50),
 	Corner = 17,
-	Stroke = 2,
+	Stroke = 2.5,
+	StrokeColor = Color3.new(0, 0, 0),
 	ZIndex = 4,
 })
 local badgeText = UIKit.Text(badge, { Text = "!", ZIndex = 5, Stroke = 1.5 })
@@ -109,57 +168,64 @@ badge.Visible = false
 -- Stamina e dinheiro (embaixo à esquerda) ---------------------------------------------------
 local stats = UIKit.Frame(gui, {
 	Name = "Stats",
-	Size = UDim2.fromOffset(340, 160),
-	Position = UDim2.new(0, 14, 1, -14),
+	Size = UDim2.fromOffset(310, 160),
+	Position = UDim2.new(0, 22, 1, -18),
 	AnchorPoint = Vector2.new(0, 1),
 	Transparency = 1,
 	Corner = false,
 })
 UIKit.AutoScale(stats)
 
+-- barra cinza com ícone grande à esquerda e o "+" verde ao lado (igual à referência)
 local function statBar(y, icon, color, onPlus)
 	local bar = UIKit.Frame(stats, {
-		Size = UDim2.fromOffset(268, 68),
+		Size = UDim2.fromOffset(234, 66),
 		Position = UDim2.fromOffset(0, y),
-		Color = Color3.fromRGB(28, 30, 36),
-		Corner = 8,
-		Stroke = 3,
-		StrokeColor = Color3.fromRGB(70, 70, 80),
+		Color = Color3.new(1, 1, 1),
+		Transparency = 0.12,
+		Corner = 4,
+		Stroke = 4,
+		StrokeColor = Color3.new(0, 0, 0),
 	})
-	UIKit.Gradient(bar, Color3.fromRGB(70, 72, 80), Color3.fromRGB(40, 42, 48), 90)
-	UIKit.Text(bar, { Text = icon, Size = UDim2.fromOffset(52, 52), Position = UDim2.fromOffset(8, 8), Stroke = 1.5 })
+	UIKit.Gradient(bar, Color3.fromRGB(120, 120, 124), Color3.fromRGB(72, 72, 78), 90)
+	UIKit.Studs(bar, Vector2.new(234, 66), { Spacing = 22, Transparency = 0.9, EdgeTransparency = 0.85 })
+	local iconLabel = UIKit.Text(bar, { Text = icon, Size = UDim2.fromOffset(62, 62), Position = UDim2.new(0, -10, 0.5, 0), AnchorPoint = Vector2.new(0, 0.5), Stroke = 3, ZIndex = 2 })
+	iconLabel:FindFirstChildOfClass("UIStroke").Color = Color3.new(0, 0, 0)
 	local value = UIKit.Text(bar, {
 		Name = "Value",
 		Text = "0",
-		Size = UDim2.new(1, -70, 0, 50),
-		Position = UDim2.fromOffset(64, 9),
+		Size = UDim2.new(1, -66, 0, 52),
+		Position = UDim2.fromOffset(58, 7),
 		Align = Enum.TextXAlignment.Left,
 		Color = color,
-		Stroke = 3,
+		Stroke = 3.5,
 		Max = 46,
+		ZIndex = 2,
 	})
+	value:FindFirstChildOfClass("UIStroke").Color = Color3.new(0, 0, 0)
 	UIKit.Button(stats, {
 		Text = "+",
-		Color = "Green",
-		Size = UDim2.fromOffset(58, 58),
-		Position = UDim2.fromOffset(280, y + 5),
-		Max = 48,
+		Color = "Lime",
+		Style = "Hud",
+		Size = UDim2.fromOffset(56, 56),
+		Position = UDim2.fromOffset(248, y + 5),
+		Max = 50,
 		OnClick = onPlus,
 	})
 	return bar, value
 end
 
-local staminaBar, staminaText = statBar(0, "⚡", UIKit.StaminaYellow, function()
+local staminaBar, staminaText = statBar(0, "⚡", UIKit.White, function()
 	UIKit.OpenWindow("Shop", "Gamepasses")
 end)
-local _, moneyText = statBar(84, "💵", UIKit.MoneyGreen, function()
+local _, moneyText = statBar(82, "💵", UIKit.MoneyGreen, function()
 	UIKit.OpenWindow("Shop", "Dinheiro")
 end)
 local rateText = UIKit.Text(staminaBar, {
 	Name = "Rate",
 	Text = "",
 	Size = UDim2.new(1, 0, 0, 24),
-	Position = UDim2.new(0, 0, 0, -26),
+	Position = UDim2.new(0, 0, 0, -28),
 	Align = Enum.TextXAlignment.Left,
 	Color = UIKit.StaminaYellow,
 	Max = 22,
@@ -187,6 +253,7 @@ end)
 local popupClock = 0
 RunService.Heartbeat:Connect(function(dt)
 	local training = player:GetAttribute("Training") == true
+	updateOffer()
 	rateText.Text = training and ("Treinando: +" .. NumberFormat.Rate(ClientState.Stat("StaminaRate")) .. "/s") or ""
 	if training then
 		popupClock += dt

@@ -510,20 +510,27 @@ local function buildBeach(map)
 
 	-- passarela de madeira da praça até a água
 	local walk = Brick.Folder(folder, "Passarela")
-	for z = 4, 70, 2.2 do
+	-- (termina na borda da praça, z = 59: antes entrava no piso e as tábuas piscavam)
+	local plankIndex = 0
+	for z = 3, 57, 2 do
 		Brick.Part(walk, {
-			Size = Vector3.new(14, 0.4, 2),
-			Position = Vector3.new(0, top + 0.2, z),
-			Color = (math.floor(z / 2.2) % 2 == 0) and WOOD_LIGHT or WOOD,
+			Size = Vector3.new(14, 0.5, 2),
+			Position = Vector3.new(0, top + 0.25, z + 1),
+			Color = (plankIndex % 2 == 0) and WOOD_LIGHT or WOOD,
 			Studs = false,
 		})
+		plankIndex += 1
+	end
+	-- vigas dos lados
+	for side = -1, 1, 2 do
+		Brick.Box(walk, Vector3.new(side * 7 - 0.6, top, 3), Vector3.new(side * 7 + 0.6, top + 0.8, 59), { Name = "Viga", Color = WOOD_DARK, Studs = false })
 	end
 
 	-- texto "ZONA DE MERGULHO" no chão, perto da água
 	local textPart = Brick.Part(folder, {
 		Name = "TextoZona",
 		Size = Vector3.new(44, 0.1, 9),
-		Position = Vector3.new(0, top + 0.45, 3),
+		Position = Vector3.new(0, top + 0.58, 3), -- um pouco acima das tábuas (0.5)
 		Transparency = 1,
 		CanCollide = false,
 		Studs = false,
@@ -970,16 +977,27 @@ local function buildPlaza(map)
 	local folder = Brick.Folder(map, "Praca")
 	local top = Track.BEACH_Y
 
-	-- piso da praça (placas brancas e azuis)
+	-- piso da praça: grama com studs (como o lobby das referências), em xadrez bem leve
+	-- de dois verdes e com uma borda verde-escura
 	for gx = -5, 4 do
 		for gz = 0, 8 do
 			Brick.Part(folder, {
 				Name = "Piso",
 				Size = Vector3.new(10, 0.4, 10),
 				Position = Vector3.new(gx * 10 + 5, top + 0.2, 64 + gz * 10),
-				Color = ((gx + gz) % 2 == 0) and rgb(245, 240, 225) or rgb(200, 225, 245),
+				Color = ((gx + gz) % 2 == 0) and rgb(98, 196, 72) or rgb(90, 186, 66),
 			})
 		end
+	end
+	for _, edge in ipairs({
+		-- a frente tem uma abertura no meio para a passarela
+		{ Vector3.new(-51, top, 58), Vector3.new(-7.6, top + 0.6, 59) },
+		{ Vector3.new(7.6, top, 58), Vector3.new(51, top + 0.6, 59) },
+		{ Vector3.new(-51, top, 149), Vector3.new(51, top + 0.6, 150) },
+		{ Vector3.new(-51, top, 59), Vector3.new(-50, top + 0.6, 149) },
+		{ Vector3.new(50, top, 59), Vector3.new(51, top + 0.6, 149) },
+	}) do
+		Brick.Box(folder, edge[1], edge[2], { Name = "BordaPraca", Color = rgb(62, 140, 48) })
 	end
 
 	-- barraca de vender peixes (com peixes no balcão)

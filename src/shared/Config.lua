@@ -45,6 +45,7 @@ Config.RIDE = {
 	SLOWMO_TIME = 2.4, -- segundos (reais) de câmera lenta
 	-- Assistência de mira: pega o peixe MAIS PERTO dentro do alcance do arpão (HARPOON_RANGE)
 	ASSIST_BEHIND = 15, -- aceita peixes até esta distância para trás
+	ASSIST_OBSTACLE_AHEAD = 60, -- evita peixes com uma pedra a menos disto na frente
 	RETICLE_SIZE = 10, -- tamanho do círculo (studs)
 	HARPOON_TIME = 0.32, -- segundos voando pela corda até o peixe
 	GRAVITY = 40, -- "gravidade" debaixo d'água (mais leve que a normal)
@@ -96,6 +97,9 @@ Config.PRODUCTS = {
 	{ Key = "Cash2", Id = 0, Name = "Pacote médio", Price = 99, Minutes = 45, Minimum = 15000 },
 	{ Key = "Cash3", Id = 0, Name = "Pacote grande", Price = 249, Minutes = 150, Minimum = 60000 },
 }
+-- Passe que aparece no lugar do botão Índex enquanto você treina na esteira
+-- (some quando o jogador já tem o passe)
+Config.TREADMILL_OFFER = "StaminaX2"
 -- Como o bônus de Robux junta com o das auras: "soma" (x2 + aura 1.5 = x2.5).
 -- Assim a aura vale o mesmo para quem pagou e para quem não pagou.
 Config.BONUS_MODE = "soma"

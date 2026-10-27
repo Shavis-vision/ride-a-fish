@@ -218,7 +218,7 @@ local function lockOnTreadmill(humanoid, root, zone)
 		lock.Track.Priority = Enum.AnimationPriority.Action
 		lock.Track.Looped = true
 		lock.Track:Play(0.2)
-		lock.Track:AdjustSpeed(math.clamp(0.8 + (level - 1) * 0.1, 0.8, 3))
+		lock.Track:AdjustSpeed(math.clamp(0.85 + (level - 1) * 0.04, 0.85, 1.6)) -- cresce devagar e tem limite (não fica frenético)
 	end
 end
 
@@ -299,7 +299,7 @@ RunService.RenderStepped:Connect(function()
 	end
 	if lock.Track and lock.Zone.Parent and lock.Zone.Parent.Parent then
 		local level = lock.Zone.Parent.Parent:GetAttribute("TreadmillLevel") or 1
-		lock.Track:AdjustSpeed(math.clamp(0.8 + (level - 1) * 0.1, 0.8, 3))
+		lock.Track:AdjustSpeed(math.clamp(0.85 + (level - 1) * 0.04, 0.85, 1.6)) -- cresce devagar e tem limite (não fica frenético)
 	end
 	local center = lock.Zone.Position
 	local y = lock.Root.Position.Y
@@ -367,7 +367,7 @@ RunService.RenderStepped:Connect(function(dt)
 					local cf = rootPart.CFrame
 					local p = cf.Position
 					rootPart.CFrame = CFrame.new(p.X, baseY + math.sin(t * 1.4 + phase) * 0.45, p.Z) * cf.Rotation
-					FishModel.Wag(fish, t + phase, 5)
+					FishModel.Wag(fish, t + phase, 3.2)
 				end
 			end
 		end

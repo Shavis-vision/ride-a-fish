@@ -49,7 +49,7 @@ Config.RIDE = {
 	ASSIST_BEHIND = 15, -- aceita peixes até esta distância para trás
 	ASSIST_OBSTACLE_AHEAD = 60, -- evita peixes com uma pedra a menos disto na frente
 	RETICLE_SIZE = 10, -- tamanho do círculo (studs)
-	HARPOON_TIME = 0.2, -- segundos voando pela corda até o peixe (rápido, como nos vídeos)
+	HARPOON_TIME = 0.32, -- segundos voando pela corda até o peixe (suave: acelera e freia)
 	GRAVITY = 75, -- "gravidade" do pulo (mais alta = pulo mais curto e rápido)
 	JUMP_UP = 26, -- impulso para cima ao pular
 	BUCK_UP = 30, -- impulso para cima quando o peixe derruba

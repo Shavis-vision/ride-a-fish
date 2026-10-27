@@ -290,7 +290,7 @@ function FishModel.Wag(model, t, speed)
 	local root = model.PrimaryPart
 	local joint = root and root:FindFirstChild("TailJoint")
 	if joint then
-		joint.Transform = CFrame.Angles(0, math.sin(t * (speed or 6)) * 0.45, 0)
+		joint.Transform = CFrame.Angles(0, math.sin(t * (speed or 6)) * 0.38, 0)
 	end
 end
 

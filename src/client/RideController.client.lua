@@ -402,12 +402,12 @@ local function showBanner(text, color)
 	scale.Name = "Pop"
 	scale.Parent = banner
 	scale.Scale = 0.6
-	UIKit.Tween(scale, 0.35, { Scale = 1 }, Enum.EasingStyle.Back)
+	UIKit.Tween(scale, 0.5, { Scale = 1 }, Enum.EasingStyle.Back)
 	task.delay(1.6, function()
 		if banner.Text == text then
-			UIKit.Tween(banner, 0.5, { TextTransparency = 1 })
+			UIKit.Tween(banner, 0.8, { TextTransparency = 1 }, Enum.EasingStyle.Sine)
 			if stroke then
-				UIKit.Tween(stroke, 0.5, { Transparency = 1 })
+				UIKit.Tween(stroke, 0.8, { Transparency = 1 }, Enum.EasingStyle.Sine)
 			end
 		end
 	end)
@@ -614,7 +614,7 @@ local function updateFreeFish(obj, dt, t)
 	obj.Y += (targetY - obj.Y) * math.min(1, dt * 2.5)
 	local yaw = math.clamp(-(obj.X - previousX) / math.max(dt, 1e-3) * 0.02, -0.5, 0.5)
 	obj.Root.CFrame = CFrame.new(obj.X, obj.Y, Track.ZOf(obj.Dist)) * CFrame.Angles(0, yaw, 0)
-	FishModel.Wag(obj.Model, t + obj.Phase, 8)
+	FishModel.Wag(obj.Model, t + obj.Phase, 5)
 end
 
 -- Ações -----------------------------------------------------------------------------------------
@@ -844,7 +844,9 @@ local function updateRiding(dt, now, t)
 	if species.Ability == "Turbo" and now - rider.MountAt > RIDE.TURBO_AFTER then
 		speed *= RIDE.TURBO_MULT
 	end
-	local steer = moveX()
+	-- a direção acelera e freia suave (sem tranco ao apertar ou soltar A/D)
+	rider.Steer = (rider.Steer or 0) + (moveX() - (rider.Steer or 0)) * math.min(1, dt * 7)
+	local steer = rider.Steer
 	local limit = Track.HALF_WIDTH - 6
 	obj.X = math.clamp(obj.X + steer * RIDE.STEER_SPEED * dt, -limit, limit)
 	obj.Dist += speed * dt
@@ -877,7 +879,7 @@ local function updateRiding(dt, now, t)
 	end
 	local pitch = leaping and math.cos(math.pi * ((now - rider.LeapStart) / 1.6)) * 0.5 or 0
 	obj.Root.CFrame = CFrame.new(obj.X, obj.Y, Track.ZOf(obj.Dist)) * CFrame.Angles(pitch, -steer * 0.25, -steer * 0.2)
-	FishModel.Wag(obj.Model, t, 14)
+	FishModel.Wag(obj.Model, t, 8.5)
 	rider.Dist = obj.Dist
 	local seat = seatCFrame(obj)
 	rider.Pos = seat.Position
@@ -943,7 +945,8 @@ end
 
 local function updateAirborne(realDt, dt)
 	rider.Vel += Vector3.new(0, -RIDE.GRAVITY * dt, 0)
-	local steer = moveX()
+	rider.Steer = (rider.Steer or 0) + (moveX() - (rider.Steer or 0)) * math.min(1, realDt * 7)
+	local steer = rider.Steer
 	-- A/D move o jogador (e o círculo embaixo dele) para os lados, no tempo real
 	local pos = rider.Pos + rider.Vel * dt + Vector3.new(steer * RIDE.AIR_STEER_SPEED * realDt, 0, 0)
 	local limit = Track.HALF_WIDTH - 4
@@ -966,7 +969,7 @@ local function updateZipping(now)
 		return
 	end
 	local p = math.clamp((now - rider.ZipStart) / (rider.ZipDuration or RIDE.HARPOON_TIME), 0, 1)
-	local eased = 1 - (1 - p) ^ 2
+	local eased = p * p * (3 - 2 * p) -- começa e termina suave
 	local seat = seatCFrame(obj)
 	local arc = rider.ZipDuration and rider.ZipDuration > 0.5 and 0 or 3 -- o mergulho desce reto
 	local pos = rider.ZipFrom:Lerp(seat.Position, eased) + Vector3.new(0, math.sin(p * math.pi) * arc, 0)
@@ -1140,9 +1143,9 @@ local function updateCamera(dt)
 		eye = Vector3.new(eye.X, math.min(eye.Y, Track.WATER_Y - 1.5), eye.Z)
 	end
 	local desired = CFrame.lookAt(eye, look)
-	camera.CFrame = camera.CFrame:Lerp(desired, 1 - math.exp(-dt * 8))
+	camera.CFrame = camera.CFrame:Lerp(desired, 1 - math.exp(-dt * 4.5)) -- câmera segue com mais calma
 	local speed = state == "Riding" and currentSpeed() or 30
-	camera.FieldOfView += ((68 + math.clamp(speed - 30, 0, 40) * 0.25) - camera.FieldOfView) * math.min(1, dt * 3)
+	camera.FieldOfView += ((68 + math.clamp(speed - 30, 0, 40) * 0.25) - camera.FieldOfView) * math.min(1, dt * 1.8)
 end
 
 local function updateFallen(now)

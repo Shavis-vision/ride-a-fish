@@ -227,17 +227,18 @@ end
 local function pressFeedback(button)
 	local scale = Instance.new("UIScale")
 	scale.Parent = button
+	-- tempos mais longos e curvas suaves (antes era tudo muito rápido e "pulava")
 	button.MouseEnter:Connect(function()
-		UIKit.Tween(scale, 0.12, { Scale = 1.05 })
+		UIKit.Tween(scale, 0.22, { Scale = 1.04 }, Enum.EasingStyle.Sine)
 	end)
 	button.MouseLeave:Connect(function()
-		UIKit.Tween(scale, 0.12, { Scale = 1 })
+		UIKit.Tween(scale, 0.22, { Scale = 1 }, Enum.EasingStyle.Sine)
 	end)
 	button.MouseButton1Down:Connect(function()
-		UIKit.Tween(scale, 0.08, { Scale = 0.93 })
+		UIKit.Tween(scale, 0.12, { Scale = 0.95 }, Enum.EasingStyle.Sine)
 	end)
 	button.MouseButton1Up:Connect(function()
-		UIKit.Tween(scale, 0.18, { Scale = 1 }, Enum.EasingStyle.Back)
+		UIKit.Tween(scale, 0.35, { Scale = 1 }, Enum.EasingStyle.Back)
 	end)
 	return scale
 end
@@ -519,12 +520,17 @@ function UIKit.Window(name, props)
 		ZIndex = 5,
 	})
 
+	local animToken, wasVisible = 0, false
 	function window.Open(...)
 		UIKit.CloseAll(name)
 		window.IsOpen = true
 		root.Visible = true
-		animScale.Scale = 0.85
-		UIKit.Tween(animScale, 0.28, { Scale = 1 }, Enum.EasingStyle.Back)
+		animToken += 1
+		if not wasVisible then
+			animScale.Scale = 0.9
+		end
+		wasVisible = true
+		UIKit.Tween(animScale, 0.42, { Scale = 1 }, Enum.EasingStyle.Back)
 		window.Opened:Fire(...)
 	end
 
@@ -533,7 +539,16 @@ function UIKit.Window(name, props)
 			return
 		end
 		window.IsOpen = false
-		root.Visible = false
+		-- encolhe um pouco antes de sumir (em vez de sumir de uma vez)
+		animToken += 1
+		local token = animToken
+		UIKit.Tween(animScale, 0.18, { Scale = 0.9 }, Enum.EasingStyle.Sine, Enum.EasingDirection.In)
+		task.delay(0.18, function()
+			if token == animToken then
+				root.Visible = false
+				wasVisible = false
+			end
+		end)
 		window.Closed:Fire()
 	end
 

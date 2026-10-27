@@ -237,7 +237,7 @@ local shownMoney, shownStamina = 0, 0
 RunService.RenderStepped:Connect(function(dt)
 	local money = ClientState.Stat("Money")
 	local stamina = ClientState.Stat("Stamina")
-	local k = 1 - math.exp(-dt * 10)
+	local k = 1 - math.exp(-dt * 6) -- números sobem com calma
 	shownMoney += (money - shownMoney) * k
 	shownStamina += (stamina - shownStamina) * k
 	if math.abs(money - shownMoney) < 1 then
@@ -267,12 +267,12 @@ RunService.Heartbeat:Connect(function(dt)
 				Color = UIKit.StaminaYellow,
 				Max = 30,
 			})
-			UIKit.Tween(popup, 0.9, { Position = popup.Position - UDim2.fromOffset(0, 60), TextTransparency = 1 })
+			UIKit.Tween(popup, 1.3, { Position = popup.Position - UDim2.fromOffset(0, 60), TextTransparency = 1 }, Enum.EasingStyle.Sine)
 			local stroke = popup:FindFirstChildOfClass("UIStroke")
 			if stroke then
-				UIKit.Tween(stroke, 0.9, { Transparency = 1 })
+				UIKit.Tween(stroke, 1.3, { Transparency = 1 }, Enum.EasingStyle.Sine)
 			end
-			task.delay(0.95, function()
+			task.delay(1.35, function()
 				popup:Destroy()
 			end)
 		end
@@ -363,7 +363,7 @@ ClientState.ToastEvent.Event:Connect(function(text, kind)
 	local scale = Instance.new("UIScale")
 	scale.Scale = 0.6
 	scale.Parent = label
-	UIKit.Tween(scale, 0.25, { Scale = 1 }, Enum.EasingStyle.Back)
+	UIKit.Tween(scale, 0.4, { Scale = 1 }, Enum.EasingStyle.Back)
 	local children = toasts:GetChildren()
 	local count = 0
 	for _, child in ipairs(children) do
@@ -380,12 +380,12 @@ ClientState.ToastEvent.Event:Connect(function(text, kind)
 	end
 	task.delay(3.2, function()
 		if label.Parent then
-			UIKit.Tween(label, 0.4, { TextTransparency = 1 })
+			UIKit.Tween(label, 0.7, { TextTransparency = 1 }, Enum.EasingStyle.Sine)
 			local stroke = label:FindFirstChildOfClass("UIStroke")
 			if stroke then
-				UIKit.Tween(stroke, 0.4, { Transparency = 1 })
+				UIKit.Tween(stroke, 0.7, { Transparency = 1 }, Enum.EasingStyle.Sine)
 			end
-			task.delay(0.45, function()
+			task.delay(0.75, function()
 				label:Destroy()
 			end)
 		end

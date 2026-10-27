@@ -185,6 +185,12 @@ Config.ICONS = {
 	Dinheiro = 0, -- assets/icons/dinheiro.png
 }
 
+-- Studs grandes nas peças --------------------------------------------------------------------
+-- Envie assets/textures/studs.png no Studio (Gerenciador de Ativos > Importar) e cole o ID aqui.
+-- Com 0, ficam os studs normais (pequenos) do Roblox.
+Config.STUD_TEXTURE = 0
+Config.STUD_SPACING = 2 -- distância entre studs, em studs (maior = bolinhas maiores)
+
 -- Placar -----------------------------------------------------------------------------------
 Config.LEADERBOARD_REFRESH = 5
 

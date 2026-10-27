@@ -11,7 +11,29 @@
 --       Material = Enum.Material.Neon, Anchored = false, Name = "Nome",
 --   })
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+
 local Brick = {}
+
+-- Studs grandes (textura) em cima das peças, como nas referências. Enquanto
+-- Config.STUD_TEXTURE for 0, usa os studs normais do Roblox (pequenos).
+local STUD_IMAGE = (Config.STUD_TEXTURE or 0) ~= 0 and ("rbxassetid://" .. tostring(Config.STUD_TEXTURE)) or nil
+local STUD_SPACING = Config.STUD_SPACING or 2
+
+local function addStudTexture(part)
+	local texture = Instance.new("Texture")
+	texture.Name = "Studs"
+	texture.Texture = STUD_IMAGE
+	texture.Face = Enum.NormalId.Top
+	texture.StudsPerTileU = STUD_SPACING
+	texture.StudsPerTileV = STUD_SPACING
+	-- alinha os studs entre peças vizinhas (para peças retas)
+	local corner = part.CFrame.Position - part.Size / 2
+	texture.OffsetStudsU = -(corner.X % STUD_SPACING)
+	texture.OffsetStudsV = -(corner.Z % STUD_SPACING)
+	texture.Parent = part
+end
 
 function Brick.Part(parent, props)
 	local part = Instance.new(props.Class or "Part")
@@ -27,8 +49,14 @@ function Brick.Part(parent, props)
 		part.CFrame = CFrame.new(props.Position)
 	end
 	part.Color = props.Color or Color3.new(1, 1, 1)
-	part.Material = props.Material or Enum.Material.Plastic
-	part.TopSurface = (props.Studs == false) and Enum.SurfaceType.Smooth or Enum.SurfaceType.Studs
+	part.Material = props.Material or Enum.Material.SmoothPlastic -- liso, sem o "chuvisco" do Plastic
+	local wantsStuds = props.Studs ~= false
+	-- textura só em peças com topo de pelo menos 2x2 studs (peixes e detalhes ficam lisos)
+	local textured = wantsStuds and STUD_IMAGE ~= nil and part.Size.X >= 2 and part.Size.Z >= 2 and (props.Class == nil or props.Class == "Part") and props.Shape == nil
+	part.TopSurface = (wantsStuds and not textured) and Enum.SurfaceType.Studs or Enum.SurfaceType.Smooth
+	if textured then
+		addStudTexture(part)
+	end
 	part.BottomSurface = Enum.SurfaceType.Smooth
 	part.Transparency = props.Transparency or 0
 	part.Reflectance = props.Reflectance or 0

@@ -32,7 +32,7 @@ local rgb = Color3.fromRGB
 local SAND = rgb(238, 216, 156)
 local SAND_DARK = rgb(222, 196, 132)
 local WET_SAND = rgb(206, 180, 120)
-local GRASS = rgb(110, 200, 70)
+local GRASS = rgb(124, 198, 62)
 local WOOD = rgb(160, 108, 60)
 local WOOD_DARK = rgb(110, 72, 40)
 local WOOD_LIGHT = rgb(196, 146, 88)
@@ -407,7 +407,8 @@ local function buildBeach(map)
 
 	-- paredões em degraus atrás da praia (estilo das referências: xadrez + grama em cima)
 	local tiers = { { Z0 = b.MaxZ, Z1 = b.MaxZ + 16, H = 14 }, { Z0 = b.MaxZ + 16, Z1 = b.MaxZ + 34, H = 30 }, { Z0 = b.MaxZ + 34, Z1 = b.MaxZ + 60, H = 52 } }
-	local checkA, checkB = rgb(232, 218, 178), rgb(212, 196, 152)
+	-- paredões claros (branco-acinzentado) com grama em cima, como nas referências
+	local checkA, checkB = rgb(238, 238, 232), rgb(224, 226, 220)
 	for t, tier in ipairs(tiers) do
 		local x = b.MinX - 80
 		local index = 0
@@ -418,7 +419,7 @@ local function buildBeach(map)
 				Name = "Paredao",
 				Color = (index + t) % 2 == 0 and checkA or checkB,
 			})
-			Brick.Box(folder, Vector3.new(x - 0.1, top + h, tier.Z0 - 0.1), Vector3.new(x + width + 0.1, top + h + 2, tier.Z1 + 0.1), {
+			Brick.Box(folder, Vector3.new(x - 0.1, top + h, tier.Z0 - 0.1), Vector3.new(x + width + 0.1, top + h + 4, tier.Z1 + 0.1), {
 				Name = "Grama",
 				Color = (index % 2 == 0) and GRASS or Brick.Shade(GRASS, 0.12),
 			})
@@ -447,7 +448,7 @@ local function buildBeach(map)
 				Brick.Box(
 					folder,
 					Vector3.new(math.min(x0, x1) - 0.1, top + h, z - 0.1),
-					Vector3.new(math.max(x0, x1) + 0.1, top + h + 2, z + depth + 0.1),
+					Vector3.new(math.max(x0, x1) + 0.1, top + h + 4, z + depth + 0.1),
 					{ Name = "Grama", Color = (index % 2 == 0) and GRASS or Brick.Shade(GRASS, 0.12) }
 				)
 				z += depth

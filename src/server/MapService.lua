@@ -722,15 +722,24 @@ local function buildBeach(map)
 		Brick.Part(walk, { Name = "BoiaFuro", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 1.2, 1.2), CFrame = ringCf, Color = rgb(150, 100, 60), Studs = false, CanCollide = false })
 	end
 
-	-- entrada do píer: dois postes grossos com bolas douradas e cordas enroladas
+	-- entrada do píer: dois postes altos de madeira com acabamento e bandeirinha no topo
 	local entrance = Brick.Model(folder, "EntradaPier")
+	local ENTRANCE_H = 13
 	for side = -1, 1, 2 do
-		local x = side * 8.4
-		Brick.Part(entrance, { Name = "Poste", Shape = Enum.PartType.Cylinder, Size = Vector3.new(6, 2.2, 2.2), CFrame = CFrame.new(x, top + 3, 2) * CFrame.Angles(0, 0, math.pi / 2), Color = WOOD_DARK, Studs = false })
-		Brick.Part(entrance, { Name = "Topo", Shape = Enum.PartType.Ball, Size = Vector3.new(2.6, 2.6, 2.6), Position = Vector3.new(x, top + 6.4, 2), Color = rgb(255, 210, 50), Studs = false })
-		for k = 0, 2 do
-			Brick.Part(entrance, { Name = "Corda", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.5, 2.6, 2.6), CFrame = CFrame.new(x, top + 1.4 + k * 0.5, 2) * CFrame.Angles(0, 0, math.pi / 2), Color = rgb(225, 200, 150), Studs = false })
-		end
+		local x = side * 7.6
+		Brick.Part(entrance, { Name = "Base", Size = Vector3.new(2.4, 1, 2.4), Position = Vector3.new(x, top + 0.5, 2), Color = WOOD_DARK })
+		Brick.Part(entrance, { Name = "Poste", Size = Vector3.new(1.4, ENTRANCE_H, 1.4), Position = Vector3.new(x, top + ENTRANCE_H / 2, 2), Color = WOOD, Studs = false })
+		Brick.Part(entrance, { Name = "Acabamento", Size = Vector3.new(2, 0.6, 2), Position = Vector3.new(x, top + ENTRANCE_H + 0.3, 2), Color = WOOD_DARK })
+		Brick.Part(entrance, { Name = "Mastro", Size = Vector3.new(0.25, 3, 0.25), Position = Vector3.new(x, top + ENTRANCE_H + 2.1, 2), Color = rgb(70, 70, 80), Studs = false })
+		Brick.Part(entrance, {
+			Name = "Bandeira",
+			Class = "WedgePart",
+			Size = Vector3.new(0.1, 1.2, 2),
+			CFrame = CFrame.new(x - side * 1, top + ENTRANCE_H + 3, 2) * CFrame.Angles(0, side * math.pi / 2, 0) * CFrame.Angles(0, 0, -math.pi / 2),
+			Color = side < 0 and rgb(255, 80, 90) or rgb(60, 170, 255),
+			Studs = false,
+			CanCollide = false,
+		})
 	end
 
 	-- bandeirinhas coloridas cruzando o píer (como nas festas de praia)
@@ -740,36 +749,47 @@ local function buildBeach(map)
 	for z = 2, Track.ZOf(Track.PIER_END - 12) + 2, -8 do
 		table.insert(poleZs, z)
 	end
-	local poleTop = Track.PIER_TOP + 7.5
+	local poleTop = Track.PIER_TOP + 12.5 -- bem acima da câmera (antes ficavam na frente da visão)
 	for i, z in ipairs(poleZs) do
 		for side = -1, 1, 2 do
 			if i > 1 then -- o primeiro par é o dos postes da entrada
-				Brick.Part(flags, { Name = "Mastro", Size = Vector3.new(0.4, 7.5, 0.4), Position = Vector3.new(side * 6.8, Track.PIER_TOP + 3.75, z), Color = WOOD_DARK, Studs = false })
+				Brick.Part(flags, { Name = "Mastro", Size = Vector3.new(0.45, 12.5, 0.45), Position = Vector3.new(side * 6.8, Track.PIER_TOP + 6.25, z), Color = WOOD_DARK, Studs = false })
 			end
 		end
-		-- fio com barriguinha (8 pontos) e bandeirinhas triangulares
-		local edgeX = (i == 1) and 8.4 or 6.8 -- o primeiro fio vai nos postes da entrada
-		local fromP = Vector3.new(-edgeX, (i == 1) and (top + 6.2) or poleTop, z)
-		local toP = Vector3.new(edgeX, (i == 1) and (top + 6.2) or poleTop, z)
-		local count = 9
+	end
+	-- fio com barriguinha e bandeirinhas triangulares entre dois pontos
+	local function bunting(fromP, toP, count, sag, offset)
 		local prev = fromP
+		local along = (toP - fromP).Unit
 		for k = 1, count do
 			local p = k / count
-			local point = fromP:Lerp(toP, p) - Vector3.new(0, math.sin(p * math.pi) * 1.4, 0)
+			local point = fromP:Lerp(toP, p) - Vector3.new(0, math.sin(p * math.pi) * sag, 0)
 			local mid = (prev + point) / 2
 			Brick.Part(flags, { Name = "Fio", Size = Vector3.new(0.12, 0.12, (point - prev).Magnitude), CFrame = CFrame.lookAt(mid, point), Color = rgb(60, 60, 60), Studs = false, CanCollide = false })
 			if k < count then
+				local yaw = math.atan2(-along.X, -along.Z)
 				Brick.Part(flags, {
 					Name = "Bandeira",
 					Class = "WedgePart",
 					Size = Vector3.new(0.1, 1.2, 0.9),
-					CFrame = CFrame.new(point - Vector3.new(0, 0.6, 0)) * CFrame.Angles(0, math.pi / 2, math.pi),
-					Color = flagColors[(k + i) % #flagColors + 1],
+					CFrame = CFrame.new(point - Vector3.new(0, 0.6, 0)) * CFrame.Angles(0, yaw + math.pi / 2, 0) * CFrame.Angles(0, math.pi / 2, math.pi),
+					Color = flagColors[(k + offset) % #flagColors + 1],
 					Studs = false,
 					CanCollide = false,
 				})
 			end
 			prev = point
+		end
+	end
+	-- só um fio atravessa o píer (no alto, entre os postes da entrada); os outros vão pelos
+	-- lados, de mastro em mastro, e não tapam a vista da placa do fim
+	bunting(Vector3.new(-7.6, top + ENTRANCE_H - 0.4, 2), Vector3.new(7.6, top + ENTRANCE_H - 0.4, 2), 9, 1.1, 0)
+	for i = 1, #poleZs - 1 do
+		for side = -1, 1, 2 do
+			local x = side * 6.8
+			local y1 = (i == 1) and (top + ENTRANCE_H - 0.4) or poleTop
+			local x1 = (i == 1) and side * 7.6 or x
+			bunting(Vector3.new(x1, y1, poleZs[i]), Vector3.new(x, poleTop, poleZs[i + 1]), 5, 1.2, i * 2 + (side > 0 and 1 or 0))
 		end
 	end
 
@@ -816,16 +836,16 @@ local function buildBeach(map)
 		local z = Track.ZOf(Track.PIER_END - 12) - 0.6
 		local y0 = Track.PIER_TOP
 		for side = -1, 1, 2 do
-			Brick.Part(sign, { Name = "Poste", Size = Vector3.new(1, 11, 1), Position = Vector3.new(side * 6.4, y0 + 5.5, z), Color = WOOD_DARK, Studs = false })
-			Brick.Part(sign, { Name = "Ponta", Shape = Enum.PartType.Ball, Size = Vector3.new(1.4, 1.4, 1.4), Position = Vector3.new(side * 6.4, y0 + 11.3, z), Color = rgb(255, 210, 50), Studs = false })
+			Brick.Part(sign, { Name = "Poste", Size = Vector3.new(1, 16, 1), Position = Vector3.new(side * 6.4, y0 + 8, z), Color = WOOD_DARK, Studs = false })
+			Brick.Part(sign, { Name = "Acabamento", Size = Vector3.new(1.5, 0.5, 1.5), Position = Vector3.new(side * 6.4, y0 + 16.25, z), Color = WOOD })
 		end
-		Brick.Part(sign, { Name = "Travessa", Size = Vector3.new(13.8, 0.8, 0.8), Position = Vector3.new(0, y0 + 10.4, z), Color = WOOD, Studs = false })
+		Brick.Part(sign, { Name = "Travessa", Size = Vector3.new(13.8, 0.8, 0.8), Position = Vector3.new(0, y0 + 15.4, z), Color = WOOD, Studs = false })
 		-- correntinhas
 		for side = -1, 1, 2 do
-			Brick.Part(sign, { Name = "Corrente", Size = Vector3.new(0.2, 1.2, 0.2), Position = Vector3.new(side * 4, y0 + 9.4, z), Color = rgb(70, 70, 80), Studs = false, CanCollide = false })
+			Brick.Part(sign, { Name = "Corrente", Size = Vector3.new(0.2, 1.2, 0.2), Position = Vector3.new(side * 4, y0 + 14.4, z), Color = rgb(70, 70, 80), Studs = false, CanCollide = false })
 		end
-		local signBoard = Brick.Part(sign, { Name = "Placa", Size = Vector3.new(10, 3.4, 0.5), Position = Vector3.new(0, y0 + 7.1, z), Color = rgb(30, 120, 240), Studs = false, CanCollide = false })
-		Brick.Part(sign, { Name = "Moldura", Size = Vector3.new(10.6, 4, 0.4), Position = Vector3.new(0, y0 + 7.1, z - 0.15), Color = rgb(255, 210, 50), Studs = false, CanCollide = false })
+		local signBoard = Brick.Part(sign, { Name = "Placa", Size = Vector3.new(10, 3.4, 0.5), Position = Vector3.new(0, y0 + 12.1, z), Color = rgb(30, 120, 240), Studs = false, CanCollide = false })
+		Brick.Part(sign, { Name = "Moldura", Size = Vector3.new(10.6, 4, 0.4), Position = Vector3.new(0, y0 + 12.1, z - 0.15), Color = rgb(255, 210, 50), Studs = false, CanCollide = false })
 		surfaceText(signBoard, Enum.NormalId.Back, {
 			{ Text = "MERGULHE!", Size = 0.58, Color = WHITE, Stroke = 5 },
 			{ Text = "pule do trampolim", Size = 0.3, Color = rgb(190, 235, 255), Stroke = 3 },

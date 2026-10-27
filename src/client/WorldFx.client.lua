@@ -54,21 +54,55 @@ local underwater = false
 local fogColor = Track.Areas[1].FogColor
 local fogEnd = Track.Areas[1].FogEnd
 
--- Raios de luz: só aparecem com a câmera debaixo d'água (de fora eles vazavam pela água)
-local lightRays = {}
-local function collectRays()
-	table.clear(lightRays)
-	for _, part in ipairs(map:GetDescendants()) do
-		if part:IsA("BasePart") and part.Name == "RaioDeLuz" then
-			table.insert(lightRays, { Part = part, Transparency = part.Transparency })
-		end
+-- Raios de luz (só no seu computador e só com a câmera debaixo d'água): feixes suaves que
+-- brilham em cima e somem perto do fundo, no Recife Raso.
+local raysFolder = Instance.new("Folder")
+raysFolder.Name = "RaiosDeLuz"
+do
+	local rng = Random.new(9)
+	for _ = 1, 26 do
+		local dist = rng:NextNumber(70, Track.Areas[1].Finish - 30)
+		local x = rng:NextNumber(-45, 45)
+		local seabed = Track.SeabedY(dist)
+		local anchor = Instance.new("Part")
+		anchor.Name = "Raio"
+		anchor.Anchored = true
+		anchor.CanCollide = false
+		anchor.CanQuery = false
+		anchor.CanTouch = false
+		anchor.Transparency = 1
+		anchor.Size = Vector3.new(0.2, 0.2, 0.2)
+		anchor.CFrame = CFrame.new(x, Track.WATER_Y - 2, Track.ZOf(dist))
+		local top = Instance.new("Attachment")
+		top.Parent = anchor
+		local bottom = Instance.new("Attachment")
+		-- inclinado, como a luz entrando de lado
+		-- posição relativa ao topo (a peça âncora não é girada)
+		bottom.Position = Vector3.new(rng:NextNumber(4, 10), seabed + 2 - (Track.WATER_Y - 2), -rng:NextNumber(2, 8))
+		bottom.Parent = anchor
+		local beam = Instance.new("Beam")
+		beam.Attachment0 = top
+		beam.Attachment1 = bottom
+		beam.FaceCamera = true
+		beam.LightEmission = 1
+		beam.LightInfluence = 0
+		beam.Color = ColorSequence.new(Color3.fromRGB(230, 250, 255))
+		-- forte em cima e some embaixo
+		beam.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.82),
+			NumberSequenceKeypoint.new(0.5, 0.9),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		local width = rng:NextNumber(4, 9)
+		beam.Width0 = width
+		beam.Width1 = width * 1.6
+		beam.Segments = 1
+		beam.Parent = anchor
+		anchor.Parent = raysFolder
 	end
 end
-task.defer(collectRays)
 local function showRays(visible)
-	for _, ray in ipairs(lightRays) do
-		ray.Part.LocalTransparencyModifier = visible and 0 or 1
-	end
+	raysFolder.Parent = visible and Workspace or nil
 end
 
 local function setUnderwater(value)
@@ -95,9 +129,6 @@ local function setUnderwater(value)
 	end
 end
 
-task.defer(function()
-	showRays(false)
-end)
 
 -- Sons de passos: o Roblox toca "Running" pelo HumanoidRootPart. Debaixo d'água (e durante a
 -- corrida, quando o personagem é movido pelo jogo) eles ficam mudos.

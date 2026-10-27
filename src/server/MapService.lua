@@ -421,25 +421,6 @@ local function sandcastle(parent, base)
 	return model
 end
 
-local function buoy(parent, position, color)
-	local model = Brick.Model(parent, "Boia")
-	Brick.Part(model, {
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(2, 2.6, 2.6),
-		CFrame = CFrame.new(position) * CFrame.Angles(0, 0, math.pi / 2),
-		Color = color,
-		CanCollide = false,
-	})
-	Brick.Part(model, {
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(0.6, 2.8, 2.8),
-		CFrame = CFrame.new(position + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.pi / 2),
-		Color = WHITE,
-		CanCollide = false,
-	})
-	return model
-end
-
 -- Bonequinho estilo Lego (vendedores)
 local function minifig(parent, cframe, shirt, hair)
 	local model = Brick.Model(parent, "Vendedor")
@@ -741,34 +722,79 @@ local function buildBeach(map)
 		Brick.Part(walk, { Name = "BoiaFuro", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 1.2, 1.2), CFrame = ringCf, Color = rgb(150, 100, 60), Studs = false, CanCollide = false })
 	end
 
-	-- arco de entrada no começo do píer (colunas listradas redondas e placa com moldura)
-	local arch = Brick.Model(folder, "ArcoMergulho")
-	local archZ = 1
+	-- entrada do píer: dois postes grossos com bolas douradas e cordas enroladas
+	local entrance = Brick.Model(folder, "EntradaPier")
 	for side = -1, 1, 2 do
-		for i = 0, 6 do
-			Brick.Part(arch, {
-				Name = "Coluna",
-				Shape = Enum.PartType.Cylinder,
-				Size = Vector3.new(2.4, 2.4, 2.4),
-				CFrame = CFrame.new(side * 9.5, top + 1.2 + i * 2.4, archZ) * CFrame.Angles(0, 0, math.pi / 2),
-				Color = (i % 2 == 0) and rgb(255, 75, 75) or WHITE,
-				Studs = false,
-			})
+		local x = side * 8.4
+		Brick.Part(entrance, { Name = "Poste", Shape = Enum.PartType.Cylinder, Size = Vector3.new(6, 2.2, 2.2), CFrame = CFrame.new(x, top + 3, 2) * CFrame.Angles(0, 0, math.pi / 2), Color = WOOD_DARK, Studs = false })
+		Brick.Part(entrance, { Name = "Topo", Shape = Enum.PartType.Ball, Size = Vector3.new(2.6, 2.6, 2.6), Position = Vector3.new(x, top + 6.4, 2), Color = rgb(255, 210, 50), Studs = false })
+		for k = 0, 2 do
+			Brick.Part(entrance, { Name = "Corda", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.5, 2.6, 2.6), CFrame = CFrame.new(x, top + 1.4 + k * 0.5, 2) * CFrame.Angles(0, 0, math.pi / 2), Color = rgb(225, 200, 150), Studs = false })
 		end
-		Brick.Part(arch, { Name = "Pe", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 3.6, 3.6), CFrame = CFrame.new(side * 9.5, top + 0.4, archZ) * CFrame.Angles(0, 0, math.pi / 2), Color = rgb(255, 75, 75), Studs = false })
-		Brick.Part(arch, { Name = "Topo", Shape = Enum.PartType.Ball, Size = Vector3.new(2.8, 2.8, 2.8), Position = Vector3.new(side * 9.5, top + 18.6, archZ), Color = rgb(255, 210, 50), Studs = false })
 	end
-	local beam = Brick.Part(arch, { Name = "Placa", Size = Vector3.new(22, 4.6, 1.4), Position = Vector3.new(0, top + 16, archZ), Color = rgb(30, 120, 240), Studs = false })
-	Brick.Part(arch, { Name = "Moldura", Size = Vector3.new(22.6, 0.6, 1.6), Position = Vector3.new(0, top + 18.4, archZ), Color = rgb(255, 210, 50), Studs = false })
-	Brick.Part(arch, { Name = "Moldura", Size = Vector3.new(22.6, 0.6, 1.6), Position = Vector3.new(0, top + 13.6, archZ), Color = rgb(255, 210, 50), Studs = false })
-	surfaceText(beam, Enum.NormalId.Back, { { Text = "MERGULHE PARA COMEÇAR", Size = 0.75, Color = WHITE } })
-	surfaceText(beam, Enum.NormalId.Front, { { Text = "BOA SORTE!", Size = 0.75, Color = WHITE } })
 
-	-- boias marcando a faixa de mergulho
-	for d = 4, Track.BARRIER_DIST, 7 do
+	-- bandeirinhas coloridas cruzando o píer (como nas festas de praia)
+	local flags = Brick.Folder(folder, "Bandeirinhas")
+	local flagColors = { rgb(255, 80, 90), rgb(255, 210, 50), rgb(60, 170, 255), rgb(90, 220, 110), rgb(200, 120, 255), WHITE }
+	local poleZs = {}
+	for z = 2, Track.ZOf(Track.PIER_END - 12) + 2, -8 do
+		table.insert(poleZs, z)
+	end
+	local poleTop = Track.PIER_TOP + 7.5
+	for i, z in ipairs(poleZs) do
 		for side = -1, 1, 2 do
-			buoy(folder, Vector3.new(side * 24, Track.WATER_Y + 0.4, Track.ZOf(d)), (math.floor(d / 7) % 2 == 0) and rgb(255, 60, 60) or rgb(255, 200, 40))
+			if i > 1 then -- o primeiro par é o dos postes da entrada
+				Brick.Part(flags, { Name = "Mastro", Size = Vector3.new(0.4, 7.5, 0.4), Position = Vector3.new(side * 6.8, Track.PIER_TOP + 3.75, z), Color = WOOD_DARK, Studs = false })
+			end
 		end
+		-- fio com barriguinha (8 pontos) e bandeirinhas triangulares
+		local edgeX = (i == 1) and 8.4 or 6.8 -- o primeiro fio vai nos postes da entrada
+		local fromP = Vector3.new(-edgeX, (i == 1) and (top + 6.2) or poleTop, z)
+		local toP = Vector3.new(edgeX, (i == 1) and (top + 6.2) or poleTop, z)
+		local count = 9
+		local prev = fromP
+		for k = 1, count do
+			local p = k / count
+			local point = fromP:Lerp(toP, p) - Vector3.new(0, math.sin(p * math.pi) * 1.4, 0)
+			local mid = (prev + point) / 2
+			Brick.Part(flags, { Name = "Fio", Size = Vector3.new(0.12, 0.12, (point - prev).Magnitude), CFrame = CFrame.lookAt(mid, point), Color = rgb(60, 60, 60), Studs = false, CanCollide = false })
+			if k < count then
+				Brick.Part(flags, {
+					Name = "Bandeira",
+					Class = "WedgePart",
+					Size = Vector3.new(0.1, 1.2, 0.9),
+					CFrame = CFrame.new(point - Vector3.new(0, 0.6, 0)) * CFrame.Angles(0, math.pi / 2, math.pi),
+					Color = flagColors[(k + i) % #flagColors + 1],
+					Studs = false,
+					CanCollide = false,
+				})
+			end
+			prev = point
+		end
+	end
+
+	-- barquinho amarrado do lado do píer
+	do
+		local boat = Brick.Model(folder, "Barquinho")
+		local cf = CFrame.new(-13, Track.WATER_Y + 0.6, -12) * CFrame.Angles(0, 0.15, 0)
+		local hull, trim = rgb(255, 255, 255), rgb(40, 140, 230)
+		Brick.Part(boat, { Name = "Casco", Size = Vector3.new(5, 1.6, 10), CFrame = cf, Color = hull, Studs = false })
+		Brick.Part(boat, { Name = "Proa", Class = "WedgePart", Size = Vector3.new(5, 1.6, 3), CFrame = cf * CFrame.new(0, 0, -6.5) * CFrame.Angles(0, 0, 0), Color = hull, Studs = false })
+		Brick.Part(boat, { Name = "Faixa", Size = Vector3.new(5.1, 0.4, 10), CFrame = cf * CFrame.new(0, 0.3, 0), Color = trim, Studs = false })
+		Brick.Part(boat, { Name = "Banco", Size = Vector3.new(4.4, 0.4, 1.2), CFrame = cf * CFrame.new(0, 0.9, 1.5), Color = WOOD_LIGHT, Studs = false })
+		Brick.Part(boat, { Name = "Fundo", Size = Vector3.new(4.4, 0.3, 9.4), CFrame = cf * CFrame.new(0, 0.6, 0), Color = WOOD, Studs = false })
+		Brick.Part(boat, { Name = "Remo", Size = Vector3.new(0.3, 0.3, 6), CFrame = cf * CFrame.new(1.8, 1.1, 0.5) * CFrame.Angles(0, 0.3, 0.2), Color = WOOD_DARK, Studs = false })
+		for _, part in ipairs(boat:GetChildren()) do
+			part.CanCollide = false
+		end
+	end
+
+	-- boias salva-vidas boiando perto do píer
+	for _, spot in ipairs({ { 15, -8 }, { -17, -30 }, { 18, -40 } }) do
+		local cf = CFrame.new(spot[1], Track.WATER_Y + 0.25, spot[2]) * CFrame.Angles(0, 0, math.pi / 2)
+		Brick.Part(folder, { Name = "BoiaMar", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 3, 3), CFrame = cf, Color = rgb(255, 80, 70), Studs = false, CanCollide = false })
+		Brick.Part(folder, { Name = "BoiaFaixa", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.65, 3, 0.8), CFrame = cf, Color = WHITE, Studs = false, CanCollide = false })
+		Brick.Part(folder, { Name = "BoiaMeio", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.7, 1.3, 1.3), CFrame = cf, Color = rgb(40, 150, 230), Studs = false, CanCollide = false })
 	end
 
 	-- anel da zona de mergulho (dentro da água rasa)
@@ -1299,25 +1325,8 @@ local function buildOcean(map)
 		end
 	end
 
-	-- raios de luz no Recife Raso
-	local lrng = Random.new(9)
-	for _ = 1, 28 do
-		local dist = lrng:NextNumber(60, Track.Areas[1].Finish - 20)
-		local x = lrng:NextNumber(-35, 35)
-		local seabed = Track.SeabedY(dist)
-		local height = Track.WATER_Y - 4 - seabed -- para antes da superfície
-		Brick.Part(deco, {
-			Name = "RaioDeLuz",
-			Size = Vector3.new(lrng:NextNumber(4, 8), height, lrng:NextNumber(2, 4)),
-			CFrame = CFrame.new(x, seabed + height / 2, Track.ZOf(dist)) * CFrame.Angles(0.25, lrng:NextNumber(-0.4, 0.4), 0.2),
-			Color = rgb(220, 250, 255),
-			Material = Enum.Material.Neon,
-			Transparency = 0.88,
-			CanCollide = false,
-			CastShadow = false,
-			Studs = false,
-		})
-	end
+	-- (os raios de luz são criados no cliente, só enquanto a câmera está debaixo d'água:
+	-- veja WorldFx)
 
 	-- (sem portais/placas entre as áreas: a troca de bioma aparece pela mudança de cor,
 	-- neblina, pedras e decoração, e pelo aviso na tela)

@@ -23,7 +23,7 @@ Track.BEACH_Y = 2 -- altura do chão de areia da praia (topo)
 Track.SHORE_Z = 0
 Track.HALF_WIDTH = 45 -- meia largura da pista
 Track.LENGTH = 1500
-Track.DEEP_FLOOR_Y = -150 -- fundo escuro bem lá embaixo (só visual)
+Track.DEEP_FLOOR_Y = -175 -- fundo escuro bem lá embaixo (só visual)
 
 Track.SLOPE_END = 48 -- a rampa da praia vai até aqui
 Track.SLOPE_STEPS = 14 -- degraus de 1 stud cada
@@ -33,7 +33,8 @@ Track.START_DIST = 26 -- centro da zona de mergulho (na água rasa)
 Track.START_RADIUS = 12
 Track.BARRIER_DIST = 46 -- parede invisível para quem não está correndo
 
-Track.FISH_SWIM_HEIGHT = 7 -- altura dos peixes acima do fundo
+Track.FISH_SWIM_HEIGHT = 5 -- altura dos peixes acima do fundo
+Track.FIRST_FISH_DIST = 74 -- o peixe garantido fica depois da queda, já no fundo
 
 Track.Areas = {
 	{
@@ -109,15 +110,17 @@ end
 -- O fundo do mar --------------------------------------------------------------------------
 -- Pontos de controle (dist, altura). Entre eles a altura desce em linha reta e depois é
 -- arredondada para um número inteiro: fica com cara de degraus de Lego.
+-- Depois da rampa da praia vem uma QUEDA (o "afundar" do começo da corrida).
 local CONTROL = {
-	{ 48, -12 },
-	{ 470, -34 },
-	{ 500, -34 },
-	{ 532, -50 },
-	{ 965, -68 },
-	{ 1000, -68 },
-	{ 1032, -88 },
-	{ 1500, -108 },
+	{ 48, -14 },
+	{ 66, -32 },
+	{ 470, -46 },
+	{ 500, -46 },
+	{ 532, -62 },
+	{ 965, -82 },
+	{ 1000, -82 },
+	{ 1032, -100 },
+	{ 1500, -126 },
 }
 
 local function interpolate(dist)
@@ -207,13 +210,13 @@ function Track.GenerateRun(seed)
 		S = "palhaco",
 		M = "Normal",
 		Z = "Normal",
-		Dist = Track.START_DIST + 20,
+		Dist = Track.FIRST_FISH_DIST,
 		X = 0,
 		Phase = 0,
 		SpeedMul = 1,
 	})
 
-	local d = Track.START_DIST + 34
+	local d = Track.FIRST_FISH_DIST + 14
 	while d < Track.LENGTH - 40 do
 		local area = Track.AreaAt(d)
 		local species = Fish.RollSpecies(rng, area.Index)

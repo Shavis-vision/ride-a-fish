@@ -177,35 +177,125 @@ for _, model in ipairs(plots:GetChildren()) do
 	end)
 end
 
--- Esteira: correr e esteira andando ----------------------------------------------------------
-local runTrack = nil
-local function setTrainingAnimation(training)
-	local character = player.Character
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
-	if training then
-		if runTrack or not animator then
-			return
+-- Esteira: o jogador fica preso olhando para o aquário, andando. Para sair, pula. -------------
+local UserInputService = game:GetService("UserInputService")
+local lock = nil -- { Humanoid, Root, Zone, WalkSpeed, JumpPower, Track }
+local exitUntilOutside = false
+
+local function myTreadmillZone()
+	for _, model in ipairs(plots:GetChildren()) do
+		if model:GetAttribute("Owner") == player.UserId then
+			local treadmill = model:FindFirstChild("Esteira")
+			return treadmill and treadmill:FindFirstChild("Zona")
 		end
-		local animate = character:FindFirstChild("Animate")
-		local runFolder = animate and animate:FindFirstChild("run")
-		local animation = runFolder and runFolder:FindFirstChildOfClass("Animation")
-		if animation then
-			runTrack = animator:LoadAnimation(animation)
-			runTrack.Priority = Enum.AnimationPriority.Movement
-			runTrack.Looped = true
-			runTrack:Play(0.2)
-		end
-	elseif runTrack then
-		runTrack:Stop(0.2)
-		runTrack = nil
+	end
+	return nil
+end
+
+local function insideZone(zone, position)
+	local localPos = zone.CFrame:PointToObjectSpace(position)
+	local half = zone.Size / 2
+	return math.abs(localPos.X) <= half.X and math.abs(localPos.Y) <= half.Y and math.abs(localPos.Z) <= half.Z
+end
+
+local function lockOnTreadmill(humanoid, root, zone)
+	-- não ancora: o servidor precisa continuar vendo o jogador em cima da esteira
+	lock = { Humanoid = humanoid, Root = root, Zone = zone, AutoRotate = humanoid.AutoRotate, WalkSpeed = humanoid.WalkSpeed }
+	humanoid.AutoRotate = false
+	humanoid.WalkSpeed = 0
+
+	local animator = humanoid:FindFirstChildOfClass("Animator")
+	local animate = humanoid.Parent:FindFirstChild("Animate")
+	local walkFolder = animate and animate:FindFirstChild("walk")
+	local animation = walkFolder and walkFolder:FindFirstChildOfClass("Animation")
+	if animator and animation then
+		lock.Track = animator:LoadAnimation(animation)
+		lock.Track.Priority = Enum.AnimationPriority.Action
+		lock.Track.Looped = true
+		lock.Track:Play(0.2)
 	end
 end
-player:GetAttributeChangedSignal("Training"):Connect(function()
-	setTrainingAnimation(player:GetAttribute("Training") == true)
+
+local function unlockTreadmill()
+	if not lock then
+		return
+	end
+	local current = lock
+	lock = nil
+	if current.Track then
+		current.Track:Stop(0.2)
+	end
+	if current.Root.Parent then
+		-- sai pela frente da esteira (o lado de onde se entra), olhando para o mar
+		local zone = current.Zone
+		local out = zone.CFrame * CFrame.new(0, 0, -(zone.Size.Z / 2 + 3))
+		local y = current.Root.Position.Y
+		current.Root.CFrame = CFrame.lookAt(Vector3.new(out.X, y, out.Z), Vector3.new(out.X, y, out.Z - 10))
+		current.Root.AssemblyLinearVelocity = Vector3.new(0, 25, -12)
+	end
+	if current.Humanoid.Parent then
+		current.Humanoid.AutoRotate = current.AutoRotate
+		current.Humanoid.WalkSpeed = current.WalkSpeed
+	end
+	exitUntilOutside = true
+end
+
+UserInputService.JumpRequest:Connect(function()
+	if lock then
+		unlockTreadmill()
+	end
 end)
+
+local treadmillClock = 0
+RunService.Heartbeat:Connect(function(dt)
+	treadmillClock += dt
+	if treadmillClock < 0.1 then
+		return
+	end
+	treadmillClock = 0
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if lock then
+		if not root or lock.Root ~= root or player:GetAttribute("Running") then
+			lock = nil
+		end
+		return
+	end
+	if not humanoid or not root or humanoid.Health <= 0 or player:GetAttribute("Running") then
+		return
+	end
+	local zone = myTreadmillZone()
+	if not zone then
+		return
+	end
+	local inside = insideZone(zone, root.Position)
+	if exitUntilOutside then
+		if not inside then
+			exitUntilOutside = false
+		end
+		return
+	end
+	if inside then
+		lockOnTreadmill(humanoid, root, zone)
+	end
+end)
+
 player.CharacterAdded:Connect(function()
-	runTrack = nil
+	lock = nil
+	exitUntilOutside = false
+end)
+
+-- enquanto preso: no meio da esteira, de frente para o aquário (+Z)
+RunService.RenderStepped:Connect(function()
+	if not lock or not lock.Root.Parent then
+		return
+	end
+	local center = lock.Zone.Position
+	local y = lock.Root.Position.Y
+	lock.Root.CFrame = CFrame.lookAt(Vector3.new(center.X, y, center.Z), Vector3.new(center.X, y, center.Z + 10))
+	local velocity = lock.Root.AssemblyLinearVelocity
+	lock.Root.AssemblyLinearVelocity = Vector3.new(0, math.min(velocity.Y, 0), 0)
 end)
 
 local stripeBase = {}

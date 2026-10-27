@@ -123,17 +123,26 @@ end
 
 -- Placas -----------------------------------------------------------------------------------
 
+local GREEN = ColorSequence.new(Color3.fromRGB(140, 245, 90), Color3.fromRGB(40, 175, 45))
+local RED = ColorSequence.new(Color3.fromRGB(255, 105, 115), Color3.fromRGB(215, 35, 55))
+local GRAY = ColorSequence.new(Color3.fromRGB(150, 150, 160), Color3.fromRGB(95, 95, 108))
+
+-- canBuy: true (verde), false (vermelho) ou nil (nível máximo, cinza)
 local function setSign(sign, title, level, info, price, canBuy)
 	local gui = sign and sign:FindFirstChild("Placa") and sign.Placa:FindFirstChild("Gui")
-	local frame = gui and gui:FindFirstChildOfClass("Frame")
+	local frame = gui and gui:FindFirstChild("Board")
 	if not frame then
 		return
 	end
 	frame.Title.Text = title
 	frame.Level.Text = level
 	frame.Info.Text = info
-	frame.Price.Text = price
-	frame.Price.TextColor3 = canBuy and Color3.fromRGB(90, 255, 90) or Color3.fromRGB(255, 90, 80)
+	frame.PriceButton.Label.Text = price
+	frame.PriceButton.Fill.Color = (canBuy == nil and GRAY) or (canBuy and GREEN) or RED
+	local alert = sign:FindFirstChild("Alerta")
+	if alert and alert:FindFirstChild("Gui") then
+		alert.Gui.Enabled = canBuy == true
+	end
 end
 
 function PlotService.RefreshSigns(player)
@@ -153,14 +162,14 @@ function PlotService.RefreshSigns(player)
 		local nextRate = Progression.TreadmillRate(level + 1) * mult
 		setSign(
 			model.PlacaEsteira,
-			"MELHORAR ESTEIRA",
-			("Nível %d > %d"):format(level, level + 1),
-			("⚡ +%s/s > +%s/s"):format(NumberFormat.Rate(now), NumberFormat.Rate(nextRate)),
+			"Melhorar Esteira",
+			("Nível %d > Nível %d"):format(level, level + 1),
+			("+%s > +%s Stamina/s"):format(NumberFormat.Rate(now), NumberFormat.Rate(nextRate)),
 			NumberFormat.Money(cost),
 			data.Money >= cost
 		)
 	else
-		setSign(model.PlacaEsteira, "ESTEIRA", ("Nível %d (máximo)"):format(level), ("⚡ +%s/s"):format(NumberFormat.Rate(now)), "MÁX", false)
+		setSign(model.PlacaEsteira, "Esteira", ("Nível %d (máximo)"):format(level), ("+%s Stamina/s"):format(NumberFormat.Rate(now)), "MÁXIMO", nil)
 	end
 
 	-- painel da própria esteira
@@ -177,14 +186,14 @@ function PlotService.RefreshSigns(player)
 	if aqCost then
 		setSign(
 			model.PlacaAquario,
-			"MELHORAR AQUÁRIO",
-			("Nível %d > %d"):format(aqLevel, aqLevel + 1),
-			("🐟 %d > %d vagas"):format(slots, Progression.AquariumSlots(aqLevel + 1)),
+			"Melhorar Aquário",
+			("Nível %d > Nível %d"):format(aqLevel, aqLevel + 1),
+			("%d > %d vagas para peixes"):format(slots, Progression.AquariumSlots(aqLevel + 1)),
 			NumberFormat.Money(aqCost),
 			data.Money >= aqCost
 		)
 	else
-		setSign(model.PlacaAquario, "AQUÁRIO", ("Nível %d (máximo)"):format(aqLevel), ("🐟 %d vagas"):format(slots), "MÁX", false)
+		setSign(model.PlacaAquario, "Aquário", ("Nível %d (máximo)"):format(aqLevel), ("%d vagas para peixes"):format(slots), "MÁXIMO", nil)
 	end
 end
 

@@ -33,7 +33,7 @@ Para o salvamento funcionar no Studio: publique o jogo e ligue **Game Settings >
 | Começar a corrida | Entrar no anel azul dentro da água | Igual |
 | Arpão no peixe marcado / pular | Espaço | Botão PULAR |
 | Desviar | A / D (ou setas) | Analógico |
-| Treinar stamina | Ficar em cima da esteira do seu lote | Igual |
+| Treinar stamina | Subir na esteira do seu lote (você fica preso andando; pule para sair) | Igual (botão de pular) |
 | Melhorar esteira/aquário | Tecla E perto da placa | Tocar no botão da placa |
 
 As cores embaixo do nome de cada peixe dizem se você consegue domar: **verde ✓** (tem stamina), **amarelo !** (tem 80% ou mais, ainda não dá) e **vermelho ✗**.

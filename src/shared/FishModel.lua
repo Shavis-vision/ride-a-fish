@@ -107,9 +107,14 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		props.Reflectance = props.Reflectance or palette.Reflectance
 		local part = Brick.Part(model, props)
 		part.Massless = true
-		local weld = Instance.new("WeldConstraint")
-		weld.Part0 = attachTo or root
+		-- Weld com deslocamento fixo (C0): o peixe fica inteiro mesmo se for movido antes de
+		-- entrar no Workspace (a WeldConstraint não garante isso)
+		local base = attachTo or root
+		local weld = Instance.new("Weld")
+		weld.Part0 = base
 		weld.Part1 = part
+		weld.C0 = base.CFrame:ToObjectSpace(part.CFrame)
+		weld.C1 = CFrame.new()
 		weld.Parent = part
 		return part
 	end

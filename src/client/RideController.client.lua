@@ -39,6 +39,7 @@ local RIDE = Config.RIDE
 local RIDER_OFFSET = 1.9 -- altura do HumanoidRootPart acima da sela
 local SWIM = Track.FISH_SWIM_HEIGHT
 
+local character, humanoid, root, sitTrack
 local controls = nil
 task.spawn(function()
 	local ok, module = pcall(function()
@@ -59,7 +60,15 @@ local function moveX()
 			return math.clamp(vector.X, -1, 1)
 		end
 	end
-	-- reserva: lê o teclado direto (funciona mesmo sem o PlayerModule)
+	-- reserva 1: a direção que o Roblox calcula para o Humanoid (serve para o analógico do celular).
+	-- A câmera olha para -Z, então "direita na tela" = +X no mundo.
+	if humanoid and humanoid.Parent then
+		local direction = humanoid.MoveDirection
+		if math.abs(direction.X) > 0.05 then
+			return math.clamp(direction.X / math.max(direction.Magnitude, 1e-3), -1, 1)
+		end
+	end
+	-- reserva 2: lê o teclado direto (funciona mesmo sem o PlayerModule)
 	local x = 0
 	if UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.Left) then
 		x -= 1
@@ -76,7 +85,6 @@ local run = nil
 local rider: { [string]: any } = {}
 local requesting = false
 local cooldownUntil = 0
-local character, humanoid, root, sitTrack
 local target = nil
 local lastAreaIndex = 0
 local lastActionAt = 0
@@ -394,7 +402,7 @@ local function spawnFish(data, preTamed)
 		TargetableAt = 0,
 	}
 	obj.Y = Track.SeabedY(obj.Dist) + SWIM + obj.Height / 2
-	obj.Root.CFrame = CFrame.new(obj.X, obj.Y, Track.ZOf(obj.Dist))
+	model:PivotTo(CFrame.new(obj.X, obj.Y, Track.ZOf(obj.Dist)))
 	makeLabel(obj)
 	refreshLabel(obj)
 	model.Parent = run.Folder
@@ -512,11 +520,12 @@ local function freeJump()
 	state = "Airborne"
 end
 
-local function harpoon(obj)
+local function harpoon(obj, duration)
 	releaseMount()
 	rider.ZipFrom = rider.Pos
 	rider.ZipTarget = obj
 	rider.ZipStart = os.clock()
+	rider.ZipDuration = duration or RIDE.HARPOON_TIME
 	state = "Zipping"
 end
 
@@ -596,7 +605,7 @@ local function beginRun(seed)
 	-- o mergulho já leva direto ao primeiro peixe (garantido), para ninguém cair logo de cara
 	local first = spawnFish(run.Fish[1])
 	run.NextSpawn = 2
-	harpoon(first)
+	harpoon(first, 1.1)
 	showBanner("MERGULHO!", Color3.fromRGB(120, 230, 255))
 end
 
@@ -761,10 +770,11 @@ local function updateZipping(now)
 		rope.Transparency = 1
 		return
 	end
-	local p = math.clamp((now - rider.ZipStart) / RIDE.HARPOON_TIME, 0, 1)
+	local p = math.clamp((now - rider.ZipStart) / (rider.ZipDuration or RIDE.HARPOON_TIME), 0, 1)
 	local eased = 1 - (1 - p) ^ 2
 	local seat = seatCFrame(obj)
-	local pos = rider.ZipFrom:Lerp(seat.Position, eased) + Vector3.new(0, math.sin(p * math.pi) * 3, 0)
+	local arc = rider.ZipDuration and rider.ZipDuration > 0.5 and 0 or 3 -- o mergulho desce reto
+	local pos = rider.ZipFrom:Lerp(seat.Position, eased) + Vector3.new(0, math.sin(p * math.pi) * arc, 0)
 	rider.Pos = pos
 	rider.Dist = Track.DistOf(pos.Z)
 	placeRider(CFrame.new(pos) * seat.Rotation)
@@ -858,10 +868,17 @@ end
 
 local function updateCamera(dt)
 	local focus = rider.Pos
-	local desired = CFrame.lookAt(focus + Vector3.new(0, 10, 24), focus + Vector3.new(0, 1, -28))
+	local eye = focus + Vector3.new(0, 7, 20)
+	local look = focus + Vector3.new(0, 0, -28)
 	if state == "Fallen" then
-		desired = CFrame.lookAt(focus + Vector3.new(0, 14, 16), focus)
+		eye = focus + Vector3.new(0, 12, 14)
+		look = focus
 	end
+	-- a câmera fica debaixo d'água (só sobe junto quando o peixe salta para fora)
+	if focus.Y < Track.WATER_Y then
+		eye = Vector3.new(eye.X, math.min(eye.Y, Track.WATER_Y - 1.5), eye.Z)
+	end
+	local desired = CFrame.lookAt(eye, look)
 	camera.CFrame = camera.CFrame:Lerp(desired, 1 - math.exp(-dt * 8))
 	local speed = state == "Riding" and currentSpeed() or 30
 	camera.FieldOfView += ((68 + math.clamp(speed - 30, 0, 40) * 0.25) - camera.FieldOfView) * math.min(1, dt * 3)

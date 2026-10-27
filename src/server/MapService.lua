@@ -1300,18 +1300,129 @@ local function buildPlot(parent, plot)
 	zone:SetAttribute("TreadmillZone", true)
 
 	-- PLACAS DE MELHORIA -------------------------------------------------------
-	local function upgradeSign(name, position, title, color)
+	-- Placas no estilo das referências: quadro preto, título branco, nível em verde e um
+	-- "botão" de preço (verde = dá para comprar, vermelho = falta dinheiro). Um "!" vermelho
+	-- aparece em cima quando dá para comprar. PlotService preenche os textos.
+	local function upgradeSign(name, position, title, icon)
 		local sign = Brick.Model(model, name)
 		local p = Vector3.new(position.X, floorTop, position.Z)
-		Brick.Part(sign, { Size = Vector3.new(1, 8, 1), Position = p + Vector3.new(0, 4, 0.6), Color = rgb(30, 30, 35) })
-		local board = Brick.Part(sign, { Name = "Placa", Size = Vector3.new(10, 6, 0.6), Position = p + Vector3.new(0, 9, 0), Color = rgb(25, 25, 32) })
-		surfaceText(board, Enum.NormalId.Front, {
-			{ Name = "Title", Text = title, Size = 0.22, Color = WHITE },
-			{ Name = "Level", Text = "Nível 1 > 2", Size = 0.17, Color = rgb(120, 255, 120) },
-			{ Name = "Info", Text = "", Size = 0.17, Color = rgb(255, 230, 80) },
-			{ Name = "Price", Text = "$0", Size = 0.26, Color = WHITE },
-		}, rgb(25, 25, 32))
-		Brick.Part(sign, { Size = Vector3.new(10.6, 0.6, 0.8), Position = p + Vector3.new(0, 12.2, 0), Color = color })
+		Brick.Part(sign, { Name = "Poste", Size = Vector3.new(1.4, 9, 1.4), Position = p + Vector3.new(0, 4.5, 0.8), Color = rgb(28, 28, 32) })
+		local board = Brick.Part(sign, {
+			Name = "Placa",
+			Size = Vector3.new(12, 7.5, 0.8),
+			Position = p + Vector3.new(0, 10.5, 0),
+			Color = rgb(18, 18, 22),
+			Studs = false,
+		})
+		local gui = Instance.new("SurfaceGui")
+		gui.Name = "Gui"
+		gui.Face = Enum.NormalId.Front
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.PixelsPerStud = 40
+		gui.LightInfluence = 0
+		gui.Parent = board
+		local frame = Instance.new("Frame")
+		frame.Name = "Board"
+		frame.Size = UDim2.fromScale(1, 1)
+		frame.BackgroundColor3 = rgb(18, 18, 22)
+		frame.BorderSizePixel = 0
+		frame.Parent = gui
+		local border = Instance.new("UIStroke")
+		border.Thickness = 8
+		border.Color = rgb(55, 55, 65)
+		border.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		border.Parent = frame
+
+		local function line(labelName, text, x, y, w, h, color, align)
+			local label = Instance.new("TextLabel")
+			label.Name = labelName
+			label.BackgroundTransparency = 1
+			label.Position = UDim2.fromScale(x, y)
+			label.Size = UDim2.fromScale(w, h)
+			label.Font = FONT
+			label.Text = text
+			label.TextScaled = true
+			label.TextColor3 = color
+			label.TextXAlignment = align or Enum.TextXAlignment.Center
+			label.Parent = frame
+			stroke(label, 4)
+			return label
+		end
+		line("Icon", icon, 0.03, 0.05, 0.17, 0.4, WHITE)
+		line("Title", title, 0.2, 0.05, 0.77, 0.25, WHITE)
+		line("Level", "Nível 1 > Nível 2", 0.2, 0.3, 0.77, 0.17, rgb(120, 255, 90))
+		line("Info", "", 0.04, 0.48, 0.92, 0.16, rgb(255, 225, 80))
+
+		local button = Instance.new("Frame")
+		button.Name = "PriceButton"
+		button.Position = UDim2.fromScale(0.07, 0.68)
+		button.Size = UDim2.fromScale(0.86, 0.26)
+		button.BackgroundColor3 = WHITE
+		button.BorderSizePixel = 0
+		button.Parent = frame
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0.2, 0)
+		corner.Parent = button
+		local buttonStroke = Instance.new("UIStroke")
+		buttonStroke.Thickness = 5
+		buttonStroke.Color = rgb(15, 15, 20)
+		buttonStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		buttonStroke.Parent = button
+		local fill = Instance.new("UIGradient")
+		fill.Name = "Fill"
+		fill.Rotation = 90
+		fill.Color = ColorSequence.new(rgb(140, 245, 90), rgb(40, 175, 45))
+		fill.Parent = button
+		local cash = Instance.new("TextLabel")
+		cash.Name = "Cash"
+		cash.BackgroundTransparency = 1
+		cash.Position = UDim2.fromScale(0.03, 0.1)
+		cash.Size = UDim2.fromScale(0.18, 0.8)
+		cash.Font = FONT
+		cash.Text = "💵"
+		cash.TextScaled = true
+		cash.Parent = button
+		local price = Instance.new("TextLabel")
+		price.Name = "Label"
+		price.BackgroundTransparency = 1
+		price.Position = UDim2.fromScale(0.2, 0.08)
+		price.Size = UDim2.fromScale(0.76, 0.84)
+		price.Font = FONT
+		price.Text = "$0"
+		price.TextScaled = true
+		price.TextColor3 = WHITE
+		price.Parent = button
+		stroke(price, 4)
+
+		-- moldura de madeira em volta da placa
+		Brick.Part(sign, { Size = Vector3.new(12.8, 0.7, 1), Position = p + Vector3.new(0, 14.6, 0), Color = rgb(28, 28, 32) })
+		Brick.Part(sign, { Size = Vector3.new(12.8, 0.7, 1), Position = p + Vector3.new(0, 6.4, 0), Color = rgb(28, 28, 32) })
+
+		-- "!" quando dá para comprar
+		local alertAnchor = Brick.Part(sign, {
+			Name = "Alerta",
+			Size = Vector3.new(1, 1, 1),
+			Position = p + Vector3.new(0, 17.5, 0),
+			Transparency = 1,
+			CanCollide = false,
+			Studs = false,
+		})
+		local alert = Instance.new("BillboardGui")
+		alert.Name = "Gui"
+		alert.Size = UDim2.new(3, 0, 4, 0)
+		alert.LightInfluence = 0
+		alert.Enabled = false
+		alert.Parent = alertAnchor
+		local mark = Instance.new("TextLabel")
+		mark.Size = UDim2.fromScale(1, 1)
+		mark.BackgroundTransparency = 1
+		mark.Font = FONT
+		mark.Text = "!"
+		mark.TextScaled = true
+		mark.TextColor3 = rgb(255, 40, 40)
+		mark.Parent = alert
+		stroke(mark, 4)
+
 		local prompt = Instance.new("ProximityPrompt")
 		prompt.Name = "Prompt"
 		prompt.ActionText = "Melhorar"
@@ -1323,8 +1434,8 @@ local function buildPlot(parent, plot)
 		prompt.Parent = board
 		return sign
 	end
-	upgradeSign("PlacaEsteira", plot.TreadmillSign, "MELHORAR ESTEIRA", rgb(255, 200, 40))
-	upgradeSign("PlacaAquario", plot.AquariumSign, "MELHORAR AQUÁRIO", rgb(60, 170, 255))
+	upgradeSign("PlacaEsteira", plot.TreadmillSign, "Melhorar Esteira", "⚡")
+	upgradeSign("PlacaAquario", plot.AquariumSign, "Melhorar Aquário", "🐟")
 
 	-- marca de onde o jogador nasce
 	Brick.Part(model, {

@@ -93,13 +93,16 @@ local lastActionAt = 0
 
 local highlight = Instance.new("Highlight")
 highlight.Name = "AlvoDoArpao"
-highlight.FillTransparency = 0.55
-highlight.OutlineTransparency = 0
-highlight.OutlineColor = Color3.new(1, 1, 1)
+highlight.FillColor = Color3.fromRGB(255, 215, 40) -- o peixe escolhido fica todo amarelo
+highlight.FillTransparency = 0.12
+highlight.OutlineColor = Color3.fromRGB(255, 240, 150)
+highlight.OutlineTransparency = 0.4
 highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 -- sem Adornee, o Highlight marca o próprio pai: ele é colocado dentro do peixe-alvo
 
--- Círculo amarelo da mira (fica no ponto para onde você vai lançar o arpão)
+-- Círculo amarelo da mira: um anel TRACEJADO deitado no fundo do mar, embaixo de você (ou
+-- embaixo do peixe que a assistência pegou). O peixe escolhido brilha em amarelo.
+local RING_STUDS = 14
 local reticleAnchor = Instance.new("Part")
 reticleAnchor.Name = "MiraDoArpao"
 reticleAnchor.Anchored = true
@@ -107,29 +110,50 @@ reticleAnchor.CanCollide = false
 reticleAnchor.CanQuery = false
 reticleAnchor.CanTouch = false
 reticleAnchor.Transparency = 1
-reticleAnchor.Size = Vector3.new(0.2, 0.2, 0.2)
+reticleAnchor.Size = Vector3.new(RING_STUDS, 0.1, RING_STUDS)
 reticleAnchor.Parent = Workspace
-local reticle = Instance.new("BillboardGui")
+local reticle = Instance.new("SurfaceGui")
 reticle.Name = "Circulo"
-reticle.Size = UDim2.new(RIDE.RETICLE_SIZE, 0, RIDE.RETICLE_SIZE, 0)
+reticle.Face = Enum.NormalId.Top
 reticle.AlwaysOnTop = true
 reticle.LightInfluence = 0
+reticle.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+reticle.PixelsPerStud = 24
 reticle.Enabled = false
 reticle.Parent = reticleAnchor
 local reticleRing = Instance.new("Frame")
 reticleRing.Size = UDim2.fromScale(1, 1)
-reticleRing.BackgroundColor3 = Color3.fromRGB(255, 225, 40)
-reticleRing.BackgroundTransparency = 0.85
+reticleRing.BackgroundTransparency = 1
 reticleRing.Parent = reticle
-local reticleCorner = Instance.new("UICorner")
-reticleCorner.CornerRadius = UDim.new(1, 0)
-reticleCorner.Parent = reticleRing
-local reticleStroke = Instance.new("UIStroke")
-reticleStroke.Color = Color3.fromRGB(255, 225, 40)
-reticleStroke.Thickness = 5
-reticleStroke.Parent = reticleRing
 local reticleScale = Instance.new("UIScale")
 reticleScale.Parent = reticleRing
+local dashes = {}
+do
+	local count = 18
+	local pixels = RING_STUDS * 24
+	local radius = pixels * 0.44
+	local dashLength = 2 * math.pi * radius / count * 0.55
+	for i = 0, count - 1 do
+		local angle = i / count * math.pi * 2
+		local dash = Instance.new("Frame")
+		dash.BorderSizePixel = 0
+		dash.AnchorPoint = Vector2.new(0.5, 0.5)
+		dash.Size = UDim2.fromOffset(dashLength, 9)
+		dash.Position = UDim2.fromOffset(pixels / 2 + math.cos(angle) * radius, pixels / 2 + math.sin(angle) * radius)
+		dash.Rotation = math.deg(angle) + 90
+		dash.BackgroundColor3 = Color3.fromRGB(255, 225, 40)
+		local round = Instance.new("UICorner")
+		round.CornerRadius = UDim.new(1, 0)
+		round.Parent = dash
+		dash.Parent = reticleRing
+		table.insert(dashes, dash)
+	end
+end
+local function setReticleColor(color)
+	for _, dash in ipairs(dashes) do
+		dash.BackgroundColor3 = color
+	end
+end
 
 local rope = Instance.new("Part")
 rope.Name = "CordaDoArpao"
@@ -703,9 +727,9 @@ local function onAction()
 			harpoon(target)
 		else
 			-- errou: o círculo pisca em vermelho
-			reticleStroke.Color = Color3.fromRGB(255, 70, 60)
+			setReticleColor(Color3.fromRGB(255, 70, 60))
 			task.delay(0.2, function()
-				reticleStroke.Color = Color3.fromRGB(255, 225, 40)
+				setReticleColor(Color3.fromRGB(255, 225, 40))
 			end)
 		end
 	end
@@ -988,17 +1012,17 @@ local function updateReticle(dt)
 		return
 	end
 	reticle.Enabled = true
-	-- o círculo fica embaixo de você; com um peixe pego pela assistência, desliza até ele
-	local below = Vector3.new(rider.Pos.X, Track.SeabedY(rider.Dist) + SWIM + 2, rider.Pos.Z)
-	local goal = below
+	-- o círculo fica no fundo, embaixo de você; com um peixe pego pela assistência, desliza
+	-- para baixo dele e gira devagar
+	local goal = Vector3.new(rider.Pos.X, Track.SeabedY(rider.Dist) + 0.3, rider.Pos.Z)
 	if target and target.Model then
-		goal = target.Root.Position
-		reticleRing.BackgroundTransparency = 0.6
-		reticleScale.Scale = 0.85 + math.sin(os.clock() * 12) * 0.08
+		local p = target.Root.Position
+		goal = Vector3.new(p.X, Track.SeabedY(target.Dist) + 0.3, p.Z)
+		reticleScale.Scale = 1 + math.sin(os.clock() * 10) * 0.05
 	else
-		reticleRing.BackgroundTransparency = 0.88
 		reticleScale.Scale = 1
 	end
+	reticleRing.Rotation = (os.clock() * 25) % 360
 	local current = reticleAnchor.Position
 	reticleAnchor.CFrame = CFrame.new(current:Lerp(goal, math.min(1, dt * 14)))
 end
@@ -1180,7 +1204,6 @@ RunService.RenderStepped:Connect(function(dt)
 	end
 	updateReticle(realDt)
 	if target and target.Model then
-		highlight.FillColor = stateColor(target.Required)
 		if highlight.Parent ~= target.Model then
 			highlight.Parent = target.Model
 		end

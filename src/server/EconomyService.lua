@@ -33,7 +33,7 @@ function EconomyService.Income(player, data)
 end
 
 function EconomyService.StaminaRate(player, data)
-	return Progression.StaminaPerSecond(data.TreadmillLevel, data.BestAura, MonetizationService.HasPass(player, "StaminaX2"))
+	return Progression.StaminaPerSecond(data.TreadmillLevel, data.BestAura, MonetizationService.StaminaMult(player))
 end
 
 -- Atualiza os atributos e o placar do jogador agora.

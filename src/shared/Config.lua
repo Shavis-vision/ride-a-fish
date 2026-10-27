@@ -11,7 +11,8 @@ Config.GAME_NAME = "Ride a Fish"
 -- Começo do jogador ---------------------------------------------------------------------
 Config.STARTING_MONEY = 0
 Config.STARTING_STAMINA = 12 -- dá para domar o primeiro peixe (Peixe-Palhaço pede 10)
-Config.MAX_STORED_FISH = 200 -- peixes guardados (fora do aquário). Cheio = precisa vender
+Config.MAX_STORED_FISH = 200
+Config.WALK_SPEED = 24 -- velocidade andando (o padrão do Roblox é 16) -- peixes guardados (fora do aquário). Cheio = precisa vender
 
 -- Esteira (treino de stamina) -------------------------------------------------------------
 -- Stamina por segundo no nível N = BASE_RATE * RATE_GROWTH^(N-1)
@@ -87,9 +88,15 @@ Config.AREA_REWARD = {
 -- Robux --------------------------------------------------------------------------------------
 -- Troque os Id = 0 pelos números criados no Creator Hub (Monetização). Com Id = 0 o botão
 -- aparece como "Em breve" e nada é cobrado.
+-- Os passes de stamina são uma ESCADA: x2 → x4 → x6 → x8 (de 2 em 2). Cada degrau custa
+-- 3 Robux por "x" (x2 = 6, x4 = 12, x6 = 18, x8 = 24), bem barato para incentivar a compra.
+-- Só dá para comprar o próximo degrau, e vale o maior que o jogador tiver.
 Config.GAMEPASSES = {
 	{ Key = "MoneyX2", Id = 0, Name = "Dinheiro x2", Desc = "O aquário rende o dobro. Para sempre!", Price = 115 },
-	{ Key = "StaminaX2", Id = 0, Name = "Stamina x2", Desc = "A esteira dá o dobro de stamina. Para sempre!", Price = 149 },
+	{ Key = "StaminaX2", Id = 0, Name = "Stamina x2", Desc = "A esteira dá 2x stamina. Para sempre!", Price = 6, Ladder = "Stamina", Mult = 2 },
+	{ Key = "StaminaX4", Id = 0, Name = "Stamina x4", Desc = "A esteira dá 4x stamina. Para sempre!", Price = 12, Ladder = "Stamina", Mult = 4 },
+	{ Key = "StaminaX6", Id = 0, Name = "Stamina x6", Desc = "A esteira dá 6x stamina. Para sempre!", Price = 18, Ladder = "Stamina", Mult = 6 },
+	{ Key = "StaminaX8", Id = 0, Name = "Stamina x8", Desc = "A esteira dá 8x stamina. Para sempre!", Price = 24, Ladder = "Stamina", Mult = 8 },
 }
 Config.PRODUCTS = {
 	{ Key = "Revive", Id = 0, Name = "Reviver", Price = 25 },
@@ -97,10 +104,11 @@ Config.PRODUCTS = {
 	{ Key = "Cash2", Id = 0, Name = "Pacote médio", Price = 99, Minutes = 45, Minimum = 15000 },
 	{ Key = "Cash3", Id = 0, Name = "Pacote grande", Price = 249, Minutes = 150, Minimum = 60000 },
 }
--- Passe que aparece no lugar do botão Índex enquanto você treina na esteira
--- (some quando o jogador já tem o passe)
-Config.TREADMILL_OFFER = "StaminaX2"
--- Como o bônus de Robux junta com o das auras: "soma" (x2 + aura 1.5 = x2.5).
+-- Enquanto você treina na esteira, o botão Índex vira a oferta do PRÓXIMO degrau desta
+-- escada (some quando o jogador já tem o x8)
+Config.TREADMILL_OFFER = "Stamina"
+-- Como o bônus de Robux junta com o das auras: "soma" (passe x2 + aura x1.5 = x2.5;
+-- passe x8 + aura x1.5 = x8.5).
 -- Assim a aura vale o mesmo para quem pagou e para quem não pagou.
 Config.BONUS_MODE = "soma"
 

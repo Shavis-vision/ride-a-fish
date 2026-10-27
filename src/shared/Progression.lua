@@ -62,13 +62,50 @@ end
 
 -- Bônus ------------------------------------------------------------------------------------
 -- Multiplicador da stamina da esteira: aura + gamepass, SOMADOS (veja Config.BONUS_MODE).
-function Progression.StaminaMultiplier(bestAura, hasStaminaPass)
+-- Escada de passes (Config.GAMEPASSES com Ladder): o maior multiplicador que o jogador tem.
+-- owned = { StaminaX2 = true, ... }
+function Progression.LadderMult(ladder, owned)
+	local best = 1
+	for _, pass in ipairs(Config.GAMEPASSES) do
+		if pass.Ladder == ladder and owned and owned[pass.Key] then
+			best = math.max(best, pass.Mult)
+		end
+	end
+	return best
+end
+
+-- O próximo degrau que dá para comprar (nil quando já tem todos).
+function Progression.NextLadderPass(ladder, owned)
+	for _, pass in ipairs(Config.GAMEPASSES) do
+		if pass.Ladder == ladder and not (owned and owned[pass.Key]) then
+			return pass
+		end
+	end
+	return nil
+end
+
+-- O degrau anterior (precisa ter este antes de comprar o pass); nil no primeiro.
+function Progression.PreviousLadderPass(pass)
+	local previous = nil
+	for _, other in ipairs(Config.GAMEPASSES) do
+		if other == pass then
+			return previous
+		end
+		if other.Ladder ~= nil and other.Ladder == pass.Ladder then
+			previous = other
+		end
+	end
+	return nil
+end
+
+-- staminaPassMult = multiplicador do passe de stamina (1, 2, 4, 6 ou 8)
+function Progression.StaminaMultiplier(bestAura, staminaPassMult)
 	local auraMult = 1
 	local aura = Progression.Auras[bestAura or 0]
 	if aura then
 		auraMult = aura.Mult
 	end
-	local passMult = hasStaminaPass and 2 or 1
+	local passMult = staminaPassMult or 1
 	if Config.BONUS_MODE == "multiplica" then
 		return auraMult * passMult
 	end
@@ -80,8 +117,8 @@ function Progression.MoneyMultiplier(hasMoneyPass)
 end
 
 -- Stamina por segundo na esteira, com todos os bônus.
-function Progression.StaminaPerSecond(treadmillLevel, bestAura, hasStaminaPass)
-	return Progression.TreadmillRate(treadmillLevel) * Progression.StaminaMultiplier(bestAura, hasStaminaPass)
+function Progression.StaminaPerSecond(treadmillLevel, bestAura, staminaPassMult)
+	return Progression.TreadmillRate(treadmillLevel) * Progression.StaminaMultiplier(bestAura, staminaPassMult)
 end
 
 -- Índex ------------------------------------------------------------------------------------

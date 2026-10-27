@@ -14,8 +14,8 @@ local Track = require(Shared:WaitForChild("Track"))
 local Layout = {}
 
 Layout.BEACH = {
-	MinX = -340,
-	MaxX = 340,
+	MinX = -240, -- 4 lotes: praia mais estreita (antes ±340 com 6 lotes)
+	MaxX = 240,
 	MinZ = 0,
 	MaxZ = 200,
 }
@@ -23,9 +23,9 @@ Layout.BEACH = {
 Layout.PLOT_SIZE = Vector3.new(72, 1, 92) -- largura (X) e fundo (Z) de cada lote
 Layout.PLOT_CENTER_Z = 96
 
--- Lotes: 3 à esquerda e 3 à direita da praça. A frente de cada lote olha para o mar (-Z).
+-- Lotes: 2 à esquerda e 2 à direita da praça (servidor de 4 jogadores). A frente de cada lote olha para o mar (-Z).
 Layout.Plots = {}
-for index, x in ipairs({ -104, 104, -184, 184, -264, 264 }) do
+for index, x in ipairs({ -104, 104, -184, 184 }) do
 	local center = Vector3.new(x, Track.BEACH_Y, Layout.PLOT_CENTER_Z)
 	Layout.Plots[index] = {
 		Index = index,

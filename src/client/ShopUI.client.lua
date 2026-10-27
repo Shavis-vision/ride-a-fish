@@ -21,7 +21,11 @@ local scroll = UIKit.Scroll(window.Body, { Padding = 14 })
 local PASS_STYLE = {
 	MoneyX2 = { Icon = "💰", Color = "Teal", Accent = UIKit.MoneyGreen },
 	StaminaX2 = { Icon = "⚡", Color = "Gold", Accent = UIKit.StaminaYellow },
+	StaminaX4 = { Icon = "⚡", Color = "Orange", Accent = UIKit.StaminaYellow },
+	StaminaX6 = { Icon = "⚡", Color = "Red", Accent = UIKit.StaminaYellow },
+	StaminaX8 = { Icon = "⚡", Color = "Purple", Accent = UIKit.StaminaYellow },
 }
+local Progression = require(Shared:WaitForChild("Progression"))
 
 local sections = {}
 local passButtons = {}
@@ -139,8 +143,12 @@ local function refresh()
 	local passes = data and data.Passes or {}
 	for key, info in pairs(passButtons) do
 		local label = info.Button:FindFirstChild("Label")
+		local previous = Progression.PreviousLadderPass(info.Pass)
 		if passes[key] then
 			label.Text = "COMPRADO"
+			UIKit.SetButtonColor(info.Button, "Gray")
+		elseif previous and not passes[previous.Key] then
+			label.Text = "🔒 " .. previous.Name:gsub("Stamina ", "")
 			UIKit.SetButtonColor(info.Button, "Gray")
 		else
 			label.Text = ROBUX .. info.Pass.Price

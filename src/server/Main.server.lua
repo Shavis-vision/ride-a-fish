@@ -101,6 +101,10 @@ local function onPlayerAdded(player)
 			if not root then
 				return
 			end
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				humanoid.WalkSpeed = Config.WALK_SPEED
+			end
 			task.wait(0.1)
 			PlotService.SendHome(player)
 			ShopService.ApplyAura(player)

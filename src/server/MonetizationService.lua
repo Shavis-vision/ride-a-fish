@@ -13,6 +13,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
+local Progression = require(Shared:WaitForChild("Progression"))
 local NumberFormat = require(Shared:WaitForChild("NumberFormat"))
 
 local Net = require(script.Parent:WaitForChild("Net"))
@@ -56,6 +57,11 @@ end
 
 function MonetizationService.HasPass(player, key)
 	return passes[player] ~= nil and passes[player][key] == true
+end
+
+-- Multiplicador do passe de stamina (o maior degrau comprado: 1, 2, 4, 6 ou 8)
+function MonetizationService.StaminaMult(player)
+	return Progression.LadderMult("Stamina", passes[player])
 end
 
 function MonetizationService.GetPasses(player)
@@ -114,6 +120,10 @@ function MonetizationService.Start()
 		end
 		if MonetizationService.HasPass(player, key) then
 			return { ok = false, msg = "Você já tem este gamepass" }
+		end
+		local previous = Progression.PreviousLadderPass(pass)
+		if previous and not MonetizationService.HasPass(player, previous.Key) then
+			return { ok = false, msg = "Compre o " .. previous.Name .. " antes" }
 		end
 		if pass.Id == 0 then
 			if RunService:IsStudio() then

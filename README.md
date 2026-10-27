@@ -8,7 +8,7 @@ Jogo de domar peixes debaixo d'água, inspirado no Rodeo Stampede: você mergulh
 
 | Parte | O que tem |
 |-------|-----------|
-| Mapa | Praia em estilo Lego (studs), 6 lotes, praça com barracas, estátua, placar, zona de mergulho e a pista submarina com 3 áreas de 900 studs cada (Recife Raso, Floresta de Algas, Abismo), obstáculos, portais e parede de "em breve" no fim |
+| Mapa | Praia em estilo Lego (studs), 4 lotes (servidor de 4 jogadores), praça com barracas, estátua, placar, zona de mergulho e a pista submarina com 3 áreas de 900 studs cada (Recife Raso, Floresta de Algas, Abismo), obstáculos e parede de "em breve" no fim |
 | Corrida | Mergulho, peixes nadando e desviando, arpão para o peixe marcado, doma por tempo, derrubada por falta de stamina, peixe domado cansa, queda no fundo, reviver, "Voltar à praia" |
 | Peixes | 24 espécies (8 por área), 5 raridades, 5 mutações, 5 tamanhos e 3 habilidades (Salto, Turbo, Casco). Um modelo só, que muda cor e proporções |
 | Base | Aquário com os peixes nadando dentro e renda por segundo, esteira de treino na frente do aquário, placas para melhorar esteira e aquário. Os peixes guardados ficam na mochila do Roblox: segure um e clique para pôr no aquário |

@@ -158,8 +158,7 @@ function PlotService.RefreshSigns(player)
 	if not data or not model then
 		return
 	end
-	local hasPass = MonetizationService.HasPass(player, "StaminaX2")
-	local mult = Progression.StaminaMultiplier(data.BestAura, hasPass)
+	local mult = Progression.StaminaMultiplier(data.BestAura, MonetizationService.StaminaMult(player))
 
 	-- esteira
 	local level = data.TreadmillLevel

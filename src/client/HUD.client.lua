@@ -74,13 +74,9 @@ local indexButton = UIKit.Button(left, {
 
 -- Oferta da esteira: enquanto você treina, o botão do Índex vira o atalho para comprar o
 -- multiplicador de stamina por Robux (como na referência "x8 Stamina ONLY 24").
--- Qual passe aparece está em Config.TREADMILL_OFFER.
-local offerPass
-for _, pass in ipairs(Config.GAMEPASSES) do
-	if pass.Key == Config.TREADMILL_OFFER then
-		offerPass = pass
-	end
-end
+-- Mostra o PRÓXIMO degrau da escada Config.TREADMILL_OFFER (x2 → x4 → x6 → x8).
+local Progression = require(Shared:WaitForChild("Progression"))
+local offerPass = Progression.NextLadderPass(Config.TREADMILL_OFFER, nil)
 local offerButton = UIKit.Button(left, {
 	Name = "OfertaEsteira",
 	Text = "",
@@ -101,10 +97,9 @@ offerButton.Visible = false
 local offerLabel = offerButton:FindFirstChild("Label")
 offerLabel.Size = UDim2.new(0.7, -10, 0.5, 0)
 offerLabel.Position = UDim2.new(0.3, 4, 0.06, 0)
-offerLabel.Text = offerPass and offerPass.Name:gsub("Stamina x(%d+)", "x%1 Stamina") or ""
 local offerPrice = UIKit.Text(offerButton, {
 	Name = "Preco",
-	Text = offerPass and ("SÓ " .. ROBUX .. " " .. offerPass.Price) or "",
+	Text = "",
 	Size = UDim2.new(0.7, -10, 0.4, 0),
 	Position = UDim2.new(0.3, 4, 0.54, 0),
 	Color = UIKit.MoneyGreen,
@@ -117,8 +112,12 @@ offerPrice:FindFirstChildOfClass("UIStroke").Color = Color3.new(0, 0, 0)
 local function updateOffer()
 	local training = player:GetAttribute("Training") == true
 	local data = ClientState.Data
-	local owned = offerPass == nil or (data and data.Passes and data.Passes[offerPass.Key]) == true
-	local show = training and not owned
+	offerPass = Progression.NextLadderPass(Config.TREADMILL_OFFER, data and data.Passes)
+	if offerPass then
+		offerLabel.Text = ("x%d Stamina"):format(offerPass.Mult)
+		offerPrice.Text = "SÓ " .. ROBUX .. " " .. offerPass.Price
+	end
+	local show = training and offerPass ~= nil
 	offerButton.Visible = show
 	indexButton.Visible = not show
 end

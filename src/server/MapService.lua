@@ -7,7 +7,7 @@
 --   * a água (superfície transparente) e a pista submarina com 3 áreas, paredes de recife,
 --     obstáculos, decoração, portais de área e a parede de "em breve" no fim;
 --   * a praça: barracas de VENDER PEIXES e AURAS, estátua, placar e a zona de mergulho;
---   * os 6 lotes (chão, cerca, aquário, esteira e placas de melhoria).
+--   * os 4 lotes (chão, cerca, aquário, esteira e placas de melhoria).
 --
 -- Se já existir um Workspace > Map (por exemplo, um mapa que você "congelou" no Studio),
 -- ele é mantido e nada é construído de novo.
@@ -23,7 +23,6 @@ local Brick = require(Shared:WaitForChild("Brick"))
 local Track = require(Shared:WaitForChild("Track"))
 local Layout = require(Shared:WaitForChild("Layout"))
 local FishModel = require(Shared:WaitForChild("FishModel"))
-local NumberFormat = require(Shared:WaitForChild("NumberFormat"))
 
 local MapService = {}
 
@@ -481,19 +480,23 @@ local function buildBeach(map)
 		{ -300, 30 }, { 300, 30 }, { -144, 170 }, { 144, 170 }, { -224, 172 }, { 224, 172 }, { -304, 170 }, { 304, 170 },
 		{ -20, 176 }, { 22, 182 },
 	}
+	local insideX = b.MaxX - 14 -- a praia ficou mais estreita (4 lotes): nada fora dela
 	for _, spot in ipairs(palmSpots) do
+		if math.abs(spot[1]) > insideX then
+			continue
+		end
 		local leanAngle = rng:NextNumber(0, math.pi * 2)
 		palmTree(deco, Vector3.new(spot[1], top, spot[2]), rng:NextInteger(14, 20), Vector3.new(math.cos(leanAngle) * 3, 0, math.sin(leanAngle) * 3), rng)
 	end
 	local umbrellaColors = { rgb(255, 70, 70), rgb(60, 150, 255), rgb(255, 200, 40), rgb(80, 210, 110) }
-	for i, x in ipairs({ -270, -205, -150, -95, 95, 150, 205, 270 }) do
+	for i, x in ipairs({ -205, -150, -95, 95, 150, 205 }) do
 		umbrella(deco, Vector3.new(x, top, 16 + (i % 2) * 6), umbrellaColors[i % 4 + 1], rng)
 	end
-	for _, spot in ipairs({ { -80, 12 }, { 80, 10 }, { -320, 60 }, { 320, 80 }, { -30, 190 }, { 40, 192 }, { -330, 150 }, { 330, 140 } }) do
+	for _, spot in ipairs({ { -80, 12 }, { 80, 10 }, { -226, 60 }, { 226, 80 }, { -30, 190 }, { 40, 192 }, { -226, 150 }, { 226, 140 } }) do
 		rockCluster(deco, Vector3.new(spot[1], top, spot[2]), 1.2, STONE, rng)
 	end
 	sandcastle(deco, Vector3.new(-120, top, 8))
-	sandcastle(deco, Vector3.new(236, top, 8))
+	sandcastle(deco, Vector3.new(196, top, 8))
 
 	-- torre de salva-vidas
 	local tower = Brick.Model(deco, "SalvaVidas")
@@ -526,17 +529,6 @@ local function buildBeach(map)
 		Brick.Box(walk, Vector3.new(side * 7 - 0.6, top, 3), Vector3.new(side * 7 + 0.6, top + 0.8, 59), { Name = "Viga", Color = WOOD_DARK, Studs = false })
 	end
 
-	-- texto "ZONA DE MERGULHO" no chão, perto da água
-	local textPart = Brick.Part(folder, {
-		Name = "TextoZona",
-		Size = Vector3.new(44, 0.1, 9),
-		Position = Vector3.new(0, top + 0.58, 3), -- um pouco acima das tábuas (0.5)
-		Transparency = 1,
-		CanCollide = false,
-		Studs = false,
-	})
-	surfaceText(textPart, Enum.NormalId.Top, { { Text = "ZONA DE MERGULHO", Size = 0.9, Color = WHITE, Stroke = 6 } })
-
 	-- arco de entrada sobre a água
 	local arch = Brick.Model(folder, "ArcoMergulho")
 	for side = -1, 1, 2 do
@@ -566,10 +558,10 @@ local function buildBeach(map)
 		Size = Vector3.new(0.3, Track.START_RADIUS * 2, Track.START_RADIUS * 2),
 		CFrame = CFrame.new(Layout.StartZone + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.pi / 2),
 		Color = rgb(60, 255, 230),
-		Material = Enum.Material.Neon,
-		Transparency = 0.45,
+		Transparency = 1, -- invisível: só o texto "MERGULHE" aparece
 		CanCollide = false,
 		Studs = false,
+		CastShadow = false,
 	})
 	ring:SetAttribute("StartZone", true)
 	floatingTitle(folder, Vector3.new(0, Track.WATER_Y + 7, Track.ZOf(Track.START_DIST)), "MERGULHE ↓", rgb(80, 255, 230), 18)
@@ -842,39 +834,8 @@ local function buildOcean(map)
 		})
 	end
 
-	-- portais das áreas
-	local gates = Brick.Folder(folder, "Portais")
-	for _, area in ipairs(Track.Areas) do
-		if area.Index == 1 then
-			continue -- a área 1 já tem o arco "MERGULHE PARA COMEÇAR" na praia
-		end
-		local dist = area.Start
-		local seabed = Track.SeabedY(dist)
-		local z = Track.ZOf(dist)
-		local gate = Brick.Model(gates, "Portal" .. area.Index)
-		local height = 26
-		for side = -1, 1, 2 do
-			for j = 0, math.floor(height / 4) - 1 do
-				Brick.Part(gate, {
-					Size = Vector3.new(4, 4, 4),
-					Position = Vector3.new(side * (Track.HALF_WIDTH - 3), seabed + 2 + j * 4, z),
-					Color = (j % 2 == 0) and area.Rock2 or Brick.Shade(area.Rock2, -0.2),
-					CanCollide = false,
-				})
-			end
-		end
-		local board = Brick.Part(gate, {
-			Name = "Placa",
-			Size = Vector3.new(Track.HALF_WIDTH * 2 - 2, 7, 1.5),
-			Position = Vector3.new(0, seabed + height + 1.5, z),
-			Color = rgb(25, 30, 50),
-			CanCollide = false,
-		})
-		surfaceText(board, Enum.NormalId.Back, {
-			{ Text = ("ÁREA %d • %s"):format(area.Index, string.upper(area.Name)), Size = 0.55, Color = area.Deco[1] },
-			{ Text = "⚡ " .. NumberFormat.Abbreviate(area.Recommended) .. " recomendado", Size = 0.35, Color = WHITE },
-		})
-	end
+	-- (sem portais/placas entre as áreas: a troca de bioma aparece pela mudança de cor,
+	-- neblina, pedras e decoração, e pelo aviso na tela)
 
 	-- parede do fim
 	local endZ = Track.ZOf(Track.LENGTH)

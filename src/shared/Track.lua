@@ -207,6 +207,10 @@ end
 -- Peixes de uma corrida ----------------------------------------------------------------------
 -- Gera SEMPRE a mesma lista para o mesmo seed. Cada peixe:
 -- { Index, S = espécie, M = mutação, Z = tamanho, Dist, X, Phase, SpeedMul }
+-- Distância entre um peixe e o próximo na pista (maior = menos peixes)
+Track.FISH_GAP_MIN = 8
+Track.FISH_GAP_MAX = 13
+
 function Track.GenerateRun(seed)
 	local rng = Random.new(seed)
 	local list = {}
@@ -239,7 +243,7 @@ function Track.GenerateRun(seed)
 			Phase = rng:NextNumber(0, math.pi * 2),
 			SpeedMul = rng:NextNumber(0.9, 1.1),
 		})
-		d += rng:NextNumber(5, 9) -- pista larga: mais peixes por metro
+		d += rng:NextNumber(Track.FISH_GAP_MIN, Track.FISH_GAP_MAX)
 	end
 
 	return list

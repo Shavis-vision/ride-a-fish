@@ -171,8 +171,18 @@ local function setupLighting()
 
 	-- O céu: se você colocou um Sky em Lighting pelo Studio (ex.: o "anime sky" da Toolbox),
 	-- ele é mantido do jeito que está. Só cria um céu padrão se não houver nenhum.
-	if not Lighting:FindFirstChildOfClass("Sky") then
-		local sky = Instance.new("Sky")
+	-- Se Config.SKY tiver os IDs, ele manda (fica salvo no GitHub).
+	local sky = Lighting:FindFirstChildOfClass("Sky")
+	if Config.SKY then
+		sky = sky or Instance.new("Sky")
+		for key, value in pairs(Config.SKY) do
+			pcall(function()
+				(sky :: any)[key] = value
+			end)
+		end
+		sky.Parent = Lighting
+	elseif not sky then
+		sky = Instance.new("Sky")
 		sky.SunAngularSize = 18
 		sky.Parent = Lighting
 	end

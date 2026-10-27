@@ -191,6 +191,20 @@ Config.ICONS = {
 Config.STUD_TEXTURE = 0
 Config.STUD_SPACING = 2 -- distância entre studs, em studs (maior = bolinhas maiores)
 
+-- Céu --------------------------------------------------------------------------------------
+-- Opção 1: coloque um Sky em Lighting pelo Studio COM O JOGO PARADO e salve o lugar (Ctrl+S).
+--          O jogo mantém o Sky que estiver lá.
+-- Opção 2: cole aqui os 6 IDs do céu (no Studio: selecione o Sky e copie SkyboxBk, SkyboxDn,
+--          SkyboxFt, SkyboxLf, SkyboxRt e SkyboxUp). Assim o céu fica salvo no GitHub e vale
+--          sempre, mesmo se o Sky do lugar for apagado. Deixe nil para usar a opção 1.
+Config.SKY = nil
+-- Exemplo:
+-- Config.SKY = {
+-- 	SkyboxBk = "rbxassetid://000", SkyboxDn = "rbxassetid://000", SkyboxFt = "rbxassetid://000",
+-- 	SkyboxLf = "rbxassetid://000", SkyboxRt = "rbxassetid://000", SkyboxUp = "rbxassetid://000",
+-- 	SunAngularSize = 18, -- opcional
+-- }
+
 -- Placar -----------------------------------------------------------------------------------
 Config.LEADERBOARD_REFRESH = 5
 

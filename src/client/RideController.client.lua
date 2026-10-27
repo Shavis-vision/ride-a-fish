@@ -303,16 +303,19 @@ local STEP = NumberSequence.new({
 	NumberSequenceKeypoint.new(1, 0),
 })
 
--- Anel que enche/esvazia (fraction 1 = cheio). Devolve uma função set(fraction, color).
-local function makeRing(parent, pixels, position, color, hole)
+-- Anel FINO que enche/esvazia (fraction 1 = cheio), como nas referências: trilho escuro
+-- transparente, contorno preto fino e, se `dot` for true, uma bolinha cheia no meio (◉).
+-- Devolve uma função set(fraction, color).
+local function makeRing(parent, pixels, position, color, hole, dot)
 	local back = UIKit.Frame(parent, {
 		Size = UDim2.fromOffset(pixels, pixels),
 		Position = position,
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Color = Color3.fromRGB(18, 20, 18),
-		Transparency = 0.3,
+		Color = Color3.fromRGB(12, 14, 12),
+		Transparency = 0.45,
 		Corner = 999,
-		Stroke = 3,
+		Stroke = 1.5,
+		StrokeColor = Color3.new(0, 0, 0),
 	})
 	local function half(isRight)
 		local clip = Instance.new("Frame")
@@ -337,15 +340,37 @@ local function makeRing(parent, pixels, position, color, hole)
 	end
 	local right, rightGradient = half(true)
 	local left, leftGradient = half(false)
-	UIKit.Frame(back, { -- furo do meio (deixa em forma de anel)
+	local holeFrame = UIKit.Frame(back, { -- furo do meio (deixa em forma de anel)
 		Size = UDim2.fromScale(hole, hole),
 		Position = UDim2.fromScale(0.5, 0.5),
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Color = Color3.fromRGB(18, 20, 18),
-		Transparency = 0.1,
+		Color = Color3.fromRGB(22, 26, 24),
+		Transparency = 0, -- opaco: senão o anel colorido aparece por baixo e fica "duplo"
 		Corner = 999,
 		ZIndex = 3,
 	})
+	UIKit.Stroke(holeFrame, 1.5, Color3.new(0, 0, 0), Enum.ApplyStrokeMode.Border)
+	local center
+	if dot then
+		center = UIKit.Frame(back, {
+			Size = UDim2.fromScale(hole * 0.66, hole * 0.66),
+			Position = UDim2.fromScale(0.5, 0.5),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Color = color,
+			Corner = 999,
+			ZIndex = 4,
+		})
+		UIKit.Stroke(center, 1.5, Color3.new(0, 0, 0), Enum.ApplyStrokeMode.Border)
+		-- brilhinho no alto da bolinha
+		UIKit.Frame(center, {
+			Size = UDim2.fromScale(0.32, 0.32),
+			Position = UDim2.fromScale(0.2, 0.16),
+			Color = Color3.new(1, 1, 1),
+			Transparency = 0.45,
+			Corner = 999,
+			ZIndex = 5,
+		})
+	end
 	return function(fraction, newColor)
 		fraction = math.clamp(fraction, 0, 1)
 		local angle = fraction * 360
@@ -360,6 +385,9 @@ local function makeRing(parent, pixels, position, color, hole)
 		if newColor then
 			right.BackgroundColor3 = newColor
 			left.BackgroundColor3 = newColor
+			if center then
+				center.BackgroundColor3 = newColor
+			end
 		end
 	end, back
 end
@@ -368,16 +396,16 @@ end
 -- progresso da doma (enche até o peixe ser domado).
 local wheel = Instance.new("BillboardGui")
 wheel.Name = "AneisDaDoma"
-wheel.Size = UDim2.fromOffset(150, 96)
-wheel.StudsOffset = Vector3.new(3.6, 1.4, 0)
+wheel.Size = UDim2.fromOffset(110, 70)
+wheel.StudsOffset = Vector3.new(3.4, 1.6, 0)
 wheel.AlwaysOnTop = true
 wheel.LightInfluence = 0
 wheel.Enabled = false
-local setStaminaRing = makeRing(wheel, 84, UDim2.fromScale(0.66, 0.5), Color3.fromRGB(90, 230, 70), 0.5)
-local setTameRing, tameRingBack = makeRing(wheel, 42, UDim2.fromScale(0.15, 0.5), Color3.fromRGB(255, 110, 200), 0.42)
+local setStaminaRing = makeRing(wheel, 58, UDim2.fromScale(0.68, 0.5), Color3.fromRGB(110, 240, 60), 0.78, true)
+local setTameRing, tameRingBack = makeRing(wheel, 32, UDim2.fromScale(0.2, 0.5), Color3.fromRGB(255, 110, 200), 0.72, false)
 
 local function setWheel(fraction)
-	local color = fraction > 0.3 and Color3.fromRGB(90, 230, 70) or Color3.fromRGB(255, 90 + 120 * math.max(fraction, 0), 50)
+	local color = fraction > 0.3 and Color3.fromRGB(110, 240, 60) or Color3.fromRGB(255, 90 + 120 * math.max(fraction, 0), 50)
 	setStaminaRing(fraction, color)
 end
 

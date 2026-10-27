@@ -22,8 +22,9 @@ Track.WATER_Y = 0 -- altura da superfície da água
 Track.BEACH_Y = 2 -- altura do chão de areia da praia (topo)
 Track.SHORE_Z = 0
 Track.HALF_WIDTH = 45 -- meia largura da pista
-Track.LENGTH = 1500
-Track.DEEP_FLOOR_Y = -175 -- fundo escuro bem lá embaixo (só visual)
+Track.AREA_LENGTH = 900 -- comprimento de cada área
+Track.LENGTH = Track.AREA_LENGTH * 3
+Track.DEEP_FLOOR_Y = -185 -- fundo escuro bem lá embaixo (só visual)
 
 Track.SLOPE_END = 48 -- a rampa da praia vai até aqui
 Track.SLOPE_STEPS = 14 -- degraus de 1 stud cada
@@ -41,7 +42,7 @@ Track.Areas = {
 		Index = 1,
 		Name = "Recife Raso",
 		Start = 0,
-		Finish = 500,
+		Finish = 900,
 		FogColor = Color3.fromRGB(40, 150, 225),
 		FogEnd = 260,
 		Tint = Color3.fromRGB(175, 225, 255),
@@ -54,8 +55,8 @@ Track.Areas = {
 	{
 		Index = 2,
 		Name = "Floresta de Algas",
-		Start = 500,
-		Finish = 1000,
+		Start = 900,
+		Finish = 1800,
 		FogColor = Color3.fromRGB(20, 110, 120),
 		FogEnd = 200,
 		Tint = Color3.fromRGB(150, 230, 210),
@@ -68,8 +69,8 @@ Track.Areas = {
 	{
 		Index = 3,
 		Name = "Abismo",
-		Start = 1000,
-		Finish = 1500,
+		Start = 1800,
+		Finish = 2700,
 		FogColor = Color3.fromRGB(10, 14, 45),
 		FogEnd = 150,
 		Tint = Color3.fromRGB(130, 140, 230),
@@ -111,16 +112,17 @@ end
 -- Pontos de controle (dist, altura). Entre eles a altura desce em linha reta e depois é
 -- arredondada para um número inteiro: fica com cara de degraus de Lego.
 -- Depois da rampa da praia vem uma QUEDA (o "afundar" do começo da corrida).
+-- Na troca de área o fundo cai de novo (cada área é mais funda que a anterior).
 local CONTROL = {
 	{ 48, -14 },
 	{ 66, -32 },
-	{ 470, -46 },
-	{ 500, -46 },
-	{ 532, -62 },
-	{ 965, -82 },
-	{ 1000, -82 },
-	{ 1032, -100 },
-	{ 1500, -126 },
+	{ 870, -50 },
+	{ 900, -50 },
+	{ 932, -66 },
+	{ 1770, -86 },
+	{ 1800, -86 },
+	{ 1832, -104 },
+	{ 2700, -132 },
 }
 
 local function interpolate(dist)
@@ -172,7 +174,7 @@ end
 Track.Obstacles = {}
 do
 	local rng = Random.new(731)
-	local d = 130 -- o começo fica livre: dá tempo de domar o primeiro peixe sem bater
+	local d = 200 -- o começo fica livre: dá tempo de domar o primeiro peixe sem bater
 	while true do
 		local area = Track.AreaAt(d)
 		local gap = area.Index == 1 and rng:NextNumber(30, 46) or area.Index == 2 and rng:NextNumber(24, 38) or rng:NextNumber(20, 34)
@@ -180,7 +182,12 @@ do
 		if d > Track.LENGTH - 40 then
 			break
 		end
-		local nearGate = math.abs(d - 500) < 16 or math.abs(d - 1000) < 16
+		local nearGate = false
+		for _, a in ipairs(Track.Areas) do
+			if a.Index > 1 and math.abs(d - a.Start) < 20 then
+				nearGate = true
+			end
+		end
 		if not nearGate then
 			local kinds = area.Index == 1 and { "Coral", "Rocha" } or area.Index == 2 and { "Alga", "Rocha" } or { "Cristal", "Rocha" }
 			local kind = kinds[rng:NextInteger(1, #kinds)]

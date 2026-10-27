@@ -19,6 +19,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
+local StarterGui = game:GetService("StarterGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -233,6 +234,75 @@ if reviveProduct then
 	reviveButton.Label.Text = "Reviver " .. utf8.char(0xE002) .. reviveProduct.Price
 end
 
+-- Círculo de stamina (como no Zelda) ---------------------------------------------------------
+-- Uma roda verde ao lado do jogador que esvazia enquanto ele está em cima do peixe.
+-- Desenho: duas metades com corte (ClipsDescendants) e um UIGradient com degrau no meio; girar
+-- o degrau mostra só a fatia certa de cada metade.
+local wheel = Instance.new("BillboardGui")
+wheel.Name = "RodaDeStamina"
+wheel.Size = UDim2.fromOffset(74, 74)
+wheel.StudsOffset = Vector3.new(3.2, 1.6, 0)
+wheel.AlwaysOnTop = true
+wheel.LightInfluence = 0
+wheel.Enabled = false
+local wheelBack = UIKit.Frame(wheel, { Size = UDim2.fromScale(1, 1), Color = Color3.fromRGB(20, 25, 20), Transparency = 0.35, Corner = 999, Stroke = 3 })
+local STEP = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 1),
+	NumberSequenceKeypoint.new(0.499, 1),
+	NumberSequenceKeypoint.new(0.5, 0),
+	NumberSequenceKeypoint.new(1, 0),
+})
+local function wheelHalf(isRight)
+	local clip = Instance.new("Frame")
+	clip.BackgroundTransparency = 1
+	clip.ClipsDescendants = true
+	clip.Size = UDim2.fromScale(0.5, 1)
+	clip.Position = UDim2.fromScale(isRight and 0.5 or 0, 0)
+	clip.ZIndex = 2
+	clip.Parent = wheelBack
+	local circle = Instance.new("Frame")
+	circle.BorderSizePixel = 0
+	circle.Size = UDim2.fromScale(2, 1)
+	circle.Position = UDim2.fromScale(isRight and -1 or 0, 0)
+	circle.BackgroundColor3 = Color3.fromRGB(90, 230, 70)
+	circle.ZIndex = 2
+	UIKit.Corner(circle, 999)
+	local gradient = Instance.new("UIGradient")
+	gradient.Transparency = STEP
+	gradient.Parent = circle
+	circle.Parent = clip
+	return circle, gradient
+end
+local wheelRight, wheelRightGradient = wheelHalf(true)
+local wheelLeft, wheelLeftGradient = wheelHalf(false)
+local wheelHole = UIKit.Frame(wheelBack, {
+	Size = UDim2.fromScale(0.58, 0.58),
+	Position = UDim2.fromScale(0.5, 0.5),
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Color = Color3.fromRGB(20, 25, 20),
+	Transparency = 0.1,
+	Corner = 999,
+	ZIndex = 3,
+})
+UIKit.Text(wheelHole, { Text = "⚡", Size = UDim2.fromScale(0.8, 0.8), Position = UDim2.fromScale(0.1, 0.1), ZIndex = 4, Stroke = 1 })
+
+-- fraction: 1 = cheia, 0 = vazia (some no sentido horário a partir do topo)
+local function setWheel(fraction)
+	fraction = math.clamp(fraction, 0, 1)
+	local angle = fraction * 360
+	if fraction >= 0.5 then
+		wheelRightGradient.Rotation = 0
+		wheelLeft.Visible = true
+		wheelLeftGradient.Rotation = angle - 180
+	else
+		wheelRightGradient.Rotation = angle - 180
+		wheelLeft.Visible = false
+	end
+	local color = fraction > 0.3 and Color3.fromRGB(90, 230, 70) or Color3.fromRGB(255, 90 + 120 * fraction, 50)
+	wheelRight.BackgroundColor3 = color
+	wheelLeft.BackgroundColor3 = color
+end
+
 local function showBanner(text, color)
 	banner.Text = text
 	banner.TextColor3 = color or UIKit.White
@@ -275,10 +345,19 @@ local function setCollisionGroup(group)
 	end
 end
 
+-- a mochila do Roblox (peixes guardados) some durante a corrida
+local function setBackpackVisible(visible)
+	pcall(function()
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, visible)
+	end)
+end
+
 local function setupCharacter()
 	if not humanoid or not root then
 		return false
 	end
+	humanoid:UnequipTools()
+	setBackpackVisible(false)
 	humanoid.PlatformStand = true
 	local animate = character:FindFirstChild("Animate")
 	if animate then
@@ -303,6 +382,7 @@ local function setupCharacter()
 end
 
 local function restoreCharacter()
+	setBackpackVisible(true)
 	if sitTrack then
 		sitTrack:Stop(0.1)
 		sitTrack = nil
@@ -490,6 +570,7 @@ local function mount(obj)
 	if obj.Tamed then
 		rider.RideTime = RIDE.BASE_RIDE_TIME + 4
 		rider.RideEnd = now + rider.RideTime
+		rider.WheelAtTame = 1
 	end
 	if obj.Label then
 		obj.Label.Enabled = false
@@ -631,6 +712,7 @@ endRun = function(reason)
 	rope.Transparency = 1
 	gui.Enabled = false
 	fallPanel.Visible = false
+	wheel.Enabled = false
 	restoreCharacter()
 	cooldownUntil = os.clock() + 2
 	task.spawn(function()
@@ -722,10 +804,12 @@ local function updateRiding(dt, now, t)
 					if result.ok then
 						obj.Tamed = true
 						run.Tamed += 1
-						local stamina = ClientState.Stat("Stamina")
+						local stamina = math.max(1, ClientState.Stat("Stamina"))
 						local ratio = stamina / math.max(1, obj.Required)
-						rider.RideTime = math.clamp(RIDE.BASE_RIDE_TIME + species.TameTime * (ratio - 1), RIDE.BASE_RIDE_TIME, RIDE.MAX_RIDE_TIME)
+						-- o que sobrou da stamina continua gastando no mesmo ritmo da doma
+						rider.RideTime = math.clamp(species.TameTime * (ratio - 1), RIDE.BASE_RIDE_TIME, RIDE.MAX_RIDE_TIME)
 						rider.RideEnd = os.clock() + rider.RideTime
+						rider.WheelAtTame = math.max(0.2, 1 - obj.Required / stamina)
 						showBanner("DOMADO!", UIKit.MoneyGreen)
 					else
 						buck("Escapou!")
@@ -822,6 +906,26 @@ local function updateHud(now)
 	end
 
 	local obj = rider.Mount
+	-- roda de stamina
+	if state == "Riding" and obj then
+		local fraction
+		if obj.Tamed and rider.RideEnd then
+			local start = rider.WheelAtTame or 1
+			fraction = start * math.max(0, rider.RideEnd - now) / math.max(0.01, rider.RideTime)
+		else
+			local stamina = math.max(1, ClientState.Stat("Stamina"))
+			local spent = obj.Required / obj.Species.TameTime * (now - rider.MountAt)
+			fraction = 1 - spent / stamina
+		end
+		setWheel(fraction)
+		if wheel.Parent ~= root then
+			wheel.Parent = root
+		end
+		wheel.Enabled = true
+	else
+		wheel.Enabled = false
+	end
+
 	if state == "Riding" and obj then
 		tamePanel.Visible = true
 		local rarity = Fish.Rarities[obj.Species.Rarity]
@@ -1046,6 +1150,8 @@ local function onCharacterAdded(newCharacter)
 		gui.Enabled = false
 		highlight.Parent = nil
 		rope.Transparency = 1
+		wheel.Enabled = false
+		setBackpackVisible(true)
 		camera.CameraType = Enum.CameraType.Custom
 	end
 	bindCharacter(newCharacter)

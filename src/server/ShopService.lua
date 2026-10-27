@@ -313,6 +313,17 @@ local function claimArea(player, area)
 	return { ok = true }
 end
 
+-- Usado pela mochila: clicar segurando o peixe coloca no aquário.
+function ShopService.Equip(player, uid)
+	local result = equip(player, uid)
+	if result.msg then
+		Net.Notify(player, result.msg, "erro")
+	elseif result.ok then
+		Net.Notify(player, "Peixe colocado no aquário!", "ok")
+	end
+	return result
+end
+
 function ShopService.Start()
 	Net.On("Equip", equip)
 	Net.On("Unequip", unequip)

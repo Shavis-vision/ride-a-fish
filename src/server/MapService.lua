@@ -762,8 +762,9 @@ local function buildOcean(map)
 
 	-- algas altas junto às paredes da Floresta de Algas
 	local krng = Random.new(5)
-	local kd = 510
-	while kd < 990 do
+	local kelpArea = Track.Areas[2]
+	local kd = kelpArea.Start + 10
+	while kd < kelpArea.Finish - 10 do
 		kd += krng:NextNumber(6, 12)
 		for side = -1, 1, 2 do
 			if krng:NextNumber() < 0.7 then
@@ -784,8 +785,8 @@ local function buildOcean(map)
 
 	-- raios de luz no Recife Raso
 	local lrng = Random.new(9)
-	for _ = 1, 16 do
-		local dist = lrng:NextNumber(60, 480)
+	for _ = 1, 28 do
+		local dist = lrng:NextNumber(60, Track.Areas[1].Finish - 20)
 		local x = lrng:NextNumber(-35, 35)
 		local seabed = Track.SeabedY(dist)
 		local height = Track.WATER_Y - seabed

@@ -19,6 +19,7 @@ local EconomyService = require(script.Parent:WaitForChild("EconomyService"))
 local RideService = require(script.Parent:WaitForChild("RideService"))
 local ShopService = require(script.Parent:WaitForChild("ShopService"))
 local LeaderboardService = require(script.Parent:WaitForChild("LeaderboardService"))
+local BackpackService = require(script.Parent:WaitForChild("BackpackService"))
 
 Net.Start()
 MapService.Build()
@@ -36,6 +37,7 @@ Net.SetSnapshotBuilder(function(player)
 	if not data then
 		return nil
 	end
+	BackpackService.Refresh(player) -- os peixes guardados ficam na mochila do Roblox
 	return {
 		Fish = data.Fish,
 		Aquarium = data.Aquarium,
@@ -61,6 +63,7 @@ end
 
 MonetizationService.SetHooks({ Revive = RideService.Revive, Changed = onChanged })
 ShopService.OnChanged = EconomyService.Publish
+BackpackService.PlaceInAquarium = ShopService.Equip
 PlotService.OnChanged = EconomyService.Publish
 
 Net.On("GetData", function(player)
@@ -101,6 +104,7 @@ local function onPlayerAdded(player)
 			task.wait(0.1)
 			PlotService.SendHome(player)
 			ShopService.ApplyAura(player)
+			BackpackService.Refresh(player) -- a mochila é nova a cada vez que o personagem nasce
 		end)
 	end
 	player.CharacterAdded:Connect(onCharacter)

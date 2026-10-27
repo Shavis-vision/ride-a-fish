@@ -1,0 +1,12 @@
+# Arquivos gerados pelo Rojo / Studio
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx
+*.lock
+sourcemap.json
+build/
+
+# Sistema
+.DS_Store
+Thumbs.db

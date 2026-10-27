@@ -1,9 +1,11 @@
 -- AuraUI (LocalScript)
 -- Fica em: StarterPlayerScripts > Client > AuraUI
 --
--- Barraca das AURAS (abre ao pisar no anel roxo). Cada aura é melhor que a anterior
--- (+0.5 no multiplicador de stamina da esteira) e só se compra com dinheiro do jogo,
--- em ordem. As antigas podem ser equipadas só pelo visual: o bônus é sempre o da melhor.
+-- Barraca das AURAS (abre ao pisar no anel roxo na frente do balcão), no estilo da
+-- referência: cartões coloridos lado a lado, cada um com o boneco da aura, o multiplicador
+-- de stamina e o botão. Cada aura nova é melhor que a anterior (+0.5) e só se compra com
+-- dinheiro do jogo, em ordem. As antigas podem ser equipadas só pelo visual: o bônus é
+-- sempre o da MELHOR aura comprada.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -14,86 +16,192 @@ local NumberFormat = require(Shared:WaitForChild("NumberFormat"))
 local UIKit = require(script.Parent:WaitForChild("UIKit"))
 local ClientState = require(script.Parent:WaitForChild("ClientState"))
 
-local window = UIKit.Window("Aura", { Title = "Auras", Size = Vector2.new(860, 640), Header = "Purple" })
+local window = UIKit.Window("Aura", { Title = "AURAS", Icon = "⚡", Center = true, Size = Vector2.new(1100, 660), Header = "Lavender" })
 local body = window.Body
 
-UIKit.Text(body, {
-	Text = "Auras multiplicam a stamina da esteira. O bônus é sempre o da melhor aura que você comprou.",
-	Size = UDim2.new(1, 0, 0, 44),
-	Color = Color3.fromRGB(220, 200, 255),
-	Max = 24,
-	Stroke = 2,
+local CARD = Vector2.new(240, 410)
+
+local strip = Instance.new("ScrollingFrame")
+strip.Name = "Cards"
+strip.Size = UDim2.new(1, 0, 0, CARD.Y + 22)
+strip.BackgroundTransparency = 1
+strip.BorderSizePixel = 0
+strip.ScrollBarThickness = 8
+strip.ScrollBarImageColor3 = Color3.fromRGB(150, 150, 190)
+strip.ScrollingDirection = Enum.ScrollingDirection.X
+strip.AutomaticCanvasSize = Enum.AutomaticSize.X
+strip.CanvasSize = UDim2.new()
+strip.Parent = body
+local stripLayout = Instance.new("UIListLayout")
+stripLayout.FillDirection = Enum.FillDirection.Horizontal
+stripLayout.Padding = UDim.new(0, 14)
+stripLayout.SortOrder = Enum.SortOrder.LayoutOrder
+stripLayout.Parent = strip
+local stripPad = Instance.new("UIPadding")
+stripPad.PaddingLeft = UDim.new(0, 6)
+stripPad.PaddingTop = UDim.new(0, 4)
+stripPad.Parent = strip
+
+-- parte de baixo: tirar a aura (só visual) e o aviso do bônus
+local bottom = UIKit.Frame(body, { Name = "Bottom", Size = UDim2.new(1, 0, 0, 118), Position = UDim2.new(0, 0, 1, -118), Transparency = 1, Corner = false })
+UIKit.Text(bottom, { Text = "AURA EQUIPADA • O VISUAL É SÓ COSMÉTICO", Size = UDim2.new(1, 0, 0, 36), Max = 32, Stroke = 3 })
+local noneButton, noneLabel = UIKit.Button(bottom, {
+	Text = "Sem aura",
+	Color = "Green",
+	Size = UDim2.fromOffset(250, 62),
+	Position = UDim2.fromOffset(20, 48),
+	Max = 32,
+	OnClick = function()
+		ClientState.Request("EquipAura", 0)
+	end,
 })
-local list = UIKit.Scroll(body, { Size = UDim2.new(1, 0, 1, -54), Position = UDim2.fromOffset(0, 54), Padding = 8 })
+UIKit.Text(bottom, {
+	Text = "O bônus da esteira é sempre o da melhor aura que você comprou.",
+	Size = UDim2.new(1, -300, 0, 50),
+	Position = UDim2.fromOffset(290, 54),
+	Align = Enum.TextXAlignment.Left,
+	Max = 28,
+	Stroke = 2.5,
+})
+
+-- boneco de blocos com a aura (dentro de um ViewportFrame)
+local function auraFigure(parent, color, locked)
+	local viewport = Instance.new("ViewportFrame")
+	viewport.Size = UDim2.fromScale(1, 1)
+	viewport.BackgroundTransparency = 1
+	viewport.Ambient = Color3.fromRGB(190, 190, 200)
+	viewport.LightColor = Color3.new(1, 1, 1)
+	viewport.LightDirection = Vector3.new(-0.5, -1, -0.7)
+	viewport.ZIndex = 3
+	viewport.Parent = parent
+	local model = Instance.new("Model")
+	local bodyColor = color:Lerp(Color3.new(1, 1, 1), 0.15)
+	local dark = color:Lerp(Color3.new(0, 0, 0), 0.25)
+	local function block(size, position, partColor, transparency)
+		local part = Instance.new("Part")
+		part.Anchored = true
+		part.Size = size
+		part.CFrame = CFrame.new(position)
+		part.Color = partColor
+		part.Material = Enum.Material.SmoothPlastic
+		part.Transparency = transparency or 0
+		part.Parent = model
+		return part
+	end
+	block(Vector3.new(2, 2, 1), Vector3.new(0, 0, 0), bodyColor)
+	block(Vector3.new(1.25, 1.25, 1.25), Vector3.new(0, 1.65, 0), bodyColor)
+	block(Vector3.new(1, 2, 1), Vector3.new(-1.55, 0.1, 0.1), dark)
+	block(Vector3.new(1, 2, 1), Vector3.new(1.55, -0.1, -0.1), dark)
+	block(Vector3.new(0.95, 2, 1), Vector3.new(-0.5, -2, 0.15), dark)
+	block(Vector3.new(0.95, 2, 1), Vector3.new(0.5, -2, -0.15), dark)
+	-- "chamas" da aura em volta
+	for i = 0, 9 do
+		local angle = i / 10 * math.pi * 2
+		local radius = 2.2 + (i % 3) * 0.25
+		local flame = block(Vector3.new(0.45, 1.4 + (i % 4) * 0.5, 0.45), Vector3.new(math.cos(angle) * radius, -0.6 + (i % 5) * 0.7, math.sin(angle) * radius * 0.5), color, 0.25)
+		flame.CFrame *= CFrame.Angles(0, 0, math.cos(angle) * 0.4)
+	end
+	model.Parent = viewport
+	local camera = Instance.new("Camera")
+	camera.FieldOfView = 40
+	camera.CFrame = CFrame.lookAt(Vector3.new(3.2, 1.2, 9), Vector3.new(0, -0.3, 0))
+	camera.Parent = viewport
+	viewport.CurrentCamera = camera
+	if locked then
+		viewport.ImageColor3 = Color3.fromRGB(70, 70, 80)
+	end
+	return viewport
+end
 
 local function render()
 	if not window.IsOpen then
 		return
 	end
-	UIKit.Clear(list)
+	UIKit.Clear(strip)
 	local data = ClientState.Data
 	if not data then
 		return
 	end
 	local money = ClientState.Stat("Money")
-
-	-- "nenhuma" (tirar a aura)
-	local none = UIKit.Frame(list, { Size = UDim2.new(1, -8, 0, 70), Color = UIKit.White, LayoutOrder = 0, Corner = 10, Stroke = 3 })
-	UIKit.Gradient(none, Color3.fromRGB(52, 52, 64), Color3.fromRGB(32, 32, 40), 90)
-	UIKit.Text(none, { Text = "Sem aura (só visual)", Size = UDim2.new(0.6, 0, 0, 40), Position = UDim2.fromOffset(20, 15), Align = Enum.TextXAlignment.Left, Max = 28 })
-	UIKit.Button(none, {
-		Text = data.Aura == 0 and "Equipada" or "Equipar",
-		Color = data.Aura == 0 and "Gray" or "Blue",
-		Size = UDim2.fromOffset(200, 54),
-		Position = UDim2.new(1, -10, 0.5, 0),
-		AnchorPoint = Vector2.new(1, 0.5),
-		Max = 28,
-		OnClick = function()
-			if data.Aura ~= 0 then
-				ClientState.Request("EquipAura", 0)
-			end
-		end,
-	})
+	noneLabel.Text = data.Aura == 0 and "✓ Sem aura" or "Sem aura"
+	UIKit.SetButtonColor(noneButton, data.Aura == 0 and "Gray" or "Green")
 
 	for i, aura in ipairs(Progression.Auras) do
 		local owned = i <= data.BestAura
 		local isNext = i == data.BestAura + 1
-		local frame = UIKit.Frame(list, { Size = UDim2.new(1, -8, 0, 96), Color = UIKit.White, LayoutOrder = i, Corner = 10, Stroke = 3 })
-		UIKit.Gradient(frame, Color3.fromRGB(56, 50, 70), Color3.fromRGB(34, 30, 44), 90)
-		local orb = UIKit.Frame(frame, {
-			Size = UDim2.fromOffset(74, 74),
-			Position = UDim2.fromOffset(12, 11),
-			Color = aura.Color,
-			Corner = 37,
-			Stroke = 3,
+		local locked = not owned and not isNext
+
+		local card = UIKit.Frame(strip, {
+			Name = "Aura" .. i,
+			Size = UDim2.fromOffset(CARD.X, CARD.Y),
+			Color = UIKit.White,
+			LayoutOrder = i,
+			Corner = 8,
+			Stroke = data.Aura == i and 5 or 4,
+			StrokeColor = data.Aura == i and UIKit.White or UIKit.Dark,
 		})
-		UIKit.Gradient(orb, aura.Color:Lerp(Color3.new(1, 1, 1), 0.5), aura.Color, 90)
-		if not owned and not isNext then
-			UIKit.Text(orb, { Text = "🔒", Size = UDim2.fromScale(0.7, 0.7), Position = UDim2.fromScale(0.15, 0.15), Stroke = 1 })
+		local top = locked and Color3.fromRGB(110, 110, 120) or aura.Color:Lerp(Color3.new(1, 1, 1), 0.3)
+		local bottomColor = locked and Color3.fromRGB(60, 60, 70) or aura.Color:Lerp(Color3.new(0, 0, 0), 0.15)
+		UIKit.Gradient(card, top, bottomColor, 90)
+		UIKit.Studs(card, CARD, { Spacing = 30, Transparency = 0.85, EdgeTransparency = 0.8 })
+
+		UIKit.Text(card, { Text = aura.Name, Size = UDim2.new(1, -16, 0, 32), Position = UDim2.fromOffset(8, 8), Max = 28, Stroke = 3, ZIndex = 2 })
+		local status, statusColor
+		if data.Aura == i then
+			status, statusColor = "Equipada", UIKit.MoneyGreen
+		elseif owned then
+			status, statusColor = "Comprada", UIKit.MoneyGreen
+		elseif isNext then
+			status, statusColor = "Próxima", UIKit.StaminaYellow
+		else
+			status, statusColor = "Bloqueada", Color3.fromRGB(200, 200, 210)
 		end
-		UIKit.Text(frame, {
-			Text = aura.Name,
-			Size = UDim2.new(0.45, 0, 0, 40),
-			Position = UDim2.fromOffset(102, 8),
-			Align = Enum.TextXAlignment.Left,
-			Color = aura.Color:Lerp(Color3.new(1, 1, 1), 0.3),
-			Max = 34,
-		})
-		UIKit.Text(frame, {
-			Text = ("⚡ x%s stamina na esteira"):format(tostring(aura.Mult)),
-			Size = UDim2.new(0.45, 0, 0, 30),
-			Position = UDim2.fromOffset(102, 52),
-			Align = Enum.TextXAlignment.Left,
-			Color = UIKit.StaminaYellow,
+		UIKit.Text(card, {
+			Text = ('Nv %d <font color="#%s">%s</font>'):format(i, statusColor:ToHex(), status),
+			Rich = true,
+			Size = UDim2.new(1, -16, 0, 28),
+			Position = UDim2.fromOffset(8, 40),
 			Max = 26,
+			Stroke = 2.5,
+			ZIndex = 2,
 		})
+
+		local picture = UIKit.Frame(card, {
+			Size = UDim2.new(1, -24, 0, 196),
+			Position = UDim2.fromOffset(12, 74),
+			Color = Color3.fromRGB(246, 236, 212),
+			Corner = 6,
+			Stroke = 3,
+			ZIndex = 2,
+		})
+		auraFigure(picture, aura.Color, locked)
+		if locked then
+			UIKit.Text(picture, { Text = "🔒", Size = UDim2.fromOffset(70, 70), Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5), Stroke = 1.5, ZIndex = 5 })
+		end
+
+		local multBar = UIKit.Frame(card, {
+			Size = UDim2.new(1, -24, 0, 46),
+			Position = UDim2.fromOffset(12, 280),
+			Color = Color3.fromRGB(20, 20, 26),
+			Transparency = 0.45,
+			Corner = 6,
+			ZIndex = 2,
+		})
+		UIKit.Text(multBar, {
+			Text = ('<font color="#5AFF5A">x%s</font> Stamina'):format(tostring(aura.Mult)),
+			Rich = true,
+			Size = UDim2.new(1, -10, 1, -6),
+			Position = UDim2.fromOffset(5, 3),
+			Max = 36,
+			Stroke = 3,
+			ZIndex = 3,
+		})
+
 		local text, color, action
-		if owned then
-			if data.Aura == i then
-				text, color = "Equipada", "Gray"
-			else
-				text, color, action = "Equipar", "Blue", "EquipAura"
-			end
+		if data.Aura == i then
+			text, color = "Equipada", "Gray"
+		elseif owned then
+			text, color, action = "Equipar", "Green", "EquipAura"
 		elseif isNext then
 			text = NumberFormat.Money(aura.Price)
 			color = money >= aura.Price and "Green" or "Red"
@@ -101,18 +209,18 @@ local function render()
 		else
 			text, color = NumberFormat.Money(aura.Price), "Gray"
 		end
-		UIKit.Button(frame, {
+		UIKit.Button(card, {
 			Text = text,
 			Color = color,
-			Size = UDim2.fromOffset(230, 62),
-			Position = UDim2.new(1, -10, 0.5, 0),
-			AnchorPoint = Vector2.new(1, 0.5),
-			Max = 30,
+			Size = UDim2.new(1, -24, 0, 58),
+			Position = UDim2.fromOffset(12, 340),
+			Max = 34,
+			ZIndex = 3,
 			OnClick = function()
 				if action then
 					ClientState.Request(action, i)
-				elseif not owned then
-					ClientState.Toast("Compre as auras anteriores primeiro", "info")
+				elseif locked then
+					ClientState.Toast("Compre a aura anterior primeiro", "info")
 				end
 			end,
 		})

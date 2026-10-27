@@ -36,6 +36,7 @@ UIKit.Button(left, {
 	Icon = "🎁",
 	Color = "Red",
 	Size = UDim2.fromOffset(270, 88),
+	Studs = true,
 	Max = 52,
 	IconWidth = 0.3,
 	OnClick = function()
@@ -52,6 +53,7 @@ local indexButton = UIKit.Button(left, {
 	Icon = "📘",
 	Color = "Blue",
 	Size = UDim2.fromOffset(270, 88),
+	Studs = true,
 	Position = UDim2.fromOffset(0, 104),
 	Max = 52,
 	IconWidth = 0.3,
@@ -79,6 +81,7 @@ local aquariumButton = UIKit.Button(right, {
 	Text = "",
 	Color = "Orange",
 	Size = UDim2.fromOffset(100, 100),
+	Studs = true,
 	Corner = 12,
 	OnClick = function()
 		if UIKit.IsOpen("Aquarium") then

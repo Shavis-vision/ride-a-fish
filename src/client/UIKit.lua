@@ -42,7 +42,54 @@ UIKit.Colors = {
 	Gray = { Color3.fromRGB(150, 150, 160), Color3.fromRGB(95, 95, 108) },
 	Gold = { Color3.fromRGB(255, 230, 100), Color3.fromRGB(240, 160, 20) },
 	Teal = { Color3.fromRGB(110, 240, 230), Color3.fromRGB(20, 160, 170) },
+	Lime = { Color3.fromRGB(190, 255, 80), Color3.fromRGB(80, 200, 30) },
+	Lavender = { Color3.fromRGB(215, 205, 255), Color3.fromRGB(150, 140, 230) },
 }
+
+UIKit.PanelTransparency = 0.14 -- fundo das janelas um pouco transparente (dá para ver o jogo atrás)
+
+-- Studs (as bolinhas do Lego) desenhados por cima de um fundo. size = tamanho do quadro em
+-- pixels (o mesmo usado no Size dele). Fica atrás dos outros elementos (ZIndex 0).
+function UIKit.Studs(frame, size, props)
+	props = props or {}
+	local spacing = props.Spacing or 30
+	local diameter = math.floor(spacing * (props.Fill or 0.52))
+	local layer = Instance.new("Frame")
+	layer.Name = "Studs"
+	layer.BackgroundTransparency = 1
+	layer.Size = UDim2.fromScale(1, 1)
+	layer.ZIndex = 0
+	layer.ClipsDescendants = true
+	layer.Parent = frame
+	local cols = math.max(1, math.floor(size.X / spacing))
+	local rows = math.max(1, math.floor(size.Y / spacing))
+	local offsetX = (size.X - cols * spacing) / 2
+	local offsetY = (size.Y - rows * spacing) / 2
+	for row = 0, rows - 1 do
+		for col = 0, cols - 1 do
+			local stud = Instance.new("Frame")
+			stud.BorderSizePixel = 0
+			stud.Size = UDim2.fromOffset(diameter, diameter)
+			stud.Position = UDim2.fromOffset(
+				offsetX + col * spacing + (spacing - diameter) / 2,
+				offsetY + row * spacing + (spacing - diameter) / 2
+			)
+			stud.BackgroundColor3 = props.Color or Color3.new(1, 1, 1)
+			stud.BackgroundTransparency = props.Transparency or 0.9
+			stud.ZIndex = 0
+			local round = Instance.new("UICorner")
+			round.CornerRadius = UDim.new(1, 0)
+			round.Parent = stud
+			local edge = Instance.new("UIStroke")
+			edge.Color = Color3.new(0, 0, 0)
+			edge.Transparency = props.EdgeTransparency or 0.78
+			edge.Thickness = 1
+			edge.Parent = stud
+			stud.Parent = layer
+		end
+	end
+	return layer
+end
 
 function UIKit.Tween(object, time, props, style, direction)
 	local tween = TweenService:Create(
@@ -224,6 +271,10 @@ function UIKit.Button(parent, props)
 		Stroke = props.TextStroke or 2.5,
 	})
 
+	if props.Studs and button.Size.X.Offset > 0 then
+		UIKit.Studs(button, Vector2.new(button.Size.X.Offset, button.Size.Y.Offset), { Spacing = 22, Transparency = 0.82, EdgeTransparency = 0.8 })
+	end
+
 	pressFeedback(button)
 	if props.OnClick then
 		button.Activated:Connect(props.OnClick)
@@ -300,10 +351,12 @@ function UIKit.Window(name, props)
 		Size = UDim2.fromOffset(size.X, size.Y),
 		Position = UDim2.fromScale(0.5, 0.52),
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Color = UIKit.Panel,
+		Color = Color3.fromRGB(30, 30, 38),
+		Transparency = UIKit.PanelTransparency,
 		Corner = 16,
 		Stroke = 5,
 	})
+	UIKit.Studs(root, size, { Spacing = 30, Transparency = 0.93 })
 	root.Visible = false
 	root.Active = true
 	local autoScale = UIKit.AutoScale(root, size)
@@ -337,15 +390,23 @@ function UIKit.Window(name, props)
 		stripe.Rotation = 25
 	end
 	header.ClipsDescendants = true
+	UIKit.Studs(header, Vector2.new(size.X, 74), { Spacing = 26, Transparency = 0.86, EdgeTransparency = 0.85 })
 
+	local titleLeft = 20
+	if props.Icon then
+		UIKit.Text(header, { Name = "Icon", Text = props.Icon, Size = UDim2.fromOffset(60, 60), Position = UDim2.fromOffset(14, 7), Stroke = 2, ZIndex = 2 })
+		titleLeft = 84
+	end
 	local title = UIKit.Text(header, {
 		Name = "Title",
 		Text = props.Title or name,
-		Size = UDim2.new(0.6, 0, 0, 58),
-		Position = UDim2.new(0, 20, 0, 8),
-		Align = Enum.TextXAlignment.Left,
+		Size = props.Center and UDim2.new(1, -200, 0, 58) or UDim2.new(0.6, 0, 0, 58),
+		Position = props.Center and UDim2.new(0.5, 0, 0, 8) or UDim2.new(0, titleLeft, 0, 8),
+		AnchorPoint = props.Center and Vector2.new(0.5, 0) or Vector2.new(0, 0),
+		Align = props.Center and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left,
 		Stroke = 4,
 		Max = 54,
+		ZIndex = 2,
 	})
 
 	local body = UIKit.Frame(inner, {

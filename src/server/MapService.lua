@@ -915,7 +915,7 @@ local function shopRing(parent, ring)
 	Brick.Part(model, {
 		Shape = Enum.PartType.Cylinder,
 		Size = Vector3.new(0.2, ring.Radius * 2, ring.Radius * 2),
-		CFrame = CFrame.new(ring.Position + Vector3.new(0, 0.12, 0)) * CFrame.Angles(0, 0, math.pi / 2),
+		CFrame = CFrame.new(ring.Position + Vector3.new(0, 0.52, 0)) * CFrame.Angles(0, 0, math.pi / 2), -- acima do piso da praça
 		Color = ring.Color,
 		Material = Enum.Material.Neon,
 		Transparency = 0.2,
@@ -925,7 +925,7 @@ local function shopRing(parent, ring)
 	Brick.Part(model, {
 		Shape = Enum.PartType.Cylinder,
 		Size = Vector3.new(0.25, ring.Radius * 2 - 1.4, ring.Radius * 2 - 1.4),
-		CFrame = CFrame.new(ring.Position + Vector3.new(0, 0.14, 0)) * CFrame.Angles(0, 0, math.pi / 2),
+		CFrame = CFrame.new(ring.Position + Vector3.new(0, 0.55, 0)) * CFrame.Angles(0, 0, math.pi / 2),
 		Color = Brick.Shade(ring.Color, 0.55),
 		Transparency = 0.55,
 		CanCollide = false,

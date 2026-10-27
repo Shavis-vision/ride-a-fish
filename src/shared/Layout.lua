@@ -47,8 +47,9 @@ Layout.Leaderboard = Vector3.new(0, Track.BEACH_Y, 150)
 
 -- Anéis no chão que abrem as lojas ao pisar
 Layout.ShopRings = {
-	{ Shop = "Sell", Position = Vector3.new(-30, Track.BEACH_Y, 62), Radius = 8, Color = Color3.fromRGB(255, 60, 60) },
-	{ Shop = "Aura", Position = Vector3.new(30, Track.BEACH_Y, 62), Radius = 8, Color = Color3.fromRGB(200, 60, 255) },
+	-- logo na frente do balcão (o balcão vai de Z 74 a 78)
+	{ Shop = "Sell", Position = Vector3.new(-30, Track.BEACH_Y, 67), Radius = 7, Color = Color3.fromRGB(255, 60, 60) },
+	{ Shop = "Aura", Position = Vector3.new(30, Track.BEACH_Y, 67), Radius = 7, Color = Color3.fromRGB(200, 60, 255) },
 }
 
 -- Zona de mergulho: na água rasa, logo depois da areia

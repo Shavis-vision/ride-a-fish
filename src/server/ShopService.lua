@@ -133,6 +133,38 @@ local function sellAll(player, includePrecious)
 	return { ok = true, Value = total, Count = count }
 end
 
+-- Vende os peixes escolhidos na tela (lista de Uids). Os do aquário são ignorados.
+local function sellMany(player, uids)
+	local data = DataService.Get(player)
+	if not data or type(uids) ~= "table" then
+		return { ok = false }
+	end
+	local wanted = {}
+	for _, uid in ipairs(uids) do
+		if type(uid) == "number" then
+			wanted[uid] = true
+		end
+	end
+	local total, count = 0, 0
+	local keep = {}
+	for _, entry in ipairs(data.Fish) do
+		if wanted[entry.Uid] and not DataService.InAquarium(data, entry.Uid) then
+			total += Fish.SellValue(entry, Config.SELL_SECONDS)
+			count += 1
+		else
+			table.insert(keep, entry)
+		end
+	end
+	if count == 0 then
+		return { ok = false, msg = "Nada para vender" }
+	end
+	data.Fish = keep
+	data.Money += total
+	Net.Notify(player, ("%d peixe(s) vendido(s) por %s"):format(count, NumberFormat.Money(total)), "ok")
+	changed(player, false)
+	return { ok = true, Value = total, Count = count }
+end
+
 -- Auras ------------------------------------------------------------------------------------
 
 function ShopService.ApplyAura(player)
@@ -287,6 +319,7 @@ function ShopService.Start()
 	Net.On("EquipBest", equipBest)
 	Net.On("Sell", sell)
 	Net.On("SellAll", sellAll)
+	Net.On("SellMany", sellMany)
 	Net.On("BuyAura", buyAura)
 	Net.On("EquipAura", equipAura)
 	Net.On("ClaimIndex", claimIndex)

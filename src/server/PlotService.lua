@@ -137,8 +137,15 @@ local function setSign(sign, title, level, info, price, canBuy)
 	frame.Title.Text = title
 	frame.Level.Text = level
 	frame.Info.Text = info
-	frame.PriceButton.Label.Text = price
-	frame.PriceButton.Fill.Color = (canBuy == nil and GRAY) or (canBuy and GREEN) or RED
+	local button = sign:FindFirstChild("Botao")
+	if button then
+		local buttonFrame = button:FindFirstChild("Gui") and button.Gui:FindFirstChild("Board")
+		if buttonFrame then
+			buttonFrame.Label.Text = price
+		end
+		local sequence = (canBuy == nil and GRAY) or (canBuy and GREEN) or RED
+		button.Color = sequence.Keypoints[#sequence.Keypoints].Value:Lerp(sequence.Keypoints[1].Value, 0.35)
+	end
 	local alert = sign:FindFirstChild("Alerta")
 	if alert and alert:FindFirstChild("Gui") then
 		alert.Gui.Enabled = canBuy == true
@@ -173,6 +180,7 @@ function PlotService.RefreshSigns(player)
 	end
 
 	-- painel da própria esteira
+	model:SetAttribute("TreadmillLevel", level)
 	local console = model.Esteira:FindFirstChild("Painel")
 	local consoleFrame = console and console:FindFirstChild("Gui") and console.Gui:FindFirstChildOfClass("Frame")
 	if consoleFrame then
@@ -310,9 +318,10 @@ function PlotService.Start()
 		local model = MapService.GetPlotModel(index)
 		if model then
 			for kind, signName in pairs({ Treadmill = "PlacaEsteira", Aquarium = "PlacaAquario" }) do
-				local prompt = model[signName].Placa:FindFirstChild("Prompt")
-				if prompt then
-					prompt.Triggered:Connect(function(player)
+				local button = model[signName]:FindFirstChild("Botao")
+				local click = button and button:FindFirstChild("Click")
+				if click then
+					click.MouseClick:Connect(function(player)
 						if plotOf[player] == index then
 							PlotService.Upgrade(player, kind)
 						else

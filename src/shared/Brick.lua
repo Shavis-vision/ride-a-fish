@@ -46,12 +46,43 @@ function Brick.Part(parent, props)
 	return part
 end
 
+-- O Roblox não deixa uma peça passar de 2048 studs em nenhum lado: caixas maiores que isso
+-- são divididas em pedaços.
+local MAX_PART = 2000
+
 -- Caixa a partir de dois cantos (mais fácil para chão e paredes).
 function Brick.Box(parent, minCorner, maxCorner, props)
 	props = props or {}
-	local size = maxCorner - minCorner
-	props.Size = Vector3.new(math.abs(size.X), math.abs(size.Y), math.abs(size.Z))
-	props.CFrame = CFrame.new((minCorner + maxCorner) / 2)
+	local low = Vector3.new(math.min(minCorner.X, maxCorner.X), math.min(minCorner.Y, maxCorner.Y), math.min(minCorner.Z, maxCorner.Z))
+	local high = Vector3.new(math.max(minCorner.X, maxCorner.X), math.max(minCorner.Y, maxCorner.Y), math.max(minCorner.Z, maxCorner.Z))
+	local size = high - low
+	if size.X > MAX_PART or size.Z > MAX_PART or size.Y > MAX_PART then
+		local first = nil
+		local alongX = size.X >= size.Z and size.X >= size.Y
+		local alongZ = not alongX and size.Z >= size.Y
+		local length = alongX and size.X or alongZ and size.Z or size.Y
+		local pieces = math.ceil(length / MAX_PART)
+		for i = 0, pieces - 1 do
+			local a = i / pieces
+			local b = (i + 1) / pieces
+			local pieceLow, pieceHigh
+			if alongX then
+				pieceLow = Vector3.new(low.X + size.X * a, low.Y, low.Z)
+				pieceHigh = Vector3.new(low.X + size.X * b, high.Y, high.Z)
+			elseif alongZ then
+				pieceLow = Vector3.new(low.X, low.Y, low.Z + size.Z * a)
+				pieceHigh = Vector3.new(high.X, high.Y, low.Z + size.Z * b)
+			else
+				pieceLow = Vector3.new(low.X, low.Y + size.Y * a, low.Z)
+				pieceHigh = Vector3.new(high.X, low.Y + size.Y * b, high.Z)
+			end
+			local part = Brick.Box(parent, pieceLow, pieceHigh, table.clone(props))
+			first = first or part
+		end
+		return first
+	end
+	props.Size = size
+	props.CFrame = CFrame.new((low + high) / 2)
 	return Brick.Part(parent, props)
 end
 

@@ -21,7 +21,7 @@ local Track = {}
 Track.WATER_Y = 0 -- altura da superfície da água
 Track.BEACH_Y = 2 -- altura do chão de areia da praia (topo)
 Track.SHORE_Z = 0
-Track.HALF_WIDTH = 45 -- meia largura da pista
+Track.HALF_WIDTH = 80 -- meia largura da pista (160 studs de largura)
 Track.AREA_LENGTH = 900 -- comprimento de cada área
 Track.LENGTH = Track.AREA_LENGTH * 3
 Track.DEEP_FLOOR_Y = -185 -- fundo escuro bem lá embaixo (só visual)
@@ -177,7 +177,7 @@ do
 	local d = 200 -- o começo fica livre: dá tempo de domar o primeiro peixe sem bater
 	while true do
 		local area = Track.AreaAt(d)
-		local gap = area.Index == 1 and rng:NextNumber(30, 46) or area.Index == 2 and rng:NextNumber(24, 38) or rng:NextNumber(20, 34)
+		local gap = area.Index == 1 and rng:NextNumber(18, 28) or area.Index == 2 and rng:NextNumber(15, 24) or rng:NextNumber(12, 21)
 		d += gap
 		if d > Track.LENGTH - 40 then
 			break
@@ -239,7 +239,7 @@ function Track.GenerateRun(seed)
 			Phase = rng:NextNumber(0, math.pi * 2),
 			SpeedMul = rng:NextNumber(0.9, 1.1),
 		})
-		d += rng:NextNumber(8, 15)
+		d += rng:NextNumber(5, 9) -- pista larga: mais peixes por metro
 	end
 
 	return list

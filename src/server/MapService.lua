@@ -60,12 +60,13 @@ local function stroke(label, thickness)
 end
 
 -- Escreve texto numa face de uma peça. lines = { { Text, Color, Size (0-1 da altura) } }
-local function surfaceText(part, face, lines, background)
+local function surfaceText(part, face, lines, background, pixelsPerStud)
 	local gui = Instance.new("SurfaceGui")
 	gui.Name = "Gui"
 	gui.Face = face
 	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-	gui.PixelsPerStud = 40
+	-- placas muito largas usam menos pixels por stud (o Roblox limita o tamanho da tela)
+	gui.PixelsPerStud = pixelsPerStud or math.clamp(math.floor(3000 / math.max(part.Size.X, 1)), 10, 40)
 	gui.LightInfluence = 0
 	gui.Parent = part
 
@@ -1301,17 +1302,20 @@ local function buildPlot(parent, plot)
 	zone:SetAttribute("TreadmillZone", true)
 
 	-- PLACAS DE MELHORIA -------------------------------------------------------
-	-- Placas no estilo das referências: quadro preto, título branco, nível em verde e um
-	-- "botão" de preço (verde = dá para comprar, vermelho = falta dinheiro). Um "!" vermelho
-	-- aparece em cima quando dá para comprar. PlotService preenche os textos.
+	-- Placas de melhoria DEITADAS NO CHÃO (inclinadas para quem chega pela frente do lote):
+	-- quadro preto com título, nível e ganho, e na frente um BOTÃO DE PREÇO de verdade (peça
+	-- com ClickDetector): clicar/tocar nele compra. Verde = dá para comprar, vermelho = falta
+	-- dinheiro. Um "!" vermelho aparece em cima quando dá para comprar. PlotService preenche.
+	local TILT = CFrame.Angles(math.rad(70), 0, 0) -- a face da frente olha para cima e para o jogador
 	local function upgradeSign(name, position, title, icon)
 		local sign = Brick.Model(model, name)
 		local p = Vector3.new(position.X, floorTop, position.Z)
-		Brick.Part(sign, { Name = "Poste", Size = Vector3.new(1.4, 9, 1.4), Position = p + Vector3.new(0, 4.5, 0.8), Color = rgb(28, 28, 32) })
+		local boardCF = CFrame.new(p + Vector3.new(0, 2.6, 1.6)) * TILT
+		Brick.Part(sign, { Name = "Apoio", Size = Vector3.new(11.6, 3, 1.2), Position = p + Vector3.new(0, 1.5, 4.8), Color = rgb(28, 28, 32) })
 		local board = Brick.Part(sign, {
 			Name = "Placa",
-			Size = Vector3.new(12, 7.5, 0.8),
-			Position = p + Vector3.new(0, 10.5, 0),
+			Size = Vector3.new(11, 7, 0.6),
+			CFrame = boardCF,
 			Color = rgb(18, 18, 22),
 			Studs = false,
 		})
@@ -1333,8 +1337,7 @@ local function buildPlot(parent, plot)
 		border.Color = rgb(55, 55, 65)
 		border.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 		border.Parent = frame
-
-		local function line(labelName, text, x, y, w, h, color, align)
+		local function line(labelName, text, x, y, w, h, color)
 			local label = Instance.new("TextLabel")
 			label.Name = labelName
 			label.BackgroundTransparency = 1
@@ -1344,45 +1347,48 @@ local function buildPlot(parent, plot)
 			label.Text = text
 			label.TextScaled = true
 			label.TextColor3 = color
-			label.TextXAlignment = align or Enum.TextXAlignment.Center
 			label.Parent = frame
 			stroke(label, 4)
 			return label
 		end
-		line("Icon", icon, 0.03, 0.05, 0.17, 0.4, WHITE)
-		line("Title", title, 0.2, 0.05, 0.77, 0.25, WHITE)
-		line("Level", "Nível 1 > Nível 2", 0.2, 0.3, 0.77, 0.17, rgb(120, 255, 90))
-		line("Info", "", 0.04, 0.48, 0.92, 0.16, rgb(255, 225, 80))
+		line("Icon", icon, 0.04, 0.08, 0.18, 0.4, WHITE)
+		line("Title", title, 0.22, 0.08, 0.74, 0.3, WHITE)
+		line("Level", "Nível 1 > Nível 2", 0.22, 0.4, 0.74, 0.22, rgb(120, 255, 90))
+		line("Info", "", 0.05, 0.66, 0.9, 0.24, rgb(255, 225, 80))
 
-		local button = Instance.new("Frame")
-		button.Name = "PriceButton"
-		button.Position = UDim2.fromScale(0.07, 0.68)
-		button.Size = UDim2.fromScale(0.86, 0.26)
-		button.BackgroundColor3 = WHITE
-		button.BorderSizePixel = 0
-		button.Parent = frame
-		local corner = Instance.new("UICorner")
-		corner.CornerRadius = UDim.new(0.2, 0)
-		corner.Parent = button
-		local buttonStroke = Instance.new("UIStroke")
-		buttonStroke.Thickness = 5
-		buttonStroke.Color = rgb(15, 15, 20)
-		buttonStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-		buttonStroke.Parent = button
-		local fill = Instance.new("UIGradient")
-		fill.Name = "Fill"
-		fill.Rotation = 90
-		fill.Color = ColorSequence.new(rgb(140, 245, 90), rgb(40, 175, 45))
-		fill.Parent = button
+		-- botão de preço (peça clicável)
+		local button = Brick.Part(sign, {
+			Name = "Botao",
+			Size = Vector3.new(9.4, 2.4, 0.9),
+			CFrame = boardCF * CFrame.new(0, -3.5 - 1.5, 0.15),
+			Color = rgb(60, 200, 60),
+		})
+		local buttonGui = Instance.new("SurfaceGui")
+		buttonGui.Name = "Gui"
+		buttonGui.Face = Enum.NormalId.Front
+		buttonGui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		buttonGui.PixelsPerStud = 40
+		buttonGui.LightInfluence = 0
+		buttonGui.Parent = button
+		local buttonFrame = Instance.new("Frame")
+		buttonFrame.Name = "Board"
+		buttonFrame.Size = UDim2.fromScale(1, 1)
+		buttonFrame.BackgroundTransparency = 1
+		buttonFrame.Parent = buttonGui
+		local buttonBorder = Instance.new("UIStroke")
+		buttonBorder.Thickness = 6
+		buttonBorder.Color = rgb(15, 15, 20)
+		buttonBorder.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		buttonBorder.Parent = buttonFrame
 		local cash = Instance.new("TextLabel")
 		cash.Name = "Cash"
 		cash.BackgroundTransparency = 1
-		cash.Position = UDim2.fromScale(0.03, 0.1)
-		cash.Size = UDim2.fromScale(0.18, 0.8)
+		cash.Position = UDim2.fromScale(0.04, 0.1)
+		cash.Size = UDim2.fromScale(0.16, 0.8)
 		cash.Font = FONT
 		cash.Text = "💵"
 		cash.TextScaled = true
-		cash.Parent = button
+		cash.Parent = buttonFrame
 		local price = Instance.new("TextLabel")
 		price.Name = "Label"
 		price.BackgroundTransparency = 1
@@ -1392,18 +1398,18 @@ local function buildPlot(parent, plot)
 		price.Text = "$0"
 		price.TextScaled = true
 		price.TextColor3 = WHITE
-		price.Parent = button
+		price.Parent = buttonFrame
 		stroke(price, 4)
-
-		-- moldura de madeira em volta da placa
-		Brick.Part(sign, { Size = Vector3.new(12.8, 0.7, 1), Position = p + Vector3.new(0, 14.6, 0), Color = rgb(28, 28, 32) })
-		Brick.Part(sign, { Size = Vector3.new(12.8, 0.7, 1), Position = p + Vector3.new(0, 6.4, 0), Color = rgb(28, 28, 32) })
+		local click = Instance.new("ClickDetector")
+		click.Name = "Click"
+		click.MaxActivationDistance = 40
+		click.Parent = button
 
 		-- "!" quando dá para comprar
 		local alertAnchor = Brick.Part(sign, {
 			Name = "Alerta",
 			Size = Vector3.new(1, 1, 1),
-			Position = p + Vector3.new(0, 17.5, 0),
+			Position = p + Vector3.new(0, 8, 2),
 			Transparency = 1,
 			CanCollide = false,
 			Studs = false,
@@ -1423,16 +1429,6 @@ local function buildPlot(parent, plot)
 		mark.TextColor3 = rgb(255, 40, 40)
 		mark.Parent = alert
 		stroke(mark, 4)
-
-		local prompt = Instance.new("ProximityPrompt")
-		prompt.Name = "Prompt"
-		prompt.ActionText = "Melhorar"
-		prompt.ObjectText = title
-		prompt.HoldDuration = 0
-		prompt.MaxActivationDistance = 14
-		prompt.RequiresLineOfSight = false
-		prompt.KeyboardKeyCode = Enum.KeyCode.E
-		prompt.Parent = board
 		return sign
 	end
 	upgradeSign("PlacaEsteira", plot.TreadmillSign, "Melhorar Esteira", "⚡")

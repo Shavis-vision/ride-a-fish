@@ -164,9 +164,11 @@ end)
 -- Placas: só o dono vê o botão de melhorar ------------------------------------------------------
 local function updatePrompts(model)
 	local mine = model:GetAttribute("Owner") == player.UserId
-	for _, prompt in ipairs(model:GetDescendants()) do
-		if prompt:IsA("ProximityPrompt") then
-			prompt.Enabled = mine
+	for _, item in ipairs(model:GetDescendants()) do
+		if item:IsA("ProximityPrompt") then
+			item.Enabled = mine
+		elseif item:IsA("ClickDetector") then
+			item.MaxActivationDistance = mine and 40 or 0
 		end
 	end
 end
@@ -204,15 +206,19 @@ local function lockOnTreadmill(humanoid, root, zone)
 	humanoid.AutoRotate = false
 	humanoid.WalkSpeed = 0
 
+	-- quanto maior o nível da esteira, mais rápido o personagem corre
 	local animator = humanoid:FindFirstChildOfClass("Animator")
 	local animate = humanoid.Parent:FindFirstChild("Animate")
-	local walkFolder = animate and animate:FindFirstChild("walk")
-	local animation = walkFolder and walkFolder:FindFirstChildOfClass("Animation")
+	local plot = zone.Parent and zone.Parent.Parent
+	local level = plot and plot:GetAttribute("TreadmillLevel") or 1
+	local runFolder = animate and animate:FindFirstChild(level <= 2 and "walk" or "run")
+	local animation = runFolder and runFolder:FindFirstChildOfClass("Animation")
 	if animator and animation then
 		lock.Track = animator:LoadAnimation(animation)
 		lock.Track.Priority = Enum.AnimationPriority.Action
 		lock.Track.Looped = true
 		lock.Track:Play(0.2)
+		lock.Track:AdjustSpeed(math.clamp(0.8 + (level - 1) * 0.1, 0.8, 3))
 	end
 end
 
@@ -291,6 +297,10 @@ RunService.RenderStepped:Connect(function()
 	if not lock or not lock.Root.Parent then
 		return
 	end
+	if lock.Track and lock.Zone.Parent and lock.Zone.Parent.Parent then
+		local level = lock.Zone.Parent.Parent:GetAttribute("TreadmillLevel") or 1
+		lock.Track:AdjustSpeed(math.clamp(0.8 + (level - 1) * 0.1, 0.8, 3))
+	end
 	local center = lock.Zone.Position
 	local y = lock.Root.Position.Y
 	lock.Root.CFrame = CFrame.lookAt(Vector3.new(center.X, y, center.Z), Vector3.new(center.X, y, center.Z + 10))
@@ -325,17 +335,19 @@ local function ownerTraining(model)
 	return owner ~= nil and owner:GetAttribute("Training") == true
 end
 
-local beltShift = 0
+local beltShift = {}
 RunService.RenderStepped:Connect(function(dt)
-	beltShift = (beltShift + dt * 9) % 2
 	local t = os.clock()
 	for _, model in ipairs(plots:GetChildren()) do
-		-- esteira
+		-- esteira (anda mais rápido a cada nível)
 		if ownerTraining(model) then
+			local level = model:GetAttribute("TreadmillLevel") or 1
+			beltShift[model] = ((beltShift[model] or 0) + dt * math.clamp(6 + level * 1.2, 6, 30)) % 2
+			local shift = beltShift[model]
 			local info = stripesOf(model)
 			if info then
 				for _, item in ipairs(info.List) do
-					local z = item.Offset.Position.Z - beltShift
+					local z = item.Offset.Position.Z - shift
 					if z < -7.8 then
 						z += 16
 					end

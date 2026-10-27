@@ -31,10 +31,12 @@ Para o salvamento funcionar no Studio: publique o jogo e ligue **Game Settings >
 | Ação | PC | Celular |
 |------|----|---------|
 | Começar a corrida | Entrar no anel azul dentro da água | Igual |
-| Arpão no peixe marcado / pular | Espaço | Botão PULAR |
+| Saltar do peixe (o tempo fica lento e aparece o círculo amarelo) | Espaço | Botão PULAR |
+| Mirar o círculo | A / D e W / S | Analógico |
+| Lançar o arpão no peixe dentro do círculo | Espaço de novo | Botão ARPÃO |
 | Desviar | A / D (ou setas) | Analógico |
 | Treinar stamina | Subir na esteira do seu lote (você fica preso andando; pule para sair) | Igual (botão de pular) |
-| Melhorar esteira/aquário | Tecla E perto da placa | Tocar no botão da placa |
+| Melhorar esteira/aquário | Clicar no botão verde de preço da placa no chão | Tocar no botão |
 
 As cores embaixo do nome de cada peixe dizem se você consegue domar: **verde ✓** (tem stamina), **amarelo !** (tem 80% ou mais, ainda não dá) e **vermelho ✗**.
 

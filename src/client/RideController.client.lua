@@ -7,8 +7,9 @@
 --   2. Os peixes da corrida (gerados com o seed, iguais aos do servidor) nadam sempre para
 --      a frente e desviam dos obstáculos. Cada um mostra o nome e a stamina que pede, em
 --      verde (dá), amarelo (quase, 80%+) ou vermelho (falta).
---   3. ESPAÇO (ou o botão PULAR) lança o arpão no peixe marcado e você vai até ele.
---      Sem peixe marcado, você só pula.
+--   3. ESPAÇO (ou o botão PULAR) salta do peixe: o tempo fica lento e aparece um círculo
+--      amarelo à frente (mire com A/D e W/S; ele gruda no peixe mais perto). ESPAÇO de novo
+--      lança o arpão no peixe que estiver dentro do círculo.
 --   4. Em cima do peixe: com stamina suficiente, ele é domado depois de alguns segundos.
 --      Sem stamina suficiente, ele te derruba antes (você perde só esse peixe).
 --      Domado, ele aguenta você por um tempo (mais stamina = mais tempo) e depois te derruba.
@@ -80,6 +81,32 @@ local function moveX()
 	return x
 end
 
+-- Para frente (+1) / para trás (-1): W/S, setas ou analógico (a câmera olha para -Z)
+local function moveForward()
+	if controls then
+		local ok, vector = pcall(function()
+			return controls:GetMoveVector()
+		end)
+		if ok and vector and vector.Z ~= 0 then
+			return math.clamp(-vector.Z, -1, 1)
+		end
+	end
+	if humanoid and humanoid.Parent then
+		local direction = humanoid.MoveDirection
+		if math.abs(direction.Z) > 0.05 then
+			return math.clamp(-direction.Z / math.max(direction.Magnitude, 1e-3), -1, 1)
+		end
+	end
+	local z = 0
+	if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Up) then
+		z += 1
+	end
+	if UserInputService:IsKeyDown(Enum.KeyCode.S) or UserInputService:IsKeyDown(Enum.KeyCode.Down) then
+		z -= 1
+	end
+	return z
+end
+
 -- Estado ------------------------------------------------------------------------------------
 local state = "Idle" -- Idle, Airborne, Riding, Zipping, Fallen
 local run = nil
@@ -97,6 +124,38 @@ highlight.OutlineTransparency = 0
 highlight.OutlineColor = Color3.new(1, 1, 1)
 highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 -- sem Adornee, o Highlight marca o próprio pai: ele é colocado dentro do peixe-alvo
+
+-- Círculo amarelo da mira (fica no ponto para onde você vai lançar o arpão)
+local reticleAnchor = Instance.new("Part")
+reticleAnchor.Name = "MiraDoArpao"
+reticleAnchor.Anchored = true
+reticleAnchor.CanCollide = false
+reticleAnchor.CanQuery = false
+reticleAnchor.CanTouch = false
+reticleAnchor.Transparency = 1
+reticleAnchor.Size = Vector3.new(0.2, 0.2, 0.2)
+reticleAnchor.Parent = Workspace
+local reticle = Instance.new("BillboardGui")
+reticle.Name = "Circulo"
+reticle.Size = UDim2.new(RIDE.RETICLE_SIZE, 0, RIDE.RETICLE_SIZE, 0)
+reticle.AlwaysOnTop = true
+reticle.LightInfluence = 0
+reticle.Enabled = false
+reticle.Parent = reticleAnchor
+local reticleRing = Instance.new("Frame")
+reticleRing.Size = UDim2.fromScale(1, 1)
+reticleRing.BackgroundColor3 = Color3.fromRGB(255, 225, 40)
+reticleRing.BackgroundTransparency = 0.85
+reticleRing.Parent = reticle
+local reticleCorner = Instance.new("UICorner")
+reticleCorner.CornerRadius = UDim.new(1, 0)
+reticleCorner.Parent = reticleRing
+local reticleStroke = Instance.new("UIStroke")
+reticleStroke.Color = Color3.fromRGB(255, 225, 40)
+reticleStroke.Thickness = 5
+reticleStroke.Parent = reticleRing
+local reticleScale = Instance.new("UIScale")
+reticleScale.Parent = reticleRing
 
 local rope = Instance.new("Part")
 rope.Name = "CordaDoArpao"
@@ -584,11 +643,20 @@ local function mount(obj)
 	state = "Riding"
 end
 
+-- começa a mira: tempo lento e o círculo amarelo à frente
+local function startAim()
+	rider.SlowUntil = os.clock() + RIDE.SLOWMO_TIME
+	rider.AimX = rider.Pos.X
+	rider.AimAhead = RIDE.AIM_START
+	reticle.Enabled = true
+end
+
 local function buck(reason)
 	local speed = currentSpeed()
 	releaseMount()
 	rider.Vel = Vector3.new(0, RIDE.BUCK_UP, -speed * 0.55)
 	state = "Airborne"
+	startAim()
 	if reason then
 		showBanner(reason, Color3.fromRGB(255, 120, 90))
 	end
@@ -597,12 +665,14 @@ end
 local function freeJump()
 	local speed = currentSpeed()
 	releaseMount()
-	rider.Vel = Vector3.new(0, RIDE.JUMP_UP, -math.max(speed, 20) * 0.8)
+	rider.Vel = Vector3.new(0, RIDE.JUMP_UP, -math.max(speed, 20) * 0.6)
 	state = "Airborne"
+	startAim()
 end
 
 local function harpoon(obj, duration)
 	releaseMount()
+	reticle.Enabled = false
 	rider.ZipFrom = rider.Pos
 	rider.ZipTarget = obj
 	rider.ZipStart = os.clock()
@@ -617,13 +687,17 @@ local function onAction()
 	end
 	lastActionAt = now
 	if state == "Riding" then
+		freeJump()
+	elseif state == "Airborne" then
 		if target then
 			harpoon(target)
 		else
-			freeJump()
+			-- errou: o círculo pisca em vermelho
+			reticleStroke.Color = Color3.fromRGB(255, 70, 60)
+			task.delay(0.2, function()
+				reticleStroke.Color = Color3.fromRGB(255, 225, 40)
+			end)
 		end
-	elseif state == "Airborne" and target then
-		harpoon(target)
 	end
 end
 
@@ -713,6 +787,7 @@ endRun = function(reason)
 	gui.Enabled = false
 	fallPanel.Visible = false
 	wheel.Enabled = false
+	reticle.Enabled = false
 	restoreCharacter()
 	cooldownUntil = os.clock() + 2
 	task.spawn(function()
@@ -773,8 +848,8 @@ local function updateRiding(dt, now, t)
 	rider.Pos = seat.Position
 	placeRider(seat, Vector3.new(0, 0, -speed))
 
-	-- obstáculos
-	if not leaping then
+	-- obstáculos (1 segundo de folga logo depois de montar, para dar tempo de desviar)
+	if not leaping and now - rider.MountAt > 1 then
 		for _, ob in ipairs(Track.Obstacles) do
 			if math.abs(ob.Dist - obj.Dist) < ob.Radius + obj.Length * 0.35 and math.abs(ob.X - obj.X) < ob.Radius + obj.Width * 0.5 then
 				if species.Ability == "Casco" and not rider.CascoUsed then
@@ -831,16 +906,21 @@ local function updateRiding(dt, now, t)
 	end
 end
 
-local function updateAirborne(dt)
+local function updateAirborne(realDt, dt)
 	rider.Vel += Vector3.new(0, -RIDE.GRAVITY * dt, 0)
 	local steer = moveX()
-	local pos = rider.Pos + rider.Vel * dt + Vector3.new(steer * RIDE.AIR_STEER_SPEED * dt, 0, 0)
+	-- o círculo anda rápido (no tempo real); o corpo vai indo atrás dele devagar
+	local limitAim = Track.HALF_WIDTH - 5
+	rider.AimX = math.clamp((rider.AimX or rider.Pos.X) + steer * RIDE.AIM_SPEED * realDt, -limitAim, limitAim)
+	rider.AimAhead = math.clamp((rider.AimAhead or RIDE.AIM_START) + moveForward() * RIDE.AIM_SPEED * realDt, RIDE.AIM_MIN, RIDE.AIM_MAX)
+	local drift = math.clamp(rider.AimX - rider.Pos.X, -1, 1) * RIDE.AIR_STEER_SPEED * 0.5
+	local pos = rider.Pos + rider.Vel * dt + Vector3.new(drift * dt, 0, 0)
 	local limit = Track.HALF_WIDTH - 4
 	pos = Vector3.new(math.clamp(pos.X, -limit, limit), pos.Y, pos.Z)
 	rider.Pos = pos
 	rider.Dist = Track.DistOf(pos.Z)
 	local tilt = math.clamp(rider.Vel.Y * 0.02, -0.5, 0.5)
-	placeRider(CFrame.new(pos) * CFrame.Angles(tilt, 0, -steer * 0.3), rider.Vel)
+	placeRider(CFrame.new(pos) * CFrame.Angles(tilt, 0, -steer * 0.3), rider.Vel * (dt / math.max(realDt, 1e-3)))
 	if pos.Y <= Track.SeabedY(rider.Dist) + 2.6 then
 		fall()
 	end
@@ -875,23 +955,47 @@ local function updateZipping(now)
 	end
 end
 
+-- Peixe dentro do círculo amarelo (com assistência de mira: o mais perto do centro, até
+-- ASSIST_RADIUS de distância, e que o arpão alcance).
 local function chooseTarget(now)
+	local aimDist = rider.Dist + (rider.AimAhead or RIDE.AIM_START)
+	local aimX = rider.AimX or rider.Pos.X
 	local best, bestScore = nil, math.huge
 	for _, obj in ipairs(run.Active) do
 		if obj.Model and obj ~= rider.Mount and not obj.Escaped and now >= obj.TargetableAt then
-			local ahead = obj.Dist - rider.Dist
-			if ahead > -2 and ahead < RIDE.HARPOON_RANGE then
-				local distance = (obj.Root.Position - rider.Pos).Magnitude
-				if distance < RIDE.HARPOON_RANGE then
-					local score = distance + math.abs(obj.X - rider.Pos.X) * 0.6
-					if score < bestScore then
-						best, bestScore = obj, score
-					end
+			local offset = Vector2.new(obj.X - aimX, obj.Dist - aimDist).Magnitude
+			if offset < RIDE.ASSIST_RADIUS and (obj.Root.Position - rider.Pos).Magnitude < RIDE.HARPOON_RANGE then
+				if offset < bestScore then
+					best, bestScore = obj, offset
 				end
 			end
 		end
 	end
 	return best
+end
+
+local function updateReticle(dt)
+	if state ~= "Airborne" then
+		reticle.Enabled = false
+		return
+	end
+	reticle.Enabled = true
+	local aimDist = rider.Dist + (rider.AimAhead or RIDE.AIM_START)
+	local aimPoint = Vector3.new(rider.AimX or rider.Pos.X, Track.SeabedY(aimDist) + SWIM + 2, Track.ZOf(aimDist))
+	local goal = aimPoint
+	if target and target.Model then
+		goal = target.Root.Position
+		-- assistência: o círculo "gruda" no peixe
+		rider.AimX += (target.X - rider.AimX) * math.min(1, dt * 5)
+		rider.AimAhead += ((target.Dist - rider.Dist) - rider.AimAhead) * math.min(1, dt * 5)
+		reticleRing.BackgroundTransparency = 0.6
+		reticleScale.Scale = 0.85 + math.sin(os.clock() * 12) * 0.08
+	else
+		reticleRing.BackgroundTransparency = 0.88
+		reticleScale.Scale = 1
+	end
+	local current = reticleAnchor.Position
+	reticleAnchor.CFrame = CFrame.new(current:Lerp(goal, math.min(1, dt * 14)))
 end
 
 local function updateHud(now)
@@ -959,12 +1063,13 @@ local function updateHud(now)
 		tamePanel.Visible = false
 	end
 
+	jumpButton.Label.Text = state == "Airborne" and "ARPÃO" or "PULAR"
 	if state == "Riding" and obj and not obj.Tamed and rider.CanTame then
 		hint.Text = "Segure firme até domar!  •  A/D (ou analógico): desviar das pedras"
 	elseif state == "Riding" then
-		hint.Text = target and "ESPAÇO: arpão no peixe marcado  •  A/D: desviar" or "Sem peixe no alcance  •  A/D: desviar  •  ESPAÇO: pular"
+		hint.Text = "ESPAÇO: saltar do peixe  •  A/D: desviar"
 	elseif state == "Airborne" then
-		hint.Text = target and "ESPAÇO: arpão no peixe marcado!" or "Procure um peixe para o arpão..."
+		hint.Text = target and "ESPAÇO: lançar o arpão!" or "Leve o círculo amarelo até um peixe (A/D e W/S)"
 	else
 		hint.Text = ""
 	end
@@ -972,8 +1077,8 @@ end
 
 local function updateCamera(dt)
 	local focus = rider.Pos
-	local eye = focus + Vector3.new(0, 7, 20)
-	local look = focus + Vector3.new(0, 0, -28)
+	local eye = focus + (state == "Airborne" and Vector3.new(0, 9, 22) or Vector3.new(0, 7, 20))
+	local look = focus + Vector3.new(0, state == "Airborne" and -3 or 0, -28)
 	if state == "Fallen" then
 		eye = focus + Vector3.new(0, 12, 14)
 		look = focus
@@ -1014,8 +1119,15 @@ RunService.RenderStepped:Connect(function(dt)
 		return
 	end
 	dt = math.min(dt, 0.05)
+	local realDt = dt
 	local now = os.clock()
 	local t = now - run.Start
+	-- câmera lenta enquanto mira (volta ao normal no fim)
+	if state == "Airborne" and rider.SlowUntil and now < rider.SlowUntil then
+		local left = rider.SlowUntil - now
+		local scale = left < 0.3 and RIDE.SLOWMO + (1 - RIDE.SLOWMO) * (1 - left / 0.3) or RIDE.SLOWMO
+		dt *= scale
+	end
 
 	-- novos peixes à frente
 	while run.Fish[run.NextSpawn] and run.Fish[run.NextSpawn].Dist < rider.Dist + RIDE.ACTIVATE_AHEAD do
@@ -1040,7 +1152,7 @@ RunService.RenderStepped:Connect(function(dt)
 	if state == "Riding" and rider.Mount then
 		updateRiding(dt, now, t)
 	elseif state == "Airborne" then
-		updateAirborne(dt)
+		updateAirborne(realDt, dt)
 	elseif state == "Zipping" then
 		updateZipping(now)
 	elseif state == "Fallen" then
@@ -1050,12 +1162,13 @@ RunService.RenderStepped:Connect(function(dt)
 		return
 	end
 
-	-- alvo do arpão
-	if state == "Riding" or state == "Airborne" then
+	-- alvo do arpão: só no ar, o peixe dentro do círculo
+	if state == "Airborne" then
 		target = chooseTarget(now)
 	else
 		target = nil
 	end
+	updateReticle(realDt)
 	if target and target.Model then
 		highlight.FillColor = stateColor(target.Required)
 		if highlight.Parent ~= target.Model then
@@ -1074,7 +1187,7 @@ RunService.RenderStepped:Connect(function(dt)
 	end
 
 	updateHud(now)
-	updateCamera(dt)
+	updateCamera(realDt)
 end)
 
 -- Começar a corrida ao entrar na zona de mergulho

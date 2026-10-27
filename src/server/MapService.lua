@@ -18,6 +18,7 @@ local PhysicsService = game:GetService("PhysicsService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Config = require(Shared:WaitForChild("Config"))
 local Brick = require(Shared:WaitForChild("Brick"))
 local Track = require(Shared:WaitForChild("Track"))
 local Layout = require(Shared:WaitForChild("Layout"))
@@ -134,17 +135,31 @@ end
 
 -- Iluminação de praia ensolarada ---------------------------------------------------------
 
+-- A luz vem de Config.LIGHTING (preset escolhido em Config.LIGHTING_PRESET).
 local function setupLighting()
-	Lighting.ClockTime = 13.5
-	Lighting.Brightness = 2.6
-	Lighting.Ambient = rgb(120, 120, 130)
-	Lighting.OutdoorAmbient = rgb(150, 160, 175)
+	local preset = Config.LIGHTING[Config.LIGHTING_PRESET] or Config.LIGHTING.Antiga
+	local function color(values)
+		return rgb(values[1], values[2], values[3])
+	end
+	Lighting.ClockTime = preset.ClockTime
+	Lighting.Brightness = preset.Brightness
+	Lighting.Ambient = color(preset.Ambient)
+	Lighting.OutdoorAmbient = color(preset.OutdoorAmbient)
 	Lighting.EnvironmentDiffuseScale = 0.6
 	Lighting.EnvironmentSpecularScale = 0.4
 	Lighting.GlobalShadows = true
 	Lighting.FogEnd = 100000
 	Lighting.FogStart = 0
 	Lighting.FogColor = rgb(190, 225, 255)
+	if preset.ShadowSoftness then
+		Lighting.ShadowSoftness = preset.ShadowSoftness
+	end
+	if preset.LightingStyle then
+		-- propriedade nova do Roblox; se a versão do Studio não tiver, segue sem ela
+		pcall(function()
+			Lighting.LightingStyle = Enum.LightingStyle[preset.LightingStyle]
+		end)
+	end
 
 	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
 	atmosphere.Density = 0.22
@@ -155,16 +170,32 @@ local function setupLighting()
 	atmosphere.Haze = 0.6
 	atmosphere.Parent = Lighting
 
-	local sky = Lighting:FindFirstChildOfClass("Sky") or Instance.new("Sky")
-	sky.SunAngularSize = 18
-	sky.Parent = Lighting
+	-- O céu: se você colocou um Sky em Lighting pelo Studio (ex.: o "anime sky" da Toolbox),
+	-- ele é mantido do jeito que está. Só cria um céu padrão se não houver nenhum.
+	if not Lighting:FindFirstChildOfClass("Sky") then
+		local sky = Instance.new("Sky")
+		sky.SunAngularSize = 18
+		sky.Parent = Lighting
+	end
 
 	local bloom = Lighting:FindFirstChild("MapBloom") or Instance.new("BloomEffect")
 	bloom.Name = "MapBloom"
-	bloom.Intensity = 0.6
-	bloom.Size = 24
-	bloom.Threshold = 1.6
+	bloom.Intensity = preset.BloomIntensity
+	bloom.Size = preset.BloomSize
+	bloom.Threshold = preset.BloomThreshold
 	bloom.Parent = Lighting
+
+	local correction = Lighting:FindFirstChild("MapCor")
+	if preset.ColorCorrection then
+		correction = correction or Instance.new("ColorCorrectionEffect")
+		correction.Name = "MapCor"
+		correction.Contrast = preset.ColorCorrection.Contrast
+		correction.Saturation = preset.ColorCorrection.Saturation
+		correction.TintColor = color(preset.ColorCorrection.Tint)
+		correction.Parent = Lighting
+	elseif correction then
+		correction:Destroy()
+	end
 end
 
 local function setupCollisionGroups()

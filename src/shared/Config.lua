@@ -111,6 +111,38 @@ Config.AUTOSAVE_INTERVAL = 60
 Config.DATA_RETRIES = 3
 Config.DATA_RETRY_DELAY = 1
 
+-- Luz do mapa ------------------------------------------------------------------------------
+-- Para voltar para a luz antiga, troque "Nova" por "Antiga" na linha abaixo.
+Config.LIGHTING_PRESET = "Nova"
+Config.LIGHTING = {
+	-- escolhida pelo Carlos em 27/out/2026
+	Nova = {
+		ClockTime = 13.5,
+		Brightness = 4,
+		Ambient = { 124, 155, 184 },
+		OutdoorAmbient = { 157, 178, 255 },
+		LightingStyle = "Realistic",
+		ShadowSoftness = 1,
+		BloomIntensity = 0.6,
+		BloomSize = 56,
+		BloomThreshold = 1.6,
+		ColorCorrection = { Contrast = 0.5, Saturation = 0.5, Tint = { 243, 234, 255 } },
+	},
+	-- a da primeira versão (sem correção de cor)
+	Antiga = {
+		ClockTime = 13.5,
+		Brightness = 2.6,
+		Ambient = { 120, 120, 130 },
+		OutdoorAmbient = { 150, 160, 175 },
+		LightingStyle = nil,
+		ShadowSoftness = nil,
+		BloomIntensity = 0.6,
+		BloomSize = 24,
+		BloomThreshold = 1.6,
+		ColorCorrection = nil,
+	},
+}
+
 -- Placar -----------------------------------------------------------------------------------
 Config.LEADERBOARD_REFRESH = 5
 

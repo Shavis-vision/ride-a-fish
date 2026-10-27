@@ -303,17 +303,17 @@ local STEP = NumberSequence.new({
 	NumberSequenceKeypoint.new(1, 0),
 })
 
--- Disco que enche/esvazia (fraction 1 = cheio), como na referência: disco colorido cheio,
--- uma linha branca fina perto da borda e um furo branco no meio. A parte que já gastou
--- mostra um fundo escuro transparente. Devolve uma função set(fraction, color).
+-- Disco que enche/esvazia (fraction 1 = cheio), como na referência: disco colorido cheio com
+-- um furo branco no meio. A parte que já gastou fica escura. Devolve set(fraction, color).
 local function makeRing(parent, pixels, position, color, hole)
 	local back = UIKit.Frame(parent, {
 		Size = UDim2.fromOffset(pixels, pixels),
 		Position = position,
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Color = Color3.fromRGB(15, 20, 18),
-		Transparency = 0.55,
+		Color = Color3.fromRGB(28, 36, 32), -- fundo escuro (a parte que já gastou)
+		Transparency = 0,
 		Corner = 999,
+		ZIndex = 2,
 	})
 	local function half(isRight)
 		local clip = Instance.new("Frame")
@@ -338,16 +338,6 @@ local function makeRing(parent, pixels, position, color, hole)
 	end
 	local right, rightGradient = half(true)
 	local left, leftGradient = half(false)
-	-- linha branca fina perto da borda
-	local line = UIKit.Frame(back, {
-		Size = UDim2.new(0.86, 0, 0.86, 0),
-		Position = UDim2.fromScale(0.5, 0.5),
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Transparency = 1,
-		Corner = 999,
-		ZIndex = 3,
-	})
-	UIKit.Stroke(line, math.max(1, pixels / 40), Color3.new(1, 1, 1), Enum.ApplyStrokeMode.Border)
 	-- furo branco no meio
 	UIKit.Frame(back, {
 		Size = UDim2.fromScale(hole, hole),
@@ -375,6 +365,54 @@ local function makeRing(parent, pixels, position, color, hole)
 	end, back
 end
 
+-- Linha fina em volta do disco = STAMINA EXTRA (o que sobra além do que o peixe pede).
+-- Fica atrás do disco: só a borda dela aparece. Devolve set(fraction) (0 = some).
+local function makeExtraArc(parent, pixels, position)
+	local holder = Instance.new("Frame")
+	holder.BackgroundTransparency = 1
+	holder.Size = UDim2.fromOffset(pixels, pixels)
+	holder.Position = position
+	holder.AnchorPoint = Vector2.new(0.5, 0.5)
+	holder.ZIndex = 1
+	holder.Parent = parent
+	local function half(isRight)
+		local clip = Instance.new("Frame")
+		clip.BackgroundTransparency = 1
+		clip.ClipsDescendants = true
+		clip.Size = UDim2.fromScale(0.5, 1)
+		clip.Position = UDim2.fromScale(isRight and 0.5 or 0, 0)
+		clip.ZIndex = 1
+		clip.Parent = holder
+		local circle = Instance.new("Frame")
+		circle.BorderSizePixel = 0
+		circle.Size = UDim2.fromScale(2, 1)
+		circle.Position = UDim2.fromScale(isRight and -1 or 0, 0)
+		circle.BackgroundColor3 = Color3.new(1, 1, 1)
+		circle.ZIndex = 1
+		UIKit.Corner(circle, 999)
+		local gradient = Instance.new("UIGradient")
+		gradient.Transparency = STEP
+		gradient.Parent = circle
+		circle.Parent = clip
+		return circle, gradient
+	end
+	local _, rightGradient = half(true)
+	local left, leftGradient = half(false)
+	return function(fraction)
+		fraction = math.clamp(fraction, 0, 1)
+		holder.Visible = fraction > 0.001
+		local angle = fraction * 360
+		if fraction >= 0.5 then
+			rightGradient.Rotation = 0
+			left.Visible = true
+			leftGradient.Rotation = angle - 180
+		else
+			rightGradient.Rotation = angle - 180
+			left.Visible = false
+		end
+	end
+end
+
 -- Anéis ao lado do jogador: o VERDE grande é a stamina (esvazia), o ROSA pequeno é o
 -- progresso da doma (enche até o peixe ser domado).
 local wheel = Instance.new("BillboardGui")
@@ -384,12 +422,16 @@ wheel.StudsOffset = Vector3.new(3.4, 1.6, 0)
 wheel.AlwaysOnTop = true
 wheel.LightInfluence = 0
 wheel.Enabled = false
-local setStaminaRing = makeRing(wheel, 60, UDim2.fromScale(0.68, 0.5), Color3.fromRGB(40, 240, 90), 0.36)
+wheel.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+local setExtraArc = makeExtraArc(wheel, 66, UDim2.fromScale(0.68, 0.5)) -- linha branca (extra)
+local setStaminaRing = makeRing(wheel, 58, UDim2.fromScale(0.68, 0.5), Color3.fromRGB(40, 240, 90), 0.36)
 local setTameRing, tameRingBack = makeRing(wheel, 34, UDim2.fromScale(0.2, 0.5), Color3.fromRGB(255, 110, 200), 0.36)
 
-local function setWheel(fraction)
-	local color = fraction > 0.3 and Color3.fromRGB(40, 240, 90) or Color3.fromRGB(255, 90 + 120 * math.max(fraction, 0), 50)
+-- fraction = disco (stamina normal da doma); extra = linha de fora (stamina que sobra)
+local function setWheel(fraction, extra, safe)
+	local color = (safe or fraction > 0.3) and Color3.fromRGB(40, 240, 90) or Color3.fromRGB(255, 90 + 120 * math.max(fraction, 0), 50)
 	setStaminaRing(fraction, color)
+	setExtraArc(extra or 0)
 end
 
 local function setTameProgress(fraction)
@@ -1073,16 +1115,26 @@ local function updateHud(now)
 	local obj = rider.Mount
 	-- roda de stamina
 	if state == "Riding" and obj then
-		local fraction
+		-- Disco = a stamina que a doma gasta (o que o peixe pede, ou toda a sua se for menos).
+		-- Linha de fora = a stamina EXTRA (o que sobra). Depois de domar, é a linha que
+		-- esvazia enquanto você continua montado.
+		local stamina = math.max(1, ClientState.Stat("Stamina"))
+		local extra = math.max(0, stamina - obj.Required) / stamina
+		local fraction, extraFraction
 		if obj.Tamed and rider.RideEnd then
-			local start = rider.WheelAtTame or 1
-			fraction = start * math.max(0, rider.RideEnd - now) / math.max(0.01, rider.RideTime)
+			local left = math.max(0, rider.RideEnd - now) / math.max(0.01, rider.RideTime)
+			if rider.WheelAtTame and rider.WheelAtTame < 1 and extra > 0 then
+				fraction, extraFraction = 0, left -- domou agora: gasta a extra
+			else
+				fraction, extraFraction = left, 0 -- peixe já domado antes: gasta o disco
+			end
 		else
-			local stamina = math.max(1, ClientState.Stat("Stamina"))
 			local spent = obj.Required / obj.Species.TameTime * (now - rider.MountAt)
-			fraction = 1 - spent / stamina
+			fraction = 1 - spent / math.min(stamina, obj.Required)
+			extraFraction = extra > 0 and 1 or 0
 		end
-		setWheel(fraction)
+		-- vermelho só quando a stamina não dá (com stamina de sobra o disco fica verde)
+		setWheel(fraction, extraFraction, rider.CanTame or obj.Tamed)
 		if obj.Tamed then
 			setTameProgress(nil)
 		else

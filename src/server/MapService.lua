@@ -29,9 +29,9 @@ local MapService = {}
 local FONT = Enum.Font.FredokaOne
 local rgb = Color3.fromRGB
 
-local SAND = rgb(238, 216, 156)
-local SAND_DARK = rgb(222, 196, 132)
-local WET_SAND = rgb(206, 180, 120)
+local SAND = rgb(222, 198, 145) -- menos clara (a de antes estourava com a luz)
+local SAND_DARK = rgb(206, 182, 130)
+local WET_SAND = rgb(190, 165, 115)
 local GRASS = rgb(124, 198, 62)
 local WOOD = rgb(160, 108, 60)
 local WOOD_DARK = rgb(110, 72, 40)
@@ -608,6 +608,85 @@ local function buildBeach(map)
 	end
 	for _, spot in ipairs({ { -14, 50 }, { 14, 50 }, { -14, 30 }, { 14, 30 } }) do
 		flowerBed(deco, Vector3.new(spot[1], top, spot[2]), trng)
+	end
+
+	-- detalhes na areia: manchas de outro tom, conchas, pedrinhas e estrelas-do-mar
+	-- (fora dos lotes, da praça e da passarela)
+	local srng = Random.new(777)
+	local function freeSpot(x, z, margin)
+		if math.abs(x) < 10 + margin then
+			return false -- passarela
+		end
+		if math.abs(x) < 56 + margin and z > 54 - margin and z < 154 + margin then
+			return false -- praça
+		end
+		for _, plot in ipairs(Layout.Plots) do
+			local c = plot.Center
+			if math.abs(x - c.X) < Layout.PLOT_SIZE.X / 2 + 3 + margin and math.abs(z - c.Z) < Layout.PLOT_SIZE.Z / 2 + 6 + margin then
+				return false
+			end
+		end
+		return true
+	end
+	local function randomSpot(margin)
+		for _ = 1, 30 do
+			local x = srng:NextNumber(b.MinX + 8, b.MaxX - 8)
+			local z = srng:NextNumber(6, b.MaxZ - 6)
+			if freeSpot(x, z, margin) then
+				return x, z
+			end
+		end
+		return nil
+	end
+	local sandDetails = Brick.Folder(deco, "DetalhesAreia")
+	for _ = 1, 80 do
+		local x, z = randomSpot(4)
+		if x then
+			local shade = srng:NextNumber() < 0.6 and -0.06 or 0.05
+			for k = 1, 3 do
+				local w, l = srng:NextNumber(4, 9), srng:NextNumber(3, 7)
+				Brick.Part(sandDetails, {
+					Name = "Mancha",
+					Size = Vector3.new(w, 0.1, l),
+					Position = Vector3.new(x + srng:NextNumber(-3, 3), top + 0.05, z + srng:NextNumber(-2, 2)),
+					Color = Brick.Shade(SAND, shade + k * 0.005),
+					CanCollide = false,
+				})
+			end
+		end
+	end
+	local shellColors = { rgb(255, 225, 230), rgb(255, 245, 235), rgb(250, 200, 170), rgb(230, 210, 255) }
+	for _ = 1, 300 do
+		local x, z = randomSpot(1)
+		if x then
+			local base = Vector3.new(x, top, z)
+			local roll = srng:NextNumber()
+			local yaw = srng:NextNumber(0, math.pi * 2)
+			if roll < 0.4 then
+				-- concha (cunha + bolinha)
+				local color = shellColors[srng:NextInteger(1, #shellColors)]
+				Brick.Part(sandDetails, { Name = "Concha", Class = "WedgePart", Size = Vector3.new(1.2, 0.5, 1), CFrame = CFrame.new(base + Vector3.new(0, 0.25, 0)) * CFrame.Angles(0, yaw, 0), Color = color, Studs = false, CanCollide = false })
+				Brick.Part(sandDetails, { Name = "Concha", Shape = Enum.PartType.Ball, Size = Vector3.new(0.45, 0.45, 0.45), Position = base + Vector3.new(math.cos(yaw) * 0.2, 0.2, math.sin(yaw) * 0.2), Color = Brick.Shade(color, -0.12), Studs = false, CanCollide = false })
+			elseif roll < 0.75 then
+				-- pedrinhas
+				local grey = Brick.Shade(rgb(150, 145, 140), srng:NextNumber(-0.1, 0.1))
+				for k = 1, srng:NextInteger(1, 3) do
+					local d = srng:NextNumber(0.6, 1.4)
+					Brick.Part(sandDetails, { Name = "Pedrinha", Shape = Enum.PartType.Ball, Size = Vector3.new(d, d, d), Position = base + Vector3.new(srng:NextNumber(-1, 1), d * 0.3, srng:NextNumber(-1, 1)), Color = Brick.Shade(grey, k * 0.04), Studs = false, CanCollide = false })
+				end
+			elseif roll < 0.9 then
+				-- estrela-do-mar
+				for k = 0, 2 do
+					Brick.Part(sandDetails, { Name = "Estrela", Size = Vector3.new(2.2, 0.25, 0.5), CFrame = CFrame.new(base + Vector3.new(0, 0.13, 0)) * CFrame.Angles(0, yaw + k * math.pi / 3, 0), Color = rgb(255, 130, 70), Studs = false, CanCollide = false })
+				end
+			else
+				-- tufo de capim da praia
+				for k = 1, 4 do
+					local h = srng:NextNumber(0.8, 1.8)
+					Brick.Part(sandDetails, { Name = "Capim", Size = Vector3.new(0.2, h, 0.2), CFrame = CFrame.new(base + Vector3.new((k - 2.5) * 0.35, h / 2, srng:NextNumber(-0.3, 0.3))) * CFrame.Angles(0, 0, (k - 2.5) * 0.25), Color = rgb(130, 170, 70), Studs = false, CanCollide = false })
+				end
+			end
+		end
 	end
 
 	sandcastle(deco, Vector3.new(-120, top, 8))
@@ -1985,6 +2064,18 @@ function MapService.Build()
 		local default = Workspace:FindFirstChild(name)
 		if default and default:IsA("BasePart") then
 			default:Destroy()
+		end
+	end
+	-- qualquer outro spawn que estiver no lugar fica invisível (sem o símbolo em cima)
+	for _, item in ipairs(Workspace:GetDescendants()) do
+		if item:IsA("SpawnLocation") then
+			item.Transparency = 1
+			item.CanCollide = false
+			for _, child in ipairs(item:GetChildren()) do
+				if child:IsA("Decal") or child:IsA("Texture") then
+					child:Destroy()
+				end
+			end
 		end
 	end
 

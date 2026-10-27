@@ -43,10 +43,8 @@ Config.RIDE = {
 	-- ESPAÇO de novo lança o arpão no peixe que estiver no círculo.
 	SLOWMO = 0.35, -- velocidade do mundo durante o salto (35%)
 	SLOWMO_TIME = 2.4, -- segundos (reais) de câmera lenta
-	-- Assistência de mira: pega o peixe que estiver nesta faixa, mesmo um pouco à frente
-	ASSIST_RADIUS = 10, -- para os lados
-	ASSIST_AHEAD = 32, -- para a frente (peixes à frente também contam)
-	ASSIST_BEHIND = 6, -- um pouquinho para trás
+	-- Assistência de mira: pega o peixe MAIS PERTO dentro do alcance do arpão (HARPOON_RANGE)
+	ASSIST_BEHIND = 15, -- aceita peixes até esta distância para trás
 	RETICLE_SIZE = 10, -- tamanho do círculo (studs)
 	HARPOON_TIME = 0.32, -- segundos voando pela corda até o peixe
 	GRAVITY = 40, -- "gravidade" debaixo d'água (mais leve que a normal)
@@ -112,9 +110,26 @@ Config.DATA_RETRIES = 3
 Config.DATA_RETRY_DELAY = 1
 
 -- Luz do mapa ------------------------------------------------------------------------------
--- Para voltar para a luz antiga, troque "Nova" por "Antiga" na linha abaixo.
-Config.LIGHTING_PRESET = "Nova"
+-- Escolha a luz trocando o nome na linha abaixo: "Referencia" (parecida com as fotos de
+-- referência), "Antiga" (a da primeira versão) ou "Nova" (a dos valores do Carlos).
+Config.LIGHTING_PRESET = "Referencia"
 Config.LIGHTING = {
+	-- clara e suave, cores vivas, neblina leve azulada (como nas fotos de referência)
+	Referencia = {
+		ClockTime = 14,
+		Brightness = 3,
+		Ambient = { 135, 135, 150 },
+		OutdoorAmbient = { 170, 175, 190 },
+		LightingStyle = nil,
+		ShadowSoftness = 0.35,
+		BloomIntensity = 0.3,
+		BloomSize = 24,
+		BloomThreshold = 2,
+		Glare = 0,
+		Haze = 1.2,
+		Density = 0.3,
+		ColorCorrection = { Contrast = 0.08, Saturation = 0.18, Tint = { 255, 255, 255 } },
+	},
 	-- escolhida pelo Carlos em 27/out/2026
 	Nova = {
 		ClockTime = 13.5,

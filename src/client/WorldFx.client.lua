@@ -113,15 +113,15 @@ RunService.RenderStepped:Connect(function(dt)
 	fogEnd += (area.FogEnd - fogEnd) * k
 	Lighting.FogColor = fogColor
 	Lighting.FogEnd = fogEnd
-	local depth = math.clamp((Track.WATER_Y - position.Y) / 110, 0, 1)
-	Lighting.Ambient = fogColor:Lerp(Color3.fromRGB(150, 160, 170), 0.5 - depth * 0.3)
-	Lighting.OutdoorAmbient = fogColor:Lerp(Color3.fromRGB(170, 190, 210), 0.5 - depth * 0.3)
-	Lighting.Brightness = surface.Brightness * (1 - depth * 0.6)
+	local depth = math.clamp((Track.WATER_Y - position.Y) / 140, 0, 1)
+	Lighting.Ambient = fogColor:Lerp(Color3.fromRGB(190, 200, 210), 0.6 - depth * 0.2)
+	Lighting.OutdoorAmbient = fogColor:Lerp(Color3.fromRGB(210, 225, 235), 0.6 - depth * 0.2)
+	Lighting.Brightness = surface.Brightness * (1 - depth * 0.25)
 	tint.TintColor = tint.TintColor:Lerp(area.Tint, k)
 	tint.Brightness = area.Brightness
-	tint.Contrast = 0.05
-	tint.Saturation = 0.1
-	blur.Size = 2
+	tint.Contrast = 0.03
+	tint.Saturation = 0.15
+	blur.Size = 1
 
 	bubbleClock += dt
 	if bubbleClock > 0.22 then

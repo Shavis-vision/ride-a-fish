@@ -162,12 +162,12 @@ local function setupLighting()
 	end
 
 	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
-	atmosphere.Density = 0.22
+	atmosphere.Density = preset.Density or 0.22
 	atmosphere.Offset = 0.1
 	atmosphere.Color = rgb(200, 230, 255)
 	atmosphere.Decay = rgb(110, 160, 220)
 	atmosphere.Glare = preset.Glare or 0.15
-	atmosphere.Haze = 0.6
+	atmosphere.Haze = preset.Haze or 0.6
 	atmosphere.Parent = Lighting
 
 	-- O céu: se você colocou um Sky em Lighting pelo Studio (ex.: o "anime sky" da Toolbox),

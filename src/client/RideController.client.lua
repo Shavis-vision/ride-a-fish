@@ -985,20 +985,17 @@ local function updateZipping(now)
 	end
 end
 
--- Peixe que o círculo pega: o que está embaixo de você ou, com a assistência de mira, um
--- pouco à frente (até ASSIST_AHEAD) e para os lados (até ASSIST_RADIUS). Prefere o mais
--- alinhado com você e o mais perto.
+-- Peixe que o círculo pega (assistência de mira): o MAIS PERTO de você que o arpão alcança,
+-- em qualquer direção (até um pouco para trás).
 local function chooseTarget(now)
-	local best, bestScore = nil, math.huge
+	local best, bestDistance = nil, math.huge
 	for _, obj in ipairs(run.Active) do
 		if obj.Model and obj ~= rider.Mount and not obj.Escaped and now >= obj.TargetableAt then
-			local side = math.abs(obj.X - rider.Pos.X)
 			local ahead = obj.Dist - rider.Dist
-			if side < RIDE.ASSIST_RADIUS and ahead > -RIDE.ASSIST_BEHIND and ahead < RIDE.ASSIST_AHEAD
-				and (obj.Root.Position - rider.Pos).Magnitude < RIDE.HARPOON_RANGE then
-				local score = side * 1.5 + math.abs(ahead) * 0.5
-				if score < bestScore then
-					best, bestScore = obj, score
+			if ahead > -RIDE.ASSIST_BEHIND then
+				local distance = (obj.Root.Position - rider.Pos).Magnitude
+				if distance < RIDE.HARPOON_RANGE and distance < bestDistance then
+					best, bestDistance = obj, distance
 				end
 			end
 		end
@@ -1103,7 +1100,7 @@ local function updateHud(now)
 	elseif state == "Riding" then
 		hint.Text = "ESPAÇO: saltar do peixe  •  A/D: desviar"
 	elseif state == "Airborne" then
-		hint.Text = target and "ESPAÇO: lançar o arpão!" or "Fique em cima de um peixe (A/D para os lados)"
+		hint.Text = target and "ESPAÇO: lançar o arpão!" or "Nenhum peixe no alcance... (A/D para os lados)"
 	else
 		hint.Text = ""
 	end

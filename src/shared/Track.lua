@@ -48,8 +48,8 @@ Track.Areas = {
 		Tint = Color3.fromRGB(205, 240, 250),
 		Brightness = 0.04,
 		Sand = Color3.fromRGB(236, 214, 150),
-		Rock = Color3.fromRGB(255, 140, 110),
-		Rock2 = Color3.fromRGB(250, 190, 90),
+		Rock = Color3.fromRGB(236, 206, 160), -- degraus do recife (pedra clara)
+		Rock2 = Color3.fromRGB(120, 205, 110), -- tampa dos degraus (verde, como a grama da praia)
 		Deco = { Color3.fromRGB(255, 90, 140), Color3.fromRGB(255, 200, 50), Color3.fromRGB(120, 230, 255), Color3.fromRGB(180, 120, 255) },
 	},
 	{
@@ -62,8 +62,8 @@ Track.Areas = {
 		Tint = Color3.fromRGB(200, 245, 220),
 		Brightness = 0.02,
 		Sand = Color3.fromRGB(160, 170, 120),
-		Rock = Color3.fromRGB(70, 110, 90),
-		Rock2 = Color3.fromRGB(100, 150, 80),
+		Rock = Color3.fromRGB(110, 135, 110),
+		Rock2 = Color3.fromRGB(95, 175, 75),
 		Deco = { Color3.fromRGB(60, 200, 80), Color3.fromRGB(150, 230, 60), Color3.fromRGB(30, 150, 90), Color3.fromRGB(220, 200, 80) },
 	},
 	{

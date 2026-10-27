@@ -209,6 +209,97 @@ end
 
 -- Peças de cenário reutilizáveis ----------------------------------------------------------
 
+-- Árvore redonda de Lego: tronco e copa de bolas em dois tons
+local function roundTree(parent, base, scale, rng)
+	local model = Brick.Model(parent, "Arvore")
+	local trunkH = 6 * scale
+	Brick.Part(model, {
+		Name = "Tronco",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(trunkH, 1.6 * scale, 1.6 * scale),
+		CFrame = CFrame.new(base + Vector3.new(0, trunkH / 2, 0)) * CFrame.Angles(0, 0, math.pi / 2),
+		Color = rgb(130, 88, 50),
+		Studs = false,
+	})
+	local greens = { rgb(95, 185, 60), rgb(115, 205, 70), rgb(80, 165, 55) }
+	local top = base + Vector3.new(0, trunkH, 0)
+	local leaves = {
+		{ Vector3.new(0, 2.2, 0), 6.5 },
+		{ Vector3.new(2.2, 1, 0.8), 4.6 },
+		{ Vector3.new(-2, 1.2, -0.8), 4.4 },
+		{ Vector3.new(0.4, 4.6, 0.3), 4.2 },
+	}
+	for i, leaf in ipairs(leaves) do
+		Brick.Part(model, {
+			Name = "Copa",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(1, 1, 1) * leaf[2] * scale,
+			CFrame = CFrame.new(top + leaf[1] * scale),
+			Color = greens[(i + rng:NextInteger(0, 2)) % 3 + 1],
+			Studs = false,
+		})
+	end
+	return model
+end
+
+-- Arbusto (bolas verdes, às vezes com frutinhas)
+local function bush(parent, base, scale, rng)
+	local model = Brick.Model(parent, "Arbusto")
+	local greens = { rgb(90, 180, 60), rgb(110, 200, 70) }
+	for i = 1, 3 do
+		local offset = Vector3.new((i - 2) * 1.6, 1.1 + (i == 2 and 0.5 or 0), rng:NextNumber(-0.5, 0.5)) * scale
+		Brick.Part(model, {
+			Name = "Folhas",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(1, 1, 1) * (i == 2 and 3.2 or 2.6) * scale,
+			CFrame = CFrame.new(base + offset),
+			Color = greens[i % 2 + 1],
+			Studs = false,
+		})
+	end
+	if rng:NextNumber() < 0.5 then
+		for i = 1, 3 do
+			Brick.Part(model, {
+				Name = "Fruta",
+				Shape = Enum.PartType.Ball,
+				Size = Vector3.new(0.6, 0.6, 0.6) * scale,
+				CFrame = CFrame.new(base + Vector3.new((i - 2) * 1.3, 2 + (i % 2) * 0.6, -1.3) * scale),
+				Color = rgb(235, 60, 70),
+				Studs = false,
+			})
+		end
+	end
+	return model
+end
+
+-- Canteiro de flores (cabinhos verdes e flores coloridas)
+local function flowerBed(parent, base, rng)
+	local model = Brick.Model(parent, "Flores")
+	local colors = { rgb(255, 90, 120), rgb(255, 210, 60), rgb(255, 255, 255), rgb(170, 120, 255) }
+	for i = 1, 7 do
+		local pos = base + Vector3.new(rng:NextNumber(-2.5, 2.5), 0, rng:NextNumber(-1.5, 1.5))
+		local h = rng:NextNumber(0.8, 1.6)
+		Brick.Part(model, {
+			Name = "Cabo",
+			Size = Vector3.new(0.25, h, 0.25),
+			Position = pos + Vector3.new(0, h / 2, 0),
+			Color = rgb(70, 160, 60),
+			Studs = false,
+			CanCollide = false,
+		})
+		Brick.Part(model, {
+			Name = "Flor",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(0.8, 0.8, 0.8),
+			CFrame = CFrame.new(pos + Vector3.new(0, h + 0.2, 0)),
+			Color = colors[rng:NextInteger(1, #colors)],
+			Studs = false,
+			CanCollide = false,
+		})
+	end
+	return model
+end
+
 local function palmTree(parent, base, height, lean, rng)
 	local model = Brick.Model(parent, "Coqueiro")
 	local segments = math.floor(height / 2)
@@ -406,6 +497,7 @@ local function buildBeach(map)
 	end
 
 	-- paredões em degraus atrás da praia (estilo das referências: xadrez + grama em cima)
+	local cliffTops = {} -- topos de grama (para pôr árvores em cima)
 	local tiers = { { Z0 = b.MaxZ, Z1 = b.MaxZ + 16, H = 14 }, { Z0 = b.MaxZ + 16, Z1 = b.MaxZ + 34, H = 30 }, { Z0 = b.MaxZ + 34, Z1 = b.MaxZ + 60, H = 52 } }
 	-- paredões claros (branco-acinzentado) com grama em cima, como nas referências
 	local checkA, checkB = rgb(238, 238, 232), rgb(224, 226, 220)
@@ -419,6 +511,7 @@ local function buildBeach(map)
 				Name = "Paredao",
 				Color = (index + t) % 2 == 0 and checkA or checkB,
 			})
+			table.insert(cliffTops, { X0 = x, X1 = x + width, Z0 = tier.Z0, Z1 = tier.Z1, Y = top + h + 4 })
 			Brick.Box(folder, Vector3.new(x - 0.1, top + h, tier.Z0 - 0.1), Vector3.new(x + width + 0.1, top + h + 4, tier.Z1 + 0.1), {
 				Name = "Grama",
 				Color = (index % 2 == 0) and GRASS or Brick.Shade(GRASS, 0.12),
@@ -445,6 +538,9 @@ local function buildBeach(map)
 					Name = "Paredao",
 					Color = (index + t) % 2 == 0 and checkA or checkB,
 				})
+				if z >= 0 then
+					table.insert(cliffTops, { X0 = math.min(x0, x1), X1 = math.max(x0, x1), Z0 = z, Z1 = z + depth, Y = top + h + 4 })
+				end
 				Brick.Box(
 					folder,
 					Vector3.new(math.min(x0, x1) - 0.1, top + h, z - 0.1),
@@ -496,6 +592,33 @@ local function buildBeach(map)
 	for _, spot in ipairs({ { -80, 12 }, { 80, 10 }, { -226, 60 }, { 226, 80 }, { -30, 190 }, { 40, 192 }, { -226, 150 }, { 226, 140 } }) do
 		rockCluster(deco, Vector3.new(spot[1], top, spot[2]), 1.2, STONE, rng)
 	end
+	-- árvores redondas em cima dos paredões, arbustos e flores (deixa a praia viva)
+	local trng = Random.new(2024)
+	for _, cap in ipairs(cliffTops) do
+		if trng:NextNumber() < 0.42 then
+			local pos = Vector3.new(trng:NextNumber(cap.X0 + 3, cap.X1 - 3), cap.Y, trng:NextNumber(cap.Z0 + 3, math.max(cap.Z0 + 3, cap.Z1 - 3)))
+			if trng:NextNumber() < 0.7 then
+				roundTree(deco, pos, trng:NextNumber(1.4, 2.2), trng)
+			else
+				bush(deco, pos, trng:NextNumber(1.4, 2.2), trng)
+			end
+		end
+	end
+	-- arbustos atrás das cercas dos lotes e na borda da praça
+	for _, plot in ipairs(Layout.Plots) do
+		local c = plot.Center
+		for k = -2, 2 do
+			bush(deco, Vector3.new(c.X + k * 14 + trng:NextNumber(-2, 2), top, c.Z + Layout.PLOT_SIZE.Z / 2 + 4), trng:NextNumber(0.8, 1.2), trng)
+		end
+	end
+	for _, spot in ipairs({ { -54, 70 }, { 54, 70 }, { -54, 110 }, { 54, 110 }, { -54, 145 }, { 54, 145 } }) do
+		bush(deco, Vector3.new(spot[1], top, spot[2]), 1.1, trng)
+		flowerBed(deco, Vector3.new(spot[1], top, spot[2] + 8), trng)
+	end
+	for _, spot in ipairs({ { -14, 50 }, { 14, 50 }, { -14, 30 }, { 14, 30 } }) do
+		flowerBed(deco, Vector3.new(spot[1], top, spot[2]), trng)
+	end
+
 	sandcastle(deco, Vector3.new(-120, top, 8))
 	sandcastle(deco, Vector3.new(196, top, 8))
 
@@ -568,6 +691,168 @@ local function buildBeach(map)
 	floatingTitle(folder, Vector3.new(0, Track.WATER_Y + 7, Track.ZOf(Track.START_DIST)), "MERGULHE ↓", rgb(80, 255, 230), 18)
 end
 
+-- Peças do fundo do mar (corais, pedras) -----------------------------------------------------
+-- Todas sem colisão (só os obstáculos da pista contam, e eles são checados por distância).
+
+local function noCollide(props)
+	props.CanCollide = false
+	props.CastShadow = props.CastShadow or false
+	return props
+end
+
+-- cilindro em pé com a base em `base`
+local function standingCylinder(parent, base, height, diameter, color, extra)
+	local props = noCollide({
+		Name = "Cilindro",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(height, diameter, diameter),
+		CFrame = CFrame.new(base + Vector3.new(0, height / 2, 0)) * CFrame.Angles(0, 0, math.pi / 2),
+		Color = color,
+		Studs = false,
+	})
+	if extra then
+		for k, v in pairs(extra) do
+			props[k] = v
+		end
+	end
+	return Brick.Part(parent, props)
+end
+
+-- cilindro de `from` até `to`
+local function rod(parent, from, to, diameter, color, extra)
+	local mid = (from + to) / 2
+	local props = noCollide({
+		Name = "Galho",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new((to - from).Magnitude, diameter, diameter),
+		CFrame = CFrame.lookAt(mid, to) * CFrame.Angles(0, math.pi / 2, 0),
+		Color = color,
+		Studs = false,
+	})
+	if extra then
+		for k, v in pairs(extra) do
+			props[k] = v
+		end
+	end
+	return Brick.Part(parent, props)
+end
+
+local function bead(parent, position, diameter, color, extra)
+	local props = noCollide({
+		Name = "Bola",
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.new(diameter, diameter, diameter),
+		CFrame = CFrame.new(position),
+		Color = color,
+		Studs = false,
+	})
+	if extra then
+		for k, v in pairs(extra) do
+			props[k] = v
+		end
+	end
+	return Brick.Part(parent, props)
+end
+
+-- coral de galhos com pontas redondas
+local function branchCoral(parent, base, scale, color, rng, glow)
+	local model = Brick.Model(parent, "CoralGalho")
+	local tipExtra = glow and { Material = Enum.Material.Neon } or nil
+	local trunkTop = base + Vector3.new(0, 2.2 * scale, 0)
+	rod(model, base, trunkTop, 0.9 * scale, color)
+	local branches = rng:NextInteger(3, 5)
+	for i = 1, branches do
+		local angle = i / branches * math.pi * 2 + rng:NextNumber(-0.4, 0.4)
+		local from = base + Vector3.new(0, rng:NextNumber(1, 2.2) * scale, 0)
+		local to = from + Vector3.new(math.cos(angle) * 1.6 * scale, rng:NextNumber(1.6, 2.8) * scale, math.sin(angle) * 1.6 * scale)
+		rod(model, from, to, 0.6 * scale, color)
+		bead(model, to, 0.95 * scale, Brick.Shade(color, 0.25), tipExtra)
+	end
+	bead(model, trunkTop, 1.1 * scale, Brick.Shade(color, 0.25), tipExtra)
+	return model
+end
+
+-- coral-cérebro (meia bola com uma faixa mais clara)
+local function brainCoral(parent, base, scale, color)
+	local model = Brick.Model(parent, "CoralCerebro")
+	bead(model, base + Vector3.new(0, 0.6 * scale, 0), 3 * scale, color)
+	bead(model, base + Vector3.new(0.2 * scale, 1.1 * scale, -0.1 * scale), 2.2 * scale, Brick.Shade(color, 0.15))
+	return model
+end
+
+-- tubos de alturas diferentes com a borda escura em cima
+local function tubeCoral(parent, base, scale, color, rng)
+	local model = Brick.Model(parent, "CoralTubo")
+	for i = 1, 5 do
+		local angle = i * 2.4
+		local offset = Vector3.new(math.cos(angle), 0, math.sin(angle)) * (i == 1 and 0 or 0.9 * scale)
+		local height = (i == 1 and 4 or rng:NextNumber(1.6, 3.4)) * scale
+		standingCylinder(model, base + offset, height, 0.9 * scale, color)
+		standingCylinder(model, base + offset + Vector3.new(0, height, 0), 0.25 * scale, 0.95 * scale, Brick.Shade(color, -0.3))
+	end
+	return model
+end
+
+-- leque (disco fino em pé)
+local function fanCoral(parent, base, scale, color, rng)
+	local model = Brick.Model(parent, "CoralLeque")
+	local yaw = rng:NextNumber(0, math.pi)
+	Brick.Part(model, noCollide({
+		Name = "Leque",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.3 * scale, 4.2 * scale, 4.2 * scale),
+		CFrame = CFrame.new(base + Vector3.new(0, 1.7 * scale, 0)) * CFrame.Angles(0, yaw, 0),
+		Color = color,
+		Studs = false,
+	}))
+	rod(model, base, base + Vector3.new(0, 1.2 * scale, 0), 0.4 * scale, Brick.Shade(color, -0.3))
+	return model
+end
+
+-- anêmona (base com tentáculos abertos)
+local function anemone(parent, base, scale, color, glow)
+	local model = Brick.Model(parent, "Anemona")
+	standingCylinder(model, base, 0.9 * scale, 1.8 * scale, Brick.Shade(color, -0.25))
+	for i = 1, 8 do
+		local angle = i / 8 * math.pi * 2
+		local from = base + Vector3.new(math.cos(angle) * 0.5 * scale, 0.9 * scale, math.sin(angle) * 0.5 * scale)
+		local to = from + Vector3.new(math.cos(angle) * 0.8 * scale, 1.4 * scale, math.sin(angle) * 0.8 * scale)
+		rod(model, from, to, 0.3 * scale, color)
+		bead(model, to, 0.42 * scale, Brick.Shade(color, 0.3), glow and { Material = Enum.Material.Neon } or nil)
+	end
+	return model
+end
+
+-- pedra redonda (duas ou três bolas juntas)
+local function boulder(parent, base, scale, color, rng)
+	local model = Brick.Model(parent, "Pedra")
+	bead(model, base + Vector3.new(0, 0.9 * scale, 0), 3 * scale, color)
+	bead(model, base + Vector3.new(1.3 * scale, 0.5 * scale, rng:NextNumber(-0.8, 0.8) * scale), 2 * scale, Brick.Shade(color, 0.08))
+	if rng:NextNumber() < 0.5 then
+		bead(model, base + Vector3.new(-1.1 * scale, 0.4 * scale, 0.6 * scale), 1.6 * scale, Brick.Shade(color, -0.06))
+	end
+	return model
+end
+
+-- um coral qualquer da área (usado nas bordas e nos degraus)
+local function randomCoral(parent, base, area, rng, scale)
+	local color = area.Deco[rng:NextInteger(1, #area.Deco)]
+	local glow = area.Index == 3
+	local roll = rng:NextNumber()
+	if roll < 0.28 then
+		return branchCoral(parent, base, scale, color, rng, glow)
+	elseif roll < 0.45 then
+		return brainCoral(parent, base, scale * 0.9, color)
+	elseif roll < 0.62 then
+		return tubeCoral(parent, base, scale * 0.8, color, rng)
+	elseif roll < 0.78 then
+		return fanCoral(parent, base, scale, color, rng)
+	elseif roll < 0.9 then
+		return anemone(parent, base, scale, color, glow)
+	end
+	return boulder(parent, base, scale * 0.7, Brick.Shade(area.Rock, -0.1), rng)
+end
+
 -- Água e pista submarina ----------------------------------------------------------------
 
 local function buildOcean(map)
@@ -613,44 +898,139 @@ local function buildOcean(map)
 		)
 	end
 
-	-- paredes de recife dos dois lados
+	-- recifes em DEGRAUS dos dois lados (como os morros das referências): três andares que
+	-- sobem para fora da pista, com uma "tampa" colorida em cima e corais espalhados
 	local walls = Brick.Folder(folder, "Recife")
+	local reefDeco = Brick.Folder(folder, "RecifeDecoracao")
 	local rng = Random.new(1203)
-	local d = Track.SLOPE_END
-	local index = 0
-	while d < Track.LENGTH + 30 do
-		local chunk = 16
-		local area = Track.AreaAt(d)
-		local seabed = math.min(Track.SeabedY(d), Track.SeabedY(d + chunk - 0.1))
-		for side = -1, 1, 2 do
-			local heightAbove = 18 + ((index * 3 + (side > 0 and 1 or 0)) % 4) * 3 + rng:NextNumber(0, 4)
-			local wallTop = math.min(Track.WATER_Y - 3, seabed + heightAbove)
-			local x0 = side * Track.HALF_WIDTH
-			local x1 = side * (Track.HALF_WIDTH + 14)
-			local color = (index + (side > 0 and 1 or 0)) % 2 == 0 and area.Rock or Brick.Shade(area.Rock, 0.1)
-			Brick.Box(walls, Vector3.new(math.min(x0, x1), seabed - 20, Track.ZOf(d + chunk)), Vector3.new(math.max(x0, x1), wallTop - 3, Track.ZOf(d)), {
-				Name = "Parede",
-				Color = color,
-			})
-			Brick.Box(
-				walls,
-				Vector3.new(math.min(x0, x1) - side * 1, wallTop - 3, Track.ZOf(d + chunk) + 0.5),
-				Vector3.new(math.max(x0, x1) - side * 1, wallTop, Track.ZOf(d) - 0.5),
-				{ Name = "Topo", Color = area.Rock2 }
-			)
-			-- degrauzinho para dentro (deixa a parede menos reta)
-			if rng:NextNumber() < 0.5 then
-				local inner = side * (Track.HALF_WIDTH - rng:NextNumber(2, 5))
+	local tiers = {
+		{ Inner = 0, Outer = 13, Low = 4, High = 8 },
+		{ Inner = 11, Outer = 27, Low = 11, High = 17 },
+		{ Inner = 25, Outer = 52, Low = 20, High = 30 },
+	}
+	for side = -1, 1, 2 do
+		for t, tier in ipairs(tiers) do
+			local d = Track.SLOPE_END - 4
+			local index = 0
+			while d < Track.LENGTH + 30 do
+				local chunk = rng:NextNumber(12, 24)
+				local area = Track.AreaAt(math.min(d, Track.LENGTH - 1))
+				local seabed = math.min(Track.SeabedY(d), Track.SeabedY(math.min(d + chunk, Track.LENGTH)))
+				local top = math.min(Track.WATER_Y - 3, seabed + rng:NextNumber(tier.Low, tier.High))
+				local inner = side * (Track.HALF_WIDTH + tier.Inner + rng:NextNumber(-2, 2))
+				local outer = side * (Track.HALF_WIDTH + tier.Outer)
+				local rock = (index % 2 == 0) and area.Rock or Brick.Shade(area.Rock, 0.07)
+				Brick.Box(walls, Vector3.new(math.min(inner, outer), seabed - 20, Track.ZOf(d + chunk)), Vector3.new(math.max(inner, outer), top - 1.6, Track.ZOf(d)), {
+					Name = "Degrau",
+					Color = rock,
+					Studs = false,
+				})
+				-- tampa (um pouco mais larga para dentro, como a grama em cima dos morros)
 				Brick.Box(
 					walls,
-					Vector3.new(math.min(inner, x0), seabed, Track.ZOf(d + chunk * 0.7)),
-					Vector3.new(math.max(inner, x0), seabed + rng:NextNumber(3, 8), Track.ZOf(d + chunk * 0.2)),
-					{ Name = "Degrau", Color = area.Rock2 }
+					Vector3.new(math.min(inner, outer) - (side < 0 and 0 or 0.6), top - 1.6, Track.ZOf(d + chunk) + 0.05),
+					Vector3.new(math.max(inner, outer) + (side < 0 and 0.6 or 0), top, Track.ZOf(d) - 0.05),
+					{ Name = "Tampa", Color = (index % 2 == 0) and area.Rock2 or Brick.Shade(area.Rock2, 0.08) }
 				)
+				-- corais em cima do degrau (os de baixo aparecem mais)
+				if t < 3 and rng:NextNumber() < (t == 1 and 0.75 or 0.45) then
+					local x = side * (Track.HALF_WIDTH + rng:NextNumber(tier.Inner + 2, tier.Outer - 2))
+					randomCoral(reefDeco, Vector3.new(x, top, Track.ZOf(d + chunk / 2)), area, rng, rng:NextNumber(1, 1.6))
+				end
+				d += chunk
+				index += 1
 			end
 		end
-		d += chunk
-		index += 1
+	end
+
+	-- corais e pedras no pé do recife, dentro da pista (enfeitam a borda sem atrapalhar)
+	local footRng = Random.new(31)
+	local fd = Track.SLOPE_END + 6
+	while fd < Track.LENGTH - 10 do
+		fd += footRng:NextNumber(5, 11)
+		local area = Track.AreaAt(fd)
+		for side = -1, 1, 2 do
+			if footRng:NextNumber() < 0.7 then
+				local x = side * (Track.HALF_WIDTH - footRng:NextNumber(1.5, 6))
+				randomCoral(reefDeco, Vector3.new(x, Track.SeabedY(fd), Track.ZOf(fd)), area, footRng, footRng:NextNumber(0.8, 1.3))
+			end
+		end
+	end
+
+	-- manchas de areia no chão (o fundo não fica liso)
+	local patchRng = Random.new(64)
+	local pd = Track.SLOPE_END
+	while pd < Track.LENGTH - 20 do
+		pd += patchRng:NextNumber(10, 22)
+		local area = Track.AreaAt(pd)
+		local w, l = patchRng:NextNumber(8, 20), patchRng:NextNumber(6, 14)
+		local x = patchRng:NextNumber(-Track.HALF_WIDTH + w / 2 + 6, Track.HALF_WIDTH - w / 2 - 6)
+		local y = math.max(Track.SeabedY(pd - l / 2), Track.SeabedY(pd + l / 2))
+		Brick.Part(reefDeco, noCollide({
+			Name = "Mancha",
+			Size = Vector3.new(w, 0.3, l),
+			Position = Vector3.new(x, y + 0.1, Track.ZOf(pd)),
+			Color = Brick.Shade(area.Sand, patchRng:NextNumber() < 0.5 and 0.1 or -0.08),
+		}))
+	end
+
+	-- destaques de cada área (dá para perceber que mudou de bioma)
+	local landmark = Brick.Folder(folder, "Destaques")
+	local lmRng = Random.new(8)
+	-- Recife Raso: corais gigantes em cima dos degraus
+	for _, dist in ipairs({ 160, 340, 520, 700, 860 }) do
+		local side = (dist / 20) % 2 == 0 and -1 or 1
+		local x = side * (Track.HALF_WIDTH + 18)
+		branchCoral(landmark, Vector3.new(x, Track.SeabedY(dist) + 12, Track.ZOf(dist)), 3.2, Track.Areas[1].Deco[lmRng:NextInteger(1, 4)], lmRng)
+	end
+	-- Floresta de Algas: navio afundado
+	do
+		local dist = 1320
+		local base = Vector3.new(-(Track.HALF_WIDTH + 30), Track.SeabedY(dist) + 6, Track.ZOf(dist))
+		local ship = Brick.Model(landmark, "NavioAfundado")
+		local tilt = CFrame.new(base) * CFrame.Angles(0, 0.5, 0.18)
+		local woodHull, woodDeck = rgb(120, 80, 50), rgb(160, 115, 70)
+		Brick.Part(ship, noCollide({ Name = "Casco", Size = Vector3.new(14, 8, 40), CFrame = tilt, Color = woodHull }))
+		Brick.Part(ship, noCollide({ Name = "Proa", Class = "WedgePart", Size = Vector3.new(14, 8, 10), CFrame = tilt * CFrame.new(0, 0, -25), Color = woodHull }))
+		Brick.Part(ship, noCollide({ Name = "Convés", Size = Vector3.new(13, 1, 38), CFrame = tilt * CFrame.new(0, 4.5, 0), Color = woodDeck }))
+		Brick.Part(ship, noCollide({ Name = "Cabine", Size = Vector3.new(10, 6, 9), CFrame = tilt * CFrame.new(0, 8, 12), Color = woodHull }))
+		Brick.Part(ship, noCollide({ Name = "Mastro", Shape = Enum.PartType.Cylinder, Size = Vector3.new(26, 1.4, 1.4), CFrame = tilt * CFrame.new(0, 17, -4) * CFrame.Angles(0, 0, math.pi / 2 + 0.25), Color = woodDeck, Studs = false }))
+		Brick.Part(ship, noCollide({ Name = "Vela", Size = Vector3.new(0.4, 10, 12), CFrame = tilt * CFrame.new(1, 19, -4) * CFrame.Angles(0, math.pi / 2, 0.25), Color = rgb(225, 215, 190), Transparency = 0.15, Studs = false }))
+		for i = -1, 1 do
+			Brick.Part(ship, noCollide({ Name = "Janela", Shape = Enum.PartType.Cylinder, Size = Vector3.new(14.2, 1.6, 1.6), CFrame = tilt * CFrame.new(0, 0.5, i * 10), Color = rgb(40, 30, 25), Studs = false }))
+		end
+		-- baú do tesouro ao lado
+		local chestCf = CFrame.new(base + Vector3.new(16, -5, 8)) * CFrame.Angles(0, 0.3, 0)
+		Brick.Part(ship, noCollide({ Name = "Bau", Size = Vector3.new(5, 3, 3.4), CFrame = chestCf, Color = woodHull }))
+		Brick.Part(ship, noCollide({ Name = "Tampa", Size = Vector3.new(5.2, 1, 3.6), CFrame = chestCf * CFrame.new(0, 2, -0.6) * CFrame.Angles(-0.5, 0, 0), Color = woodDeck }))
+		Brick.Part(ship, noCollide({ Name = "Ouro", Size = Vector3.new(4.4, 0.8, 2.8), CFrame = chestCf * CFrame.new(0, 1.6, 0), Color = rgb(255, 205, 50), Material = Enum.Material.Neon }))
+	end
+	-- Abismo: torres de cristal brilhando
+	for _, dist in ipairs({ 1900, 2080, 2260, 2440, 2620 }) do
+		for side = -1, 1, 2 do
+			local x = side * (Track.HALF_WIDTH + lmRng:NextNumber(14, 24))
+			local base = Vector3.new(x, Track.SeabedY(dist) + 10, Track.ZOf(dist + side * 30))
+			local color = Track.Areas[3].Deco[lmRng:NextInteger(1, 4)]
+			for k = 1, 3 do
+				local h = 10 + k * 5
+				local crystal = Brick.Part(landmark, noCollide({
+					Name = "Cristal",
+					Size = Vector3.new(2.4, h, 2.4),
+					CFrame = CFrame.new(base + Vector3.new(math.cos(k * 2.1) * 2.5, h / 2, math.sin(k * 2.1) * 2.5)) * CFrame.Angles(math.cos(k) * 0.2, k, math.sin(k) * 0.2),
+					Color = color,
+					Material = Enum.Material.Neon,
+					Transparency = 0.1,
+					Studs = false,
+				}))
+				if k == 3 then
+					local light = Instance.new("PointLight")
+					light.Color = color
+					light.Range = 40
+					light.Brightness = 2
+					light.Parent = crystal
+				end
+			end
+		end
 	end
 
 	-- obstáculos
@@ -663,29 +1043,20 @@ local function buildOcean(map)
 		model:SetAttribute("Radius", ob.Radius)
 		local r = ob.Radius
 		if ob.Kind == "Rocha" then
-			local grey = area.Index == 3 and rgb(60, 55, 80) or rgb(125, 120, 130)
-			Brick.Part(model, { Size = Vector3.new(r * 2, ob.Height * 0.55, r * 2), Position = base + Vector3.new(0, ob.Height * 0.275, 0), Color = grey })
-			Brick.Part(model, {
-				Size = Vector3.new(r * 1.5, ob.Height * 0.3, r * 1.4),
-				Position = base + Vector3.new(r * 0.15, ob.Height * 0.7, -r * 0.1),
-				Color = Brick.Shade(grey, 0.1),
-			})
-			Brick.Part(model, {
-				Size = Vector3.new(r * 0.9, ob.Height * 0.15, r * 0.9),
-				Position = base + Vector3.new(-r * 0.1, ob.Height * 0.925, 0),
-				Color = Brick.Shade(grey, 0.2),
-			})
+			-- pedra arredondada (bolas juntas)
+			local grey = area.Index == 3 and rgb(70, 65, 95) or rgb(140, 135, 145)
+			bead(model, base + Vector3.new(0, r * 0.7, 0), r * 2, grey)
+			bead(model, base + Vector3.new(r * 0.35, r * 1.35, -r * 0.1), r * 1.3, Brick.Shade(grey, 0.1))
+			bead(model, base + Vector3.new(-r * 0.6, r * 0.45, r * 0.4), r * 1.1, Brick.Shade(grey, -0.08))
+			-- musgo/corais pequenos em cima
+			local mossColor = area.Deco[(i % #area.Deco) + 1]
+			bead(model, base + Vector3.new(r * 0.3, r * 1.95, -r * 0.1), r * 0.55, mossColor, area.Index == 3 and { Material = Enum.Material.Neon } or nil)
 		elseif ob.Kind == "Coral" then
 			local color = area.Deco[(i % #area.Deco) + 1]
-			Brick.Part(model, { Size = Vector3.new(r * 1.6, 2, r * 1.6), Position = base + Vector3.new(0, 1, 0), Color = rgb(150, 140, 150) })
-			Brick.Part(model, { Size = Vector3.new(1.6, ob.Height, 1.6), Position = base + Vector3.new(0, ob.Height / 2 + 1, 0), Color = color })
-			for k = 1, 4 do
-				local angle = k * math.pi / 2 + i
-				local h = ob.Height * (0.45 + 0.1 * k)
-				local out = Vector3.new(math.cos(angle), 0, math.sin(angle)) * (r * 0.55)
-				Brick.Part(model, { Size = Vector3.new(1.2, h * 0.5, 1.2), Position = base + out + Vector3.new(0, h * 0.75, 0), Color = color })
-				Brick.Part(model, { Size = Vector3.new(r * 0.55, 1.2, 1.2), CFrame = CFrame.new(base + out * 0.5 + Vector3.new(0, h * 0.5, 0)) * CFrame.Angles(0, -angle, 0), Color = color })
-			end
+			local orng = Random.new(i)
+			standingCylinder(model, base, 0.8, r * 1.7, Brick.Shade(area.Rock, -0.1))
+			branchCoral(model, base + Vector3.new(0, 0.8, 0), math.max(1.4, r / 1.3), color, orng, area.Index == 3)
+			brainCoral(model, base + Vector3.new(r * 0.55, 0.6, r * 0.3), r / 3.5, Brick.Shade(color, -0.15))
 		elseif ob.Kind == "Alga" then
 			for k = 1, 3 do
 				local offset = Vector3.new(math.cos(k * 2.1) * r * 0.5, 0, math.sin(k * 2.1) * r * 0.5)
@@ -761,7 +1132,7 @@ local function buildOcean(map)
 					Size = Vector3.new(0.6, h, 0.6),
 					Position = base + Vector3.new(k * 0.7 - 1.4, h / 2, drng:NextNumber(-0.6, 0.6)),
 					Color = area.Index == 3 and color or rgb(70, 180, 70),
-					Material = area.Index == 3 and Enum.Material.Neon or Enum.Material.Plastic,
+					Material = area.Index == 3 and Enum.Material.Neon or Enum.Material.SmoothPlastic,
 					CanCollide = false,
 				})
 			end
@@ -785,10 +1156,7 @@ local function buildOcean(map)
 				CanCollide = false,
 			})
 		else
-			-- coral pequeno em blocos
-			local h = drng:NextNumber(2, 5)
-			Brick.Part(deco, { Size = Vector3.new(2, h, 2), Position = base + Vector3.new(0, h / 2, 0), Color = color, CanCollide = false })
-			Brick.Part(deco, { Size = Vector3.new(1.2, h * 0.6, 1.2), Position = base + Vector3.new(1.4, h * 0.3, 0.6), Color = Brick.Shade(color, 0.2), CanCollide = false })
+			randomCoral(deco, base, area, drng, drng:NextNumber(0.6, 1))
 		end
 	end
 

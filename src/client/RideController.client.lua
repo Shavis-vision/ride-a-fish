@@ -42,6 +42,7 @@ local RIDER_OFFSET = 1.9 -- altura do HumanoidRootPart acima da sela
 local SWIM = Track.FISH_SWIM_HEIGHT
 
 local character, humanoid, root, sitTrack
+local poseTracks = {} -- animações de pose durante a corrida: sit, run, jump, fall
 local controls = nil
 task.spawn(function()
 	local ok, module = pcall(function()
@@ -429,12 +430,19 @@ local function setupCharacter()
 		for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
 			track:Stop(0.1)
 		end
-		local sit = animate and animate:FindFirstChild("sit")
-		local animation = sit and sit:FindFirstChildOfClass("Animation")
-		if animation then
-			sitTrack = animator:LoadAnimation(animation)
-			sitTrack.Priority = Enum.AnimationPriority.Action
-			sitTrack.Looped = true
+		table.clear(poseTracks)
+		for _, name in ipairs({ "sit", "run", "jump", "fall" }) do
+			local folder = animate and animate:FindFirstChild(name)
+			local animation = folder and folder:FindFirstChildOfClass("Animation")
+			if animation then
+				local track = animator:LoadAnimation(animation)
+				track.Priority = Enum.AnimationPriority.Action
+				track.Looped = name ~= "jump"
+				poseTracks[name] = track
+			end
+		end
+		sitTrack = poseTracks.sit
+		if sitTrack then
 			sitTrack:Play(0.1)
 		end
 	end
@@ -444,10 +452,11 @@ end
 
 local function restoreCharacter()
 	setBackpackVisible(true)
-	if sitTrack then
-		sitTrack:Stop(0.1)
-		sitTrack = nil
+	for _, track in pairs(poseTracks) do
+		track:Stop(0.1)
 	end
+	table.clear(poseTracks)
+	sitTrack = nil
 	if humanoid and humanoid.Parent then
 		humanoid.PlatformStand = false
 		local animate = character:FindFirstChild("Animate")
@@ -463,6 +472,22 @@ local function restoreCharacter()
 	camera.CameraType = Enum.CameraType.Custom
 	if humanoid then
 		camera.CameraSubject = humanoid
+	end
+end
+
+-- troca a pose (com transição suave)
+local currentPose = nil
+local function setPose(name)
+	if currentPose == name then
+		return
+	end
+	currentPose = name
+	for key, track in pairs(poseTracks) do
+		if key == name then
+			track:Play(0.2)
+		elseif track.IsPlaying then
+			track:Stop(0.25)
+		end
 	end
 end
 
@@ -650,6 +675,7 @@ local function mount(obj)
 			ClientState.Request("Mount", index)
 		end)
 	end
+	setPose("sit")
 	state = "Riding"
 end
 
@@ -772,9 +798,9 @@ local function beginRun(seed)
 	rider.DiveTarget = first
 	rider.DiveStart = os.clock()
 	rider.DiveFrom = root.Position
-	rider.DiveYaw = 0
+	currentPose = nil
+	setPose("run")
 	state = "Diving"
-	camera.CFrame = CFrame.lookAt(root.Position + Vector3.new(16, 6, 6), root.Position + Vector3.new(0, 0, -8))
 end
 
 -- splash na água: anel branco que abre e gotinhas que espirram
@@ -822,40 +848,78 @@ local function splash(position)
 	end)
 end
 
-local DIVE_WALK = 0.35 -- indo até a ponta do trampolim
-local DIVE_CROUCH = 0.2 -- agachando
-local DIVE_AIR = 0.85 -- no ar até a água
+-- Pulo do píer, em 4 partes (tudo com curvas suaves, sem "teletransporte"):
+--   1. anda até a ponta do trampolim (o tempo depende da distância)
+--   2. agacha (o trampolim afunda um pouco)
+--   3. pula em arco, virando de cabeça para baixo, e entra na água com splash
+--   4. desliza debaixo d'água numa curva até as costas do 1º peixe e senta
+local DIVE_CROUCH = 0.25
+local DIVE_AIR = 1.05
+local DIVE_GLIDE = 1.5
+local DIVE_PITCH = math.pi / 2 + 0.45
+local function smooth(p)
+	return p * p * (3 - 2 * p)
+end
 local function updateDiving(now)
 	local t = now - rider.DiveStart
 	local tip = Layout.DiveBoard + Vector3.new(0, 3, 0) -- altura do corpo em pé
-	local entry = Vector3.new(0, Track.WATER_Y - 1.5, Track.ZOf(Track.PIER_END + 17))
+	local entry = Vector3.new(0, Track.WATER_Y - 1.5, Track.ZOf(Track.PIER_END + 18))
+	if not rider.DiveWalk then
+		rider.DiveWalk = math.clamp((rider.DiveFrom - tip).Magnitude / 16, 0.3, 1)
+	end
+	local walk = rider.DiveWalk
 	local pos, pitch
-	if t < DIVE_WALK then
-		local p = t / DIVE_WALK
-		pos = rider.DiveFrom:Lerp(tip, p * p * (3 - 2 * p))
+	if t < walk then
+		pos = rider.DiveFrom:Lerp(tip, smooth(t / walk))
 		pitch = 0
-	elseif t < DIVE_WALK + DIVE_CROUCH then
-		local p = (t - DIVE_WALK) / DIVE_CROUCH
-		pos = tip - Vector3.new(0, math.sin(p * math.pi) * 0.9, 0) -- agacha e o trampolim "afunda"
-		pitch = math.sin(p * math.pi) * 0.25
+	elseif t < walk + DIVE_CROUCH then
+		local p = (t - walk) / DIVE_CROUCH
+		pos = tip - Vector3.new(0, math.sin(p * math.pi * 0.5) * 0.8, 0)
+		pitch = p * 0.3
+	elseif t < walk + DIVE_CROUCH + DIVE_AIR then
+		local p = (t - walk - DIVE_CROUCH) / DIVE_AIR
+		setPose(p < 0.45 and "jump" or "fall")
+		local start = tip - Vector3.new(0, 0.8, 0)
+		local flat = start:Lerp(entry, p)
+		pos = flat + Vector3.new(0, math.sin(p * math.pi) * 8.5 * (1 - p * 0.25), 0)
+		pitch = 0.3 - smooth(p) * (DIVE_PITCH + 0.3)
+		if not rider.Splashed and pos.Y <= Track.WATER_Y + 0.5 and p > 0.6 then
+			rider.Splashed = true
+			splash(pos)
+			showBanner("MERGULHO!", Color3.fromRGB(120, 230, 255))
+		end
 	else
-		local p = math.clamp((t - DIVE_WALK - DIVE_CROUCH) / DIVE_AIR, 0, 1)
-		local flat = tip:Lerp(entry, p)
-		pos = flat + Vector3.new(0, math.sin(p * math.pi) * 7 * (1 - p * 0.3), 0)
-		pitch = -(p ^ 1.4) * (math.pi / 2 + 0.5) -- vai virando de cabeça para baixo
-		if p >= 1 then
+		local p = math.clamp((t - walk - DIVE_CROUCH - DIVE_AIR) / DIVE_GLIDE, 0, 1)
+		if not rider.Splashed then
+			rider.Splashed = true
 			splash(entry)
 			showBanner("MERGULHO!", Color3.fromRGB(120, 230, 255))
-			rider.Pos = entry
-			rider.Dist = Track.DistOf(entry.Z)
+		end
+		local fish = rider.DiveTarget
+		if not fish or not fish.Model then
 			state = "Airborne"
-			harpoon(rider.DiveTarget, 1.0)
+			rider.Vel = Vector3.new(0, 0, -10)
+			return
+		end
+		-- curva (Bézier) da entrada na água até a sela do peixe, que continua nadando
+		local seat = seatCFrame(fish).Position
+		local control = entry + Vector3.new(0, -10, -14)
+		local e = smooth(p)
+		local a1 = entry:Lerp(control, e)
+		local b1 = control:Lerp(seat, e)
+		pos = a1:Lerp(b1, e)
+		pitch = -DIVE_PITCH * (1 - smooth(p))
+		if p >= 1 then
+			rider.Pos = seat
+			rider.Dist = Track.DistOf(seat.Z)
+			mount(fish)
 			return
 		end
 	end
+	local velocity = rider.Pos and (pos - rider.Pos) * 60 or Vector3.zero
 	rider.Pos = pos
 	rider.Dist = Track.DistOf(pos.Z)
-	placeRider(CFrame.new(pos) * CFrame.Angles(pitch, 0, 0))
+	placeRider(CFrame.new(pos) * CFrame.Angles(pitch, 0, 0), velocity)
 end
 
 endRun = function(reason)

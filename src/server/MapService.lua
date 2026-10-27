@@ -784,7 +784,27 @@ local function buildBeach(map)
 		CastShadow = false,
 	})
 	ring:SetAttribute("StartZone", true)
-	floatingTitle(folder, Vector3.new(0, Track.PIER_TOP + 8, Track.ZOf(Track.PIER_END - 4)), "PULE NO MAR!", rgb(80, 255, 230), 18)
+	-- placa pendurada num pórtico de madeira na entrada da plataforma do fim do píer
+	do
+		local sign = Brick.Model(folder, "PlacaMergulhe")
+		local z = Track.ZOf(Track.PIER_END - 12) - 0.6
+		local y0 = Track.PIER_TOP
+		for side = -1, 1, 2 do
+			Brick.Part(sign, { Name = "Poste", Size = Vector3.new(1, 11, 1), Position = Vector3.new(side * 6.4, y0 + 5.5, z), Color = WOOD_DARK, Studs = false })
+			Brick.Part(sign, { Name = "Ponta", Shape = Enum.PartType.Ball, Size = Vector3.new(1.4, 1.4, 1.4), Position = Vector3.new(side * 6.4, y0 + 11.3, z), Color = rgb(255, 210, 50), Studs = false })
+		end
+		Brick.Part(sign, { Name = "Travessa", Size = Vector3.new(13.8, 0.8, 0.8), Position = Vector3.new(0, y0 + 10.4, z), Color = WOOD, Studs = false })
+		-- correntinhas
+		for side = -1, 1, 2 do
+			Brick.Part(sign, { Name = "Corrente", Size = Vector3.new(0.2, 1.2, 0.2), Position = Vector3.new(side * 4, y0 + 9.4, z), Color = rgb(70, 70, 80), Studs = false, CanCollide = false })
+		end
+		local signBoard = Brick.Part(sign, { Name = "Placa", Size = Vector3.new(10, 3.4, 0.5), Position = Vector3.new(0, y0 + 7.1, z), Color = rgb(30, 120, 240), Studs = false, CanCollide = false })
+		Brick.Part(sign, { Name = "Moldura", Size = Vector3.new(10.6, 4, 0.4), Position = Vector3.new(0, y0 + 7.1, z - 0.15), Color = rgb(255, 210, 50), Studs = false, CanCollide = false })
+		surfaceText(signBoard, Enum.NormalId.Back, {
+			{ Text = "MERGULHE!", Size = 0.58, Color = WHITE, Stroke = 5 },
+			{ Text = "pule do trampolim", Size = 0.3, Color = rgb(190, 235, 255), Stroke = 3 },
+		}, nil, 60)
+	end
 end
 
 -- Peças do fundo do mar (corais, pedras) -----------------------------------------------------
@@ -1285,7 +1305,7 @@ local function buildOcean(map)
 		local dist = lrng:NextNumber(60, Track.Areas[1].Finish - 20)
 		local x = lrng:NextNumber(-35, 35)
 		local seabed = Track.SeabedY(dist)
-		local height = Track.WATER_Y - seabed
+		local height = Track.WATER_Y - 4 - seabed -- para antes da superfície
 		Brick.Part(deco, {
 			Name = "RaioDeLuz",
 			Size = Vector3.new(lrng:NextNumber(4, 8), height, lrng:NextNumber(2, 4)),

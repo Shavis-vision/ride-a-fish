@@ -54,11 +54,29 @@ local underwater = false
 local fogColor = Track.Areas[1].FogColor
 local fogEnd = Track.Areas[1].FogEnd
 
+-- Raios de luz: só aparecem com a câmera debaixo d'água (de fora eles vazavam pela água)
+local lightRays = {}
+local function collectRays()
+	table.clear(lightRays)
+	for _, part in ipairs(map:GetDescendants()) do
+		if part:IsA("BasePart") and part.Name == "RaioDeLuz" then
+			table.insert(lightRays, { Part = part, Transparency = part.Transparency })
+		end
+	end
+end
+task.defer(collectRays)
+local function showRays(visible)
+	for _, ray in ipairs(lightRays) do
+		ray.Part.LocalTransparencyModifier = visible and 0 or 1
+	end
+end
+
 local function setUnderwater(value)
 	if value == underwater then
 		return
 	end
 	underwater = value
+	showRays(value)
 	tint.Enabled = value
 	blur.Enabled = value
 	bubblesGui.Enabled = value
@@ -76,6 +94,44 @@ local function setUnderwater(value)
 		end
 	end
 end
+
+task.defer(function()
+	showRays(false)
+end)
+
+-- Sons de passos: o Roblox toca "Running" pelo HumanoidRootPart. Debaixo d'água (e durante a
+-- corrida, quando o personagem é movido pelo jogo) eles ficam mudos.
+local stepVolumes = {}
+local STEP_SOUNDS = { Running = true, Climbing = true, Landing = true, Jumping = true, FreeFalling = true, GettingUp = true }
+local function muteSteps(muted)
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root then
+		return
+	end
+	for _, sound in ipairs(root:GetChildren()) do
+		if sound:IsA("Sound") and STEP_SOUNDS[sound.Name] then
+			if muted then
+				if stepVolumes[sound] == nil then
+					stepVolumes[sound] = sound.Volume
+				end
+				sound.Volume = 0
+			elseif stepVolumes[sound] ~= nil then
+				sound.Volume = stepVolumes[sound]
+				stepVolumes[sound] = nil
+			end
+		end
+	end
+end
+RunService.Heartbeat:Connect(function()
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root then
+		return
+	end
+	local muted = player:GetAttribute("Running") == true or root.Position.Y < Track.WATER_Y + 0.5
+	muteSteps(muted)
+end)
 
 local bubbleClock = 0
 local function spawnBubble()

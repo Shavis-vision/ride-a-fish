@@ -645,38 +645,124 @@ local function buildBeach(map)
 		Brick.Part(tower, { Size = Vector3.new(3, 0.4, 1), Position = tbase + Vector3.new(0, 1.5 + i * 2, -5 - i * 0.4), Color = WOOD_LIGHT })
 	end
 
-	-- passarela de madeira da praça até a água
+	-- passarela de madeira da praça até a água, que continua como PÍER mar adentro
 	local walk = Brick.Folder(folder, "Passarela")
-	-- (termina na borda da praça, z = 59: antes entrava no piso e as tábuas piscavam)
+	local pierTop = Track.PIER_TOP
+	local endNear, endFar = Track.ZOf(Track.PIER_END - 12), Track.ZOf(Track.PIER_END) -- plataforma do fim
 	local plankIndex = 0
-	for z = 3, 57, 2 do
+	for z = math.floor(endNear), 57, 2 do
 		Brick.Part(walk, {
+			Name = "Tabua",
 			Size = Vector3.new(14, 0.5, 2),
-			Position = Vector3.new(0, top + 0.25, z + 1),
+			Position = Vector3.new(0, pierTop - 0.25, z + 1),
 			Color = (plankIndex % 2 == 0) and WOOD_LIGHT or WOOD,
 			Studs = false,
 		})
 		plankIndex += 1
 	end
-	-- vigas dos lados
 	for side = -1, 1, 2 do
-		Brick.Box(walk, Vector3.new(side * 7 - 0.6, top, 3), Vector3.new(side * 7 + 0.6, top + 0.8, 59), { Name = "Viga", Color = WOOD_DARK, Studs = false })
+		Brick.Box(walk, Vector3.new(side * 7 - 0.6, pierTop - 2.2, endNear), Vector3.new(side * 7 + 0.6, pierTop + 0.3, 59), { Name = "Viga", Color = WOOD_DARK, Studs = false })
+	end
+	-- plataforma larga no fim
+	local platIndex = 0
+	for z = endFar, endNear - 2, 2 do
+		Brick.Part(walk, {
+			Name = "Tabua",
+			Size = Vector3.new(24, 0.5, 2),
+			Position = Vector3.new(0, pierTop - 0.25, z + 1),
+			Color = (platIndex % 2 == 0) and WOOD or WOOD_LIGHT,
+			Studs = false,
+		})
+		platIndex += 1
+	end
+	Brick.Box(walk, Vector3.new(-12.6, pierTop - 2.2, endFar - 0.6), Vector3.new(12.6, pierTop - 0.5, endNear), { Name = "Viga", Color = WOOD_DARK, Studs = false })
+	-- estacas até o fundo
+	local function post(x, z)
+		local seabed = Track.SeabedY(Track.DistOf(z))
+		local height = pierTop - 0.5 - seabed
+		Brick.Part(walk, {
+			Name = "Estaca",
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(height, 1.5, 1.5),
+			CFrame = CFrame.new(x, seabed + height / 2, z) * CFrame.Angles(0, 0, math.pi / 2),
+			Color = WOOD_DARK,
+			Studs = false,
+		})
+	end
+	for z = 0, endNear, -6 do
+		post(-6.5, z)
+		post(6.5, z)
+	end
+	for _, corner in ipairs({ { -11.5, endNear }, { 11.5, endNear }, { -11.5, endFar }, { 11.5, endFar }, { -11.5, (endNear + endFar) / 2 }, { 11.5, (endNear + endFar) / 2 } }) do
+		post(corner[1], corner[2])
+	end
+	-- corrimão (postes + barra) dos lados do píer
+	local function railing(from, to)
+		local delta = to - from
+		local steps = math.max(1, math.floor(delta.Magnitude / 4))
+		for i = 0, steps do
+			local p = from + delta * (i / steps)
+			Brick.Part(walk, { Name = "Poste", Size = Vector3.new(0.6, 3, 0.6), Position = p + Vector3.new(0, 1.5, 0), Color = WOOD_DARK, Studs = false })
+		end
+		local mid = (from + to) / 2 + Vector3.new(0, 2.9, 0)
+		Brick.Part(walk, { Name = "Corrimao", Size = Vector3.new(0.5, 0.4, delta.Magnitude + 0.6), CFrame = CFrame.lookAt(mid, mid + delta), Color = WOOD_LIGHT, Studs = false })
+	end
+	for side = -1, 1, 2 do
+		railing(Vector3.new(side * 6.8, pierTop, 0), Vector3.new(side * 6.8, pierTop, endNear))
+		railing(Vector3.new(side * 6.8, pierTop, endNear), Vector3.new(side * 11.8, pierTop, endNear))
+		railing(Vector3.new(side * 11.8, pierTop, endNear), Vector3.new(side * 11.8, pierTop, endFar))
+		railing(Vector3.new(side * 11.8, pierTop, endFar), Vector3.new(side * 2.4, pierTop, endFar)) -- abertura no meio para o trampolim
+	end
+	-- trampolim
+	local board = Brick.Part(walk, {
+		Name = "Trampolim",
+		Size = Vector3.new(3.4, 0.5, 8),
+		CFrame = CFrame.new(0, pierTop + 0.15, endFar - 3.6) * CFrame.Angles(0.06, 0, 0),
+		Color = rgb(40, 150, 255),
+		Studs = false,
+	})
+	Brick.Part(walk, { Name = "Faixa", Size = Vector3.new(3.5, 0.52, 0.8), CFrame = board.CFrame * CFrame.new(0, 0, -3.2), Color = WHITE, Studs = false })
+	Brick.Part(walk, { Name = "BaseTrampolim", Size = Vector3.new(3, 1, 1.6), Position = Vector3.new(0, pierTop - 0.1, endFar + 0.2), Color = WHITE })
+	-- lampiões, cabeços e boia salva-vidas na plataforma
+	for side = -1, 1, 2 do
+		local base = Vector3.new(side * 10.6, pierTop, endNear - 1.2)
+		Brick.Part(walk, { Name = "Lampiao", Shape = Enum.PartType.Cylinder, Size = Vector3.new(7, 0.6, 0.6), CFrame = CFrame.new(base + Vector3.new(0, 3.5, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = rgb(45, 50, 60), Studs = false })
+		local lamp = Brick.Part(walk, { Name = "Luz", Shape = Enum.PartType.Ball, Size = Vector3.new(1.4, 1.4, 1.4), Position = base + Vector3.new(0, 7.4, 0), Color = rgb(255, 235, 160), Material = Enum.Material.Neon, Studs = false })
+		local light = Instance.new("PointLight")
+		light.Color = lamp.Color
+		light.Range = 16
+		light.Brightness = 1.2
+		light.Parent = lamp
+		Brick.Part(walk, { Name = "Cabeco", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 1.4, 1.4), CFrame = CFrame.new(side * 9, pierTop + 0.6, endFar + 1.5) * CFrame.Angles(0, 0, math.pi / 2), Color = rgb(60, 60, 70), Studs = false })
+		-- boia salva-vidas pendurada no corrimão
+		local ringCf = CFrame.new(side * 12.1, pierTop + 1.9, (endNear + endFar) / 2) * CFrame.Angles(0, 0, 0)
+		Brick.Part(walk, { Name = "Boia", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.5, 2.6, 2.6), CFrame = ringCf, Color = rgb(255, 70, 60), Studs = false, CanCollide = false })
+		Brick.Part(walk, { Name = "BoiaFaixa", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.55, 2.6, 0.7), CFrame = ringCf, Color = WHITE, Studs = false, CanCollide = false })
+		Brick.Part(walk, { Name = "BoiaFuro", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 1.2, 1.2), CFrame = ringCf, Color = rgb(150, 100, 60), Studs = false, CanCollide = false })
 	end
 
-	-- arco de entrada sobre a água
+	-- arco de entrada no começo do píer (colunas listradas redondas e placa com moldura)
 	local arch = Brick.Model(folder, "ArcoMergulho")
+	local archZ = 1
 	for side = -1, 1, 2 do
-		for i = 0, 5 do
+		for i = 0, 6 do
 			Brick.Part(arch, {
-				Size = Vector3.new(3, 3, 3),
-				Position = Vector3.new(side * 20, top + 1.5 + i * 3, -2),
-				Color = (i % 2 == 0) and rgb(255, 80, 80) or WHITE,
+				Name = "Coluna",
+				Shape = Enum.PartType.Cylinder,
+				Size = Vector3.new(2.4, 2.4, 2.4),
+				CFrame = CFrame.new(side * 9.5, top + 1.2 + i * 2.4, archZ) * CFrame.Angles(0, 0, math.pi / 2),
+				Color = (i % 2 == 0) and rgb(255, 75, 75) or WHITE,
+				Studs = false,
 			})
 		end
+		Brick.Part(arch, { Name = "Pe", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 3.6, 3.6), CFrame = CFrame.new(side * 9.5, top + 0.4, archZ) * CFrame.Angles(0, 0, math.pi / 2), Color = rgb(255, 75, 75), Studs = false })
+		Brick.Part(arch, { Name = "Topo", Shape = Enum.PartType.Ball, Size = Vector3.new(2.8, 2.8, 2.8), Position = Vector3.new(side * 9.5, top + 18.6, archZ), Color = rgb(255, 210, 50), Studs = false })
 	end
-	local beam = Brick.Part(arch, { Name = "Placa", Size = Vector3.new(44, 5, 2), Position = Vector3.new(0, top + 20.5, -2), Color = rgb(40, 150, 255) })
-	surfaceText(beam, Enum.NormalId.Back, { { Text = "MERGULHE PARA COMEÇAR", Size = 0.8, Color = WHITE } })
-	surfaceText(beam, Enum.NormalId.Front, { { Text = "BOA SORTE!", Size = 0.8, Color = WHITE } })
+	local beam = Brick.Part(arch, { Name = "Placa", Size = Vector3.new(22, 4.6, 1.4), Position = Vector3.new(0, top + 16, archZ), Color = rgb(30, 120, 240), Studs = false })
+	Brick.Part(arch, { Name = "Moldura", Size = Vector3.new(22.6, 0.6, 1.6), Position = Vector3.new(0, top + 18.4, archZ), Color = rgb(255, 210, 50), Studs = false })
+	Brick.Part(arch, { Name = "Moldura", Size = Vector3.new(22.6, 0.6, 1.6), Position = Vector3.new(0, top + 13.6, archZ), Color = rgb(255, 210, 50), Studs = false })
+	surfaceText(beam, Enum.NormalId.Back, { { Text = "MERGULHE PARA COMEÇAR", Size = 0.75, Color = WHITE } })
+	surfaceText(beam, Enum.NormalId.Front, { { Text = "BOA SORTE!", Size = 0.75, Color = WHITE } })
 
 	-- boias marcando a faixa de mergulho
 	for d = 4, Track.BARRIER_DIST, 7 do
@@ -698,7 +784,7 @@ local function buildBeach(map)
 		CastShadow = false,
 	})
 	ring:SetAttribute("StartZone", true)
-	floatingTitle(folder, Vector3.new(0, Track.WATER_Y + 7, Track.ZOf(Track.START_DIST)), "MERGULHE ↓", rgb(80, 255, 230), 18)
+	floatingTitle(folder, Vector3.new(0, Track.PIER_TOP + 8, Track.ZOf(Track.PIER_END - 4)), "PULE NO MAR!", rgb(80, 255, 230), 18)
 end
 
 -- Peças do fundo do mar (corais, pedras) -----------------------------------------------------

@@ -52,8 +52,10 @@ Layout.ShopRings = {
 	{ Shop = "Aura", Position = Vector3.new(30, Track.BEACH_Y, 67), Radius = 7, Color = Color3.fromRGB(200, 60, 255) },
 }
 
--- Zona de mergulho: na água rasa, logo depois da areia
-Layout.StartZone = Vector3.new(0, Track.SeabedY(Track.START_DIST), Track.ZOf(Track.START_DIST))
+-- Zona de mergulho: a plataforma no fim do píer (de lá o jogador pula no mar)
+Layout.StartZone = Vector3.new(0, Track.PIER_TOP, Track.ZOf(Track.PIER_END - 5))
+-- ponta do trampolim (onde o pulo sai)
+Layout.DiveBoard = Vector3.new(0, Track.PIER_TOP + 0.6, Track.ZOf(Track.PIER_END + 5))
 
 -- Ponto de nascimento geral (antes de receber um lote)
 Layout.LobbySpawn = Vector3.new(0, Track.BEACH_Y + 0.5, 98)

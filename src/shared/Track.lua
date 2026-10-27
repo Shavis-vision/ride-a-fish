@@ -30,8 +30,10 @@ Track.SLOPE_END = 48 -- a rampa da praia vai até aqui
 Track.SLOPE_STEPS = 14 -- degraus de 1 stud cada
 Track.SEG = 8 -- comprimento de cada degrau do fundo depois da rampa
 
-Track.START_DIST = 26 -- centro da zona de mergulho (na água rasa)
-Track.START_RADIUS = 12
+Track.START_DIST = 26 -- (antigo) zona de mergulho no fundo; agora começa no píer
+Track.PIER_END = 36 -- o píer entra no mar até aqui (a plataforma do fim vai de 24 a 36)
+Track.PIER_TOP = 2.5 -- altura do chão do píer (a mesma da passarela da praia)
+Track.START_RADIUS = 7 -- pisou na plataforma do fim do píer: começa o pulo
 Track.BARRIER_DIST = 46 -- parede invisível para quem não está correndo
 
 Track.FISH_SWIM_HEIGHT = 5 -- altura dos peixes acima do fundo

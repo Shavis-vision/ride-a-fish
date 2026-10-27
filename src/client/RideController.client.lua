@@ -294,123 +294,46 @@ end
 
 -- Círculo de stamina (como no Zelda) ---------------------------------------------------------
 -- Uma roda verde ao lado do jogador que esvazia enquanto ele está em cima do peixe.
--- Desenho: duas metades com corte (ClipsDescendants) e um UIGradient com degrau no meio; girar
--- o degrau mostra só a fatia certa de cada metade.
-local STEP = NumberSequence.new({
-	NumberSequenceKeypoint.new(0, 1),
-	NumberSequenceKeypoint.new(0.499, 1),
-	NumberSequenceKeypoint.new(0.5, 0),
-	NumberSequenceKeypoint.new(1, 0),
-})
 
--- Disco que enche/esvazia (fraction 1 = cheio), como na referência: disco colorido cheio com
--- um furo branco no meio. A parte que já gastou fica escura. Devolve set(fraction, color).
-local function makeRing(parent, pixels, position, color, hole)
-	local back = UIKit.Frame(parent, {
-		Size = UDim2.fromOffset(pixels, pixels),
-		Position = position,
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Color = Color3.fromRGB(28, 36, 32), -- fundo escuro (a parte que já gastou)
-		Transparency = 0,
-		Corner = 999,
-		ZIndex = 2,
-	})
-	local function half(isRight)
-		local clip = Instance.new("Frame")
-		clip.BackgroundTransparency = 1
-		clip.ClipsDescendants = true
-		clip.Size = UDim2.fromScale(0.5, 1)
-		clip.Position = UDim2.fromScale(isRight and 0.5 or 0, 0)
-		clip.ZIndex = 2
-		clip.Parent = back
-		local circle = Instance.new("Frame")
-		circle.BorderSizePixel = 0
-		circle.Size = UDim2.fromScale(2, 1)
-		circle.Position = UDim2.fromScale(isRight and -1 or 0, 0)
-		circle.BackgroundColor3 = color
-		circle.ZIndex = 2
-		UIKit.Corner(circle, 999)
-		local gradient = Instance.new("UIGradient")
-		gradient.Transparency = STEP
-		gradient.Parent = circle
-		circle.Parent = clip
-		return circle, gradient
-	end
-	local right, rightGradient = half(true)
-	local left, leftGradient = half(false)
-	-- furo branco no meio
-	UIKit.Frame(back, {
-		Size = UDim2.fromScale(hole, hole),
-		Position = UDim2.fromScale(0.5, 0.5),
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Color = Color3.new(1, 1, 1),
-		Corner = 999,
-		ZIndex = 4,
-	})
-	return function(fraction, newColor)
-		fraction = math.clamp(fraction, 0, 1)
-		local angle = fraction * 360
-		if fraction >= 0.5 then
-			rightGradient.Rotation = 0
-			left.Visible = true
-			leftGradient.Rotation = angle - 180
-		else
-			rightGradient.Rotation = angle - 180
-			left.Visible = false
-		end
-		if newColor then
-			right.BackgroundColor3 = newColor
-			left.BackgroundColor3 = newColor
-		end
-	end, back
-end
-
--- Linha fina em volta do disco = STAMINA EXTRA (o que sobra além do que o peixe pede).
--- Fica atrás do disco: só a borda dela aparece. Devolve set(fraction) (0 = some).
-local function makeExtraArc(parent, pixels, position)
+-- Anel feito de pedacinhos em volta de um círculo: o fundo e o meio ficam TRANSPARENTES de
+-- verdade (só a parte colorida aparece). fraction 1 = cheio; esvazia no sentido horário a
+-- partir do topo. Devolve set(fraction, color) e o quadro do anel.
+local function makeSegmentRing(parent, pixels, position, color, inner, count)
 	local holder = Instance.new("Frame")
+	holder.Name = "Anel"
 	holder.BackgroundTransparency = 1
 	holder.Size = UDim2.fromOffset(pixels, pixels)
 	holder.Position = position
 	holder.AnchorPoint = Vector2.new(0.5, 0.5)
-	holder.ZIndex = 1
 	holder.Parent = parent
-	local function half(isRight)
-		local clip = Instance.new("Frame")
-		clip.BackgroundTransparency = 1
-		clip.ClipsDescendants = true
-		clip.Size = UDim2.fromScale(0.5, 1)
-		clip.Position = UDim2.fromScale(isRight and 0.5 or 0, 0)
-		clip.ZIndex = 1
-		clip.Parent = holder
-		local circle = Instance.new("Frame")
-		circle.BorderSizePixel = 0
-		circle.Size = UDim2.fromScale(2, 1)
-		circle.Position = UDim2.fromScale(isRight and -1 or 0, 0)
-		circle.BackgroundColor3 = Color3.new(1, 1, 1)
-		circle.ZIndex = 1
-		UIKit.Corner(circle, 999)
-		local gradient = Instance.new("UIGradient")
-		gradient.Transparency = STEP
-		gradient.Parent = circle
-		circle.Parent = clip
-		return circle, gradient
+	local outerR = pixels / 2
+	local innerR = outerR * inner
+	local thickness = outerR - innerR
+	local midR = (outerR + innerR) / 2
+	local width = 2 * math.pi * midR / count + 1.2 -- um pouco de sobra para não ficar fresta
+	local segments = {}
+	for i = 1, count do
+		local angle = (i - 0.5) / count * 360
+		local rad = math.rad(angle)
+		local seg = Instance.new("Frame")
+		seg.BorderSizePixel = 0
+		seg.BackgroundColor3 = color
+		seg.AnchorPoint = Vector2.new(0.5, 0.5)
+		seg.Size = UDim2.fromOffset(width, thickness)
+		seg.Position = UDim2.new(0.5, math.sin(rad) * midR, 0.5, -math.cos(rad) * midR)
+		seg.Rotation = angle
+		seg.Parent = holder
+		segments[i] = seg
 	end
-	local _, rightGradient = half(true)
-	local left, leftGradient = half(false)
-	return function(fraction)
-		fraction = math.clamp(fraction, 0, 1)
-		holder.Visible = fraction > 0.001
-		local angle = fraction * 360
-		if fraction >= 0.5 then
-			rightGradient.Rotation = 0
-			left.Visible = true
-			leftGradient.Rotation = angle - 180
-		else
-			rightGradient.Rotation = angle - 180
-			left.Visible = false
+	return function(fraction, newColor)
+		local shown = math.clamp(fraction, 0, 1) * count
+		for i, seg in ipairs(segments) do
+			seg.Visible = i <= math.ceil(shown - 0.01)
+			if newColor then
+				seg.BackgroundColor3 = newColor
+			end
 		end
-	end
+	end, holder
 end
 
 -- Anéis ao lado do jogador: o VERDE grande é a stamina (esvazia), o ROSA pequeno é o
@@ -423,15 +346,13 @@ wheel.AlwaysOnTop = true
 wheel.LightInfluence = 0
 wheel.Enabled = false
 wheel.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-local setExtraArc = makeExtraArc(wheel, 66, UDim2.fromScale(0.68, 0.5)) -- linha branca (extra)
-local setStaminaRing = makeRing(wheel, 58, UDim2.fromScale(0.68, 0.5), Color3.fromRGB(40, 240, 90), 0.36)
-local setTameRing, tameRingBack = makeRing(wheel, 34, UDim2.fromScale(0.2, 0.5), Color3.fromRGB(255, 110, 200), 0.36)
+local setStaminaRing = makeSegmentRing(wheel, 58, UDim2.fromScale(0.68, 0.5), Color3.fromRGB(40, 240, 90), 0.45, 72)
+local setTameRing, tameRingBack = makeSegmentRing(wheel, 34, UDim2.fromScale(0.2, 0.5), Color3.fromRGB(255, 110, 200), 0.45, 48)
 
--- fraction = disco (stamina normal da doma); extra = linha de fora (stamina que sobra)
-local function setWheel(fraction, extra, safe)
+-- fraction = quanto falta da stamina (anel verde)
+local function setWheel(fraction, safe)
 	local color = (safe or fraction > 0.3) and Color3.fromRGB(40, 240, 90) or Color3.fromRGB(255, 90 + 120 * math.max(fraction, 0), 50)
 	setStaminaRing(fraction, color)
-	setExtraArc(extra or 0)
 end
 
 local function setTameProgress(fraction)
@@ -844,12 +765,97 @@ local function beginRun(seed)
 	camera.CameraType = Enum.CameraType.Scriptable
 	gui.Enabled = true
 	fallPanel.Visible = false
-	state = "Airborne"
-	-- o mergulho já leva direto ao primeiro peixe (garantido), para ninguém cair logo de cara
+	-- animação de pulo do píer: vai até a ponta do trampolim, agacha, pula em arco, vira de
+	-- cabeça para baixo e entra na água com um splash. Depois o mergulho leva ao 1º peixe.
 	local first = spawnFish(run.Fish[1])
 	run.NextSpawn = 2
-	harpoon(first, 1.1)
-	showBanner("MERGULHO!", Color3.fromRGB(120, 230, 255))
+	rider.DiveTarget = first
+	rider.DiveStart = os.clock()
+	rider.DiveFrom = root.Position
+	rider.DiveYaw = 0
+	state = "Diving"
+	camera.CFrame = CFrame.lookAt(root.Position + Vector3.new(16, 6, 6), root.Position + Vector3.new(0, 0, -8))
+end
+
+-- splash na água: anel branco que abre e gotinhas que espirram
+local function splash(position)
+	local folder = Instance.new("Folder")
+	folder.Name = "Splash"
+	folder.Parent = Workspace
+	local ring = Instance.new("Part")
+	ring.Anchored = true
+	ring.CanCollide = false
+	ring.CanQuery = false
+	ring.CanTouch = false
+	ring.CastShadow = false
+	ring.Shape = Enum.PartType.Cylinder
+	ring.Material = Enum.Material.SmoothPlastic
+	ring.Color = Color3.new(1, 1, 1)
+	ring.Transparency = 0.2
+	ring.Size = Vector3.new(0.2, 2, 2)
+	ring.CFrame = CFrame.new(position.X, Track.WATER_Y + 0.15, position.Z) * CFrame.Angles(0, 0, math.pi / 2)
+	ring.Parent = folder
+	UIKit.Tween(ring, 0.8, { Size = Vector3.new(0.2, 16, 16), Transparency = 1 }, Enum.EasingStyle.Quad)
+	for i = 1, 14 do
+		local drop = Instance.new("Part")
+		drop.Anchored = true
+		drop.CanCollide = false
+		drop.CanQuery = false
+		drop.CanTouch = false
+		drop.CastShadow = false
+		drop.Shape = Enum.PartType.Ball
+		drop.Material = Enum.Material.SmoothPlastic
+		drop.Color = Color3.fromRGB(230, 250, 255)
+		drop.Size = Vector3.new(1, 1, 1) * (0.6 + (i % 3) * 0.3)
+		drop.CFrame = CFrame.new(position.X, Track.WATER_Y + 0.3, position.Z)
+		drop.Parent = folder
+		local angle = i / 14 * math.pi * 2
+		local up = 4 + (i % 4) * 1.5
+		local out = Vector3.new(math.cos(angle), 0, math.sin(angle)) * (2.5 + (i % 3))
+		UIKit.Tween(drop, 0.35, { CFrame = drop.CFrame + out * 0.6 + Vector3.new(0, up, 0) }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		task.delay(0.35, function()
+			UIKit.Tween(drop, 0.4, { CFrame = drop.CFrame + out * 0.5 + Vector3.new(0, -up - 1, 0), Transparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		end)
+	end
+	task.delay(1.2, function()
+		folder:Destroy()
+	end)
+end
+
+local DIVE_WALK = 0.35 -- indo até a ponta do trampolim
+local DIVE_CROUCH = 0.2 -- agachando
+local DIVE_AIR = 0.85 -- no ar até a água
+local function updateDiving(now)
+	local t = now - rider.DiveStart
+	local tip = Layout.DiveBoard + Vector3.new(0, 3, 0) -- altura do corpo em pé
+	local entry = Vector3.new(0, Track.WATER_Y - 1.5, Track.ZOf(Track.PIER_END + 17))
+	local pos, pitch
+	if t < DIVE_WALK then
+		local p = t / DIVE_WALK
+		pos = rider.DiveFrom:Lerp(tip, p * p * (3 - 2 * p))
+		pitch = 0
+	elseif t < DIVE_WALK + DIVE_CROUCH then
+		local p = (t - DIVE_WALK) / DIVE_CROUCH
+		pos = tip - Vector3.new(0, math.sin(p * math.pi) * 0.9, 0) -- agacha e o trampolim "afunda"
+		pitch = math.sin(p * math.pi) * 0.25
+	else
+		local p = math.clamp((t - DIVE_WALK - DIVE_CROUCH) / DIVE_AIR, 0, 1)
+		local flat = tip:Lerp(entry, p)
+		pos = flat + Vector3.new(0, math.sin(p * math.pi) * 7 * (1 - p * 0.3), 0)
+		pitch = -(p ^ 1.4) * (math.pi / 2 + 0.5) -- vai virando de cabeça para baixo
+		if p >= 1 then
+			splash(entry)
+			showBanner("MERGULHO!", Color3.fromRGB(120, 230, 255))
+			rider.Pos = entry
+			rider.Dist = Track.DistOf(entry.Z)
+			state = "Airborne"
+			harpoon(rider.DiveTarget, 1.0)
+			return
+		end
+	end
+	rider.Pos = pos
+	rider.Dist = Track.DistOf(pos.Z)
+	placeRider(CFrame.new(pos) * CFrame.Angles(pitch, 0, 0))
 end
 
 endRun = function(reason)
@@ -1115,26 +1121,18 @@ local function updateHud(now)
 	local obj = rider.Mount
 	-- roda de stamina
 	if state == "Riding" and obj then
-		-- Disco = a stamina que a doma gasta (o que o peixe pede, ou toda a sua se for menos).
-		-- Linha de fora = a stamina EXTRA (o que sobra). Depois de domar, é a linha que
-		-- esvazia enquanto você continua montado.
+		-- Anel = a stamina: durante a doma esvazia com o que o peixe pede (ou com toda a sua,
+		-- se for menos); depois de domar, mostra quanto tempo ainda dá para ficar montado.
 		local stamina = math.max(1, ClientState.Stat("Stamina"))
-		local extra = math.max(0, stamina - obj.Required) / stamina
-		local fraction, extraFraction
+		local fraction
 		if obj.Tamed and rider.RideEnd then
-			local left = math.max(0, rider.RideEnd - now) / math.max(0.01, rider.RideTime)
-			if rider.WheelAtTame and rider.WheelAtTame < 1 and extra > 0 then
-				fraction, extraFraction = 0, left -- domou agora: gasta a extra
-			else
-				fraction, extraFraction = left, 0 -- peixe já domado antes: gasta o disco
-			end
+			fraction = math.max(0, rider.RideEnd - now) / math.max(0.01, rider.RideTime)
 		else
 			local spent = obj.Required / obj.Species.TameTime * (now - rider.MountAt)
 			fraction = 1 - spent / math.min(stamina, obj.Required)
-			extraFraction = extra > 0 and 1 or 0
 		end
-		-- vermelho só quando a stamina não dá (com stamina de sobra o disco fica verde)
-		setWheel(fraction, extraFraction, rider.CanTame or obj.Tamed)
+		-- vermelho só quando a stamina não dá
+		setWheel(fraction, rider.CanTame or obj.Tamed)
 		if obj.Tamed then
 			setTameProgress(nil)
 		else
@@ -1200,6 +1198,10 @@ local function updateCamera(dt)
 	if state == "Fallen" then
 		eye = focus + Vector3.new(0, 12, 14)
 		look = focus
+	elseif state == "Diving" then
+		-- de lado e um pouco atrás, para ver o pulo inteiro
+		eye = focus + Vector3.new(15, 5, 9)
+		look = focus + Vector3.new(0, -1, -7)
 	end
 	-- a câmera fica debaixo d'água (só sobe junto quando o peixe salta para fora)
 	if focus.Y < Track.WATER_Y then
@@ -1273,6 +1275,8 @@ RunService.RenderStepped:Connect(function(dt)
 		updateAirborne(realDt, dt)
 	elseif state == "Zipping" then
 		updateZipping(now)
+	elseif state == "Diving" then
+		updateDiving(now)
 	elseif state == "Fallen" then
 		updateFallen(now)
 	end
@@ -1323,7 +1327,7 @@ RunService.Heartbeat:Connect(function()
 	end
 	local offset = root.Position - Layout.StartZone
 	local flat = Vector3.new(offset.X, 0, offset.Z).Magnitude
-	if flat < Track.START_RADIUS and root.Position.Y < Track.WATER_Y + 1 then
+	if flat < Track.START_RADIUS and root.Position.Y < Track.PIER_TOP + 5 then
 		requesting = true
 		task.spawn(function()
 			local result = ClientState.Request("StartRun")

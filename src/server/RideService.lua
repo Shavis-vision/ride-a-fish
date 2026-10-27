@@ -56,7 +56,7 @@ local function startRun(player)
 	end
 	local offset = root.Position - Layout.StartZone
 	local flat = Vector3.new(offset.X, 0, offset.Z).Magnitude
-	if flat > Track.START_RADIUS + 8 or root.Position.Y > Track.WATER_Y + 2 then
+	if flat > Track.START_RADIUS + 8 or root.Position.Y > Track.PIER_TOP + 8 then
 		return { ok = false, msg = "Entre na zona de mergulho" }
 	end
 	local seed = rng:NextInteger(1, 2 ^ 30)

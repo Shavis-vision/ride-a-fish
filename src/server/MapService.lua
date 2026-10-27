@@ -166,7 +166,7 @@ local function setupLighting()
 	atmosphere.Offset = 0.1
 	atmosphere.Color = rgb(200, 230, 255)
 	atmosphere.Decay = rgb(110, 160, 220)
-	atmosphere.Glare = 0.15
+	atmosphere.Glare = preset.Glare or 0.15
 	atmosphere.Haze = 0.6
 	atmosphere.Parent = Lighting
 

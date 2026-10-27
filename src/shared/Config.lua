@@ -123,9 +123,11 @@ Config.LIGHTING = {
 		OutdoorAmbient = { 157, 178, 255 },
 		LightingStyle = "Realistic",
 		ShadowSoftness = 1,
-		BloomIntensity = 0.6,
+		-- limite do bloom mais alto: só neon e aura brilham (com 1.6 a tela ficava branca)
+		BloomIntensity = 0.4,
 		BloomSize = 56,
-		BloomThreshold = 1.6,
+		BloomThreshold = 2.3,
+		Glare = 0, -- sem clarão do sol na neblina
 		ColorCorrection = { Contrast = 0.5, Saturation = 0.5, Tint = { 243, 234, 255 } },
 	},
 	-- a da primeira versão (sem correção de cor)
@@ -139,6 +141,7 @@ Config.LIGHTING = {
 		BloomIntensity = 0.6,
 		BloomSize = 24,
 		BloomThreshold = 1.6,
+		Glare = 0.15,
 		ColorCorrection = nil,
 	},
 }

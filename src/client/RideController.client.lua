@@ -8,8 +8,8 @@
 --      a frente e desviam dos obstáculos. Cada um mostra o nome e a stamina que pede, em
 --      verde (dá), amarelo (quase, 80%+) ou vermelho (falta).
 --   3. ESPAÇO (ou o botão PULAR) salta do peixe: o tempo fica lento e aparece um círculo
---      amarelo à frente (mire com A/D e W/S; ele gruda no peixe mais perto). ESPAÇO de novo
---      lança o arpão no peixe que estiver dentro do círculo.
+--      amarelo embaixo de você (A/D para os lados; a assistência pega peixes um pouco à
+--      frente). ESPAÇO de novo lança o arpão no peixe que o círculo pegou.
 --   4. Em cima do peixe: com stamina suficiente, ele é domado depois de alguns segundos.
 --      Sem stamina suficiente, ele te derruba antes (você perde só esse peixe).
 --      Domado, ele aguenta você por um tempo (mais stamina = mais tempo) e depois te derruba.
@@ -79,32 +79,6 @@ local function moveX()
 		x += 1
 	end
 	return x
-end
-
--- Para frente (+1) / para trás (-1): W/S, setas ou analógico (a câmera olha para -Z)
-local function moveForward()
-	if controls then
-		local ok, vector = pcall(function()
-			return controls:GetMoveVector()
-		end)
-		if ok and vector and vector.Z ~= 0 then
-			return math.clamp(-vector.Z, -1, 1)
-		end
-	end
-	if humanoid and humanoid.Parent then
-		local direction = humanoid.MoveDirection
-		if math.abs(direction.Z) > 0.05 then
-			return math.clamp(-direction.Z / math.max(direction.Magnitude, 1e-3), -1, 1)
-		end
-	end
-	local z = 0
-	if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Up) then
-		z += 1
-	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.S) or UserInputService:IsKeyDown(Enum.KeyCode.Down) then
-		z -= 1
-	end
-	return z
 end
 
 -- Estado ------------------------------------------------------------------------------------
@@ -334,7 +308,7 @@ local function wheelHalf(isRight)
 end
 local wheelRight, wheelRightGradient = wheelHalf(true)
 local wheelLeft, wheelLeftGradient = wheelHalf(false)
-local wheelHole = UIKit.Frame(wheelBack, {
+UIKit.Frame(wheelBack, { -- furo do meio (deixa a roda em forma de anel)
 	Size = UDim2.fromScale(0.58, 0.58),
 	Position = UDim2.fromScale(0.5, 0.5),
 	AnchorPoint = Vector2.new(0.5, 0.5),
@@ -343,7 +317,6 @@ local wheelHole = UIKit.Frame(wheelBack, {
 	Corner = 999,
 	ZIndex = 3,
 })
-UIKit.Text(wheelHole, { Text = "⚡", Size = UDim2.fromScale(0.8, 0.8), Position = UDim2.fromScale(0.1, 0.1), ZIndex = 4, Stroke = 1 })
 
 -- fraction: 1 = cheia, 0 = vazia (some no sentido horário a partir do topo)
 local function setWheel(fraction)
@@ -646,8 +619,6 @@ end
 -- começa a mira: tempo lento e o círculo amarelo à frente
 local function startAim()
 	rider.SlowUntil = os.clock() + RIDE.SLOWMO_TIME
-	rider.AimX = rider.Pos.X
-	rider.AimAhead = RIDE.AIM_START
 	reticle.Enabled = true
 end
 
@@ -909,12 +880,8 @@ end
 local function updateAirborne(realDt, dt)
 	rider.Vel += Vector3.new(0, -RIDE.GRAVITY * dt, 0)
 	local steer = moveX()
-	-- o círculo anda rápido (no tempo real); o corpo vai indo atrás dele devagar
-	local limitAim = Track.HALF_WIDTH - 5
-	rider.AimX = math.clamp((rider.AimX or rider.Pos.X) + steer * RIDE.AIM_SPEED * realDt, -limitAim, limitAim)
-	rider.AimAhead = math.clamp((rider.AimAhead or RIDE.AIM_START) + moveForward() * RIDE.AIM_SPEED * realDt, RIDE.AIM_MIN, RIDE.AIM_MAX)
-	local drift = math.clamp(rider.AimX - rider.Pos.X, -1, 1) * RIDE.AIR_STEER_SPEED * 0.5
-	local pos = rider.Pos + rider.Vel * dt + Vector3.new(drift * dt, 0, 0)
+	-- A/D move o jogador (e o círculo embaixo dele) para os lados, no tempo real
+	local pos = rider.Pos + rider.Vel * dt + Vector3.new(steer * RIDE.AIR_STEER_SPEED * realDt, 0, 0)
 	local limit = Track.HALF_WIDTH - 4
 	pos = Vector3.new(math.clamp(pos.X, -limit, limit), pos.Y, pos.Z)
 	rider.Pos = pos
@@ -955,18 +922,20 @@ local function updateZipping(now)
 	end
 end
 
--- Peixe dentro do círculo amarelo (com assistência de mira: o mais perto do centro, até
--- ASSIST_RADIUS de distância, e que o arpão alcance).
+-- Peixe que o círculo pega: o que está embaixo de você ou, com a assistência de mira, um
+-- pouco à frente (até ASSIST_AHEAD) e para os lados (até ASSIST_RADIUS). Prefere o mais
+-- alinhado com você e o mais perto.
 local function chooseTarget(now)
-	local aimDist = rider.Dist + (rider.AimAhead or RIDE.AIM_START)
-	local aimX = rider.AimX or rider.Pos.X
 	local best, bestScore = nil, math.huge
 	for _, obj in ipairs(run.Active) do
 		if obj.Model and obj ~= rider.Mount and not obj.Escaped and now >= obj.TargetableAt then
-			local offset = Vector2.new(obj.X - aimX, obj.Dist - aimDist).Magnitude
-			if offset < RIDE.ASSIST_RADIUS and (obj.Root.Position - rider.Pos).Magnitude < RIDE.HARPOON_RANGE then
-				if offset < bestScore then
-					best, bestScore = obj, offset
+			local side = math.abs(obj.X - rider.Pos.X)
+			local ahead = obj.Dist - rider.Dist
+			if side < RIDE.ASSIST_RADIUS and ahead > -RIDE.ASSIST_BEHIND and ahead < RIDE.ASSIST_AHEAD
+				and (obj.Root.Position - rider.Pos).Magnitude < RIDE.HARPOON_RANGE then
+				local score = side * 1.5 + math.abs(ahead) * 0.5
+				if score < bestScore then
+					best, bestScore = obj, score
 				end
 			end
 		end
@@ -980,14 +949,11 @@ local function updateReticle(dt)
 		return
 	end
 	reticle.Enabled = true
-	local aimDist = rider.Dist + (rider.AimAhead or RIDE.AIM_START)
-	local aimPoint = Vector3.new(rider.AimX or rider.Pos.X, Track.SeabedY(aimDist) + SWIM + 2, Track.ZOf(aimDist))
-	local goal = aimPoint
+	-- o círculo fica embaixo de você; com um peixe pego pela assistência, desliza até ele
+	local below = Vector3.new(rider.Pos.X, Track.SeabedY(rider.Dist) + SWIM + 2, rider.Pos.Z)
+	local goal = below
 	if target and target.Model then
 		goal = target.Root.Position
-		-- assistência: o círculo "gruda" no peixe
-		rider.AimX += (target.X - rider.AimX) * math.min(1, dt * 5)
-		rider.AimAhead += ((target.Dist - rider.Dist) - rider.AimAhead) * math.min(1, dt * 5)
 		reticleRing.BackgroundTransparency = 0.6
 		reticleScale.Scale = 0.85 + math.sin(os.clock() * 12) * 0.08
 	else
@@ -1069,7 +1035,7 @@ local function updateHud(now)
 	elseif state == "Riding" then
 		hint.Text = "ESPAÇO: saltar do peixe  •  A/D: desviar"
 	elseif state == "Airborne" then
-		hint.Text = target and "ESPAÇO: lançar o arpão!" or "Leve o círculo amarelo até um peixe (A/D e W/S)"
+		hint.Text = target and "ESPAÇO: lançar o arpão!" or "Fique em cima de um peixe (A/D para os lados)"
 	else
 		hint.Text = ""
 	end

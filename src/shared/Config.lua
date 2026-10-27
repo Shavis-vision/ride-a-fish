@@ -39,14 +39,14 @@ Config.AQUARIUM = {
 Config.RIDE = {
 	HARPOON_RANGE = 46, -- distância máxima do arpão até o próximo peixe
 	-- Salto com mira (estilo Rodeo Stampede): ESPAÇO salta do peixe, o tempo fica lento e
-	-- aparece o círculo amarelo; ESPAÇO de novo lança o arpão no peixe que estiver no círculo.
-	SLOWMO = 0.35, -- velocidade do mundo durante a mira (35%)
+	-- aparece o círculo amarelo EMBAIXO de você (A/D move você e o círculo para os lados).
+	-- ESPAÇO de novo lança o arpão no peixe que estiver no círculo.
+	SLOWMO = 0.35, -- velocidade do mundo durante o salto (35%)
 	SLOWMO_TIME = 2.4, -- segundos (reais) de câmera lenta
-	AIM_START = 18, -- o círculo começa esta distância à frente
-	AIM_MIN = 6,
-	AIM_MAX = 42,
-	AIM_SPEED = 38, -- velocidade do círculo (A/D e W/S ou analógico)
-	ASSIST_RADIUS = 10, -- assistência de mira: peixe a esta distância do círculo é "pego" por ele
+	-- Assistência de mira: pega o peixe que estiver nesta faixa, mesmo um pouco à frente
+	ASSIST_RADIUS = 10, -- para os lados
+	ASSIST_AHEAD = 32, -- para a frente (peixes à frente também contam)
+	ASSIST_BEHIND = 6, -- um pouquinho para trás
 	RETICLE_SIZE = 10, -- tamanho do círculo (studs)
 	HARPOON_TIME = 0.32, -- segundos voando pela corda até o peixe
 	GRAVITY = 40, -- "gravidade" debaixo d'água (mais leve que a normal)

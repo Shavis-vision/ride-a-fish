@@ -32,7 +32,7 @@ Para o salvamento funcionar no Studio: publique o jogo e ligue **Game Settings >
 |------|----|---------|
 | Começar a corrida | Entrar no anel azul dentro da água | Igual |
 | Saltar do peixe (o tempo fica lento e aparece o círculo amarelo) | Espaço | Botão PULAR |
-| Mirar o círculo | A / D e W / S | Analógico |
+| Mover para os lados no ar (o círculo fica embaixo de você) | A / D | Analógico |
 | Lançar o arpão no peixe dentro do círculo | Espaço de novo | Botão ARPÃO |
 | Desviar | A / D (ou setas) | Analógico |
 | Treinar stamina | Subir na esteira do seu lote (você fica preso andando; pule para sair) | Igual (botão de pular) |

@@ -42,7 +42,8 @@ local SWIM = Track.FISH_SWIM_HEIGHT
 local controls = nil
 task.spawn(function()
 	local ok, module = pcall(function()
-		return require(player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule"))
+		local module = player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule", 60)
+		return module and require(module)
 	end)
 	if ok and module then
 		controls = module:GetControls()
@@ -54,11 +55,19 @@ local function moveX()
 		local ok, vector = pcall(function()
 			return controls:GetMoveVector()
 		end)
-		if ok and vector then
+		if ok and vector and vector.X ~= 0 then
 			return math.clamp(vector.X, -1, 1)
 		end
 	end
-	return 0
+	-- reserva: lê o teclado direto (funciona mesmo sem o PlayerModule)
+	local x = 0
+	if UserInputService:IsKeyDown(Enum.KeyCode.A) or UserInputService:IsKeyDown(Enum.KeyCode.Left) then
+		x -= 1
+	end
+	if UserInputService:IsKeyDown(Enum.KeyCode.D) or UserInputService:IsKeyDown(Enum.KeyCode.Right) then
+		x += 1
+	end
+	return x
 end
 
 -- Estado ------------------------------------------------------------------------------------

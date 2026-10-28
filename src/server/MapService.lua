@@ -2078,10 +2078,12 @@ function MapService.Build()
 		end
 	end
 
+	-- O mapa agora fica salvo no lugar (feito no Studio). Só gera por código se ele sumir.
 	local existing = Workspace:FindFirstChild("Map")
 	if existing then
 		return existing
 	end
+	warn("[MapService] Não achei Workspace.Map no lugar; gerando o mapa por código (provisório).")
 
 	local map = Instance.new("Folder")
 	map.Name = "Map"
@@ -2096,6 +2098,64 @@ function MapService.Build()
 
 	map.Parent = Workspace
 	return map
+end
+
+-- Gera o mapa UMA VEZ dentro do Studio (modo edição), para ele passar a ficar salvo no lugar
+-- e ser editado direto no Studio. Coloca as peças no Workspace aos poucos (em lotes), para o
+-- Studio não travar. Uso (barra de comando ou MCP, no modo edição):
+--   require(game.ServerScriptService.Server.MapService).BuildForStudio()
+-- Depois salve o lugar (Ctrl+S). Se já existir um Workspace.Map, ele é renomeado para
+-- MapAntigo (não é apagado).
+function MapService.BuildForStudio()
+	setupCollisionGroups()
+	setupLighting()
+	local old = Workspace:FindFirstChild("Map")
+	if old then
+		old.Name = "MapAntigo"
+	end
+	local baseplate = Workspace:FindFirstChild("Baseplate")
+	if baseplate then
+		baseplate:Destroy()
+	end
+
+	local source = Instance.new("Folder")
+	source.Name = "Map"
+	buildBeach(source)
+	buildOcean(source)
+	buildPlaza(source)
+	local plotsFolder = Brick.Folder(source, "Lotes")
+	for _, plot in ipairs(Layout.Plots) do
+		buildPlot(plotsFolder, plot)
+	end
+
+	local target = Instance.new("Folder")
+	target.Name = "Map"
+	target.Parent = Workspace
+	local moved = 0
+	local function flush(from, to)
+		for _, child in ipairs(from:GetChildren()) do
+			local size = #child:GetDescendants()
+			if child:IsA("Folder") and size > 400 then
+				local copy = Instance.new("Folder")
+				copy.Name = child.Name
+				for key, value in pairs(child:GetAttributes()) do
+					copy:SetAttribute(key, value)
+				end
+				copy.Parent = to
+				flush(child, copy)
+			else
+				child.Parent = to
+				moved += size + 1
+				if moved > 500 then
+					moved = 0
+					task.wait()
+				end
+			end
+		end
+	end
+	flush(source, target)
+	source:Destroy()
+	return target
 end
 
 function MapService.GetPlotModel(index)

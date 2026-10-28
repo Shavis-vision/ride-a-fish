@@ -408,7 +408,13 @@ local function stripesOf(model)
 		for _, stripe in ipairs(folder:GetChildren()) do
 			table.insert(list, { Part = stripe, Offset = base.CFrame:ToObjectSpace(stripe.CFrame) })
 		end
-		stripeBase[model] = { Base = base, List = list }
+		-- Period = distância entre as setas; Span = comprimento total do ciclo (setas × Period)
+		stripeBase[model] = {
+			Base = base,
+			List = list,
+			Period = folder:GetAttribute("Period") or 2,
+			Span = folder:GetAttribute("Span") or 16,
+		}
 	end
 	return stripeBase[model]
 end
@@ -429,16 +435,18 @@ RunService.RenderStepped:Connect(function(dt)
 		-- esteira (anda mais rápido a cada nível)
 		if ownerTraining(model) then
 			local level = model:GetAttribute("TreadmillLevel") or 1
-			beltShift[model] = ((beltShift[model] or 0) + dt * math.clamp(6 + level * 1.2, 6, 30)) % 2
-			local shift = beltShift[model]
 			local info = stripesOf(model)
 			if info then
+				beltShift[model] = ((beltShift[model] or 0) + dt * math.clamp(6 + level * 1.2, 6, 30)) % info.Period
+				local shift = beltShift[model]
+				local half = info.Span / 2
 				for _, item in ipairs(info.List) do
 					local z = item.Offset.Position.Z - shift
-					if z < -7.8 then
-						z += 16
+					if z < -half then
+						z += info.Span
 					end
-					item.Part.CFrame = info.Base.CFrame * CFrame.new(item.Offset.Position.X, item.Offset.Position.Y, z)
+					local pos = item.Offset.Position
+					item.Part.CFrame = info.Base.CFrame * CFrame.new(pos.X, pos.Y, z) * item.Offset.Rotation
 				end
 			end
 		end
@@ -457,6 +465,51 @@ RunService.RenderStepped:Connect(function(dt)
 					FishModel.Wag(fish, t + phase, 3.2)
 				end
 			end
+		end
+	end
+end)
+
+-- Vendedores das barracas (bonecos Roblox): ficam parados "respirando" e acenam de vez em
+-- quando para quem chega. Animações padrão do Roblox (R15), tocadas só no seu computador.
+local IDLE_ANIM = "rbxassetid://507766666"
+local WAVE_ANIM = "rbxassetid://507770239"
+local function animateVendor(rig)
+	local humanoid = rig:FindFirstChildOfClass("Humanoid")
+	local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+	if not animator then
+		return
+	end
+	local idle = Instance.new("Animation")
+	idle.AnimationId = IDLE_ANIM
+	local wave = Instance.new("Animation")
+	wave.AnimationId = WAVE_ANIM
+	local ok, idleTrack = pcall(animator.LoadAnimation, animator, idle)
+	if not ok then
+		return
+	end
+	idleTrack.Looped = true
+	idleTrack:Play(0.3)
+	local okWave, waveTrack = pcall(animator.LoadAnimation, animator, wave)
+	if not okWave then
+		return
+	end
+	waveTrack.Priority = Enum.AnimationPriority.Action
+	task.spawn(function()
+		task.wait(math.random() * 4)
+		while rig.Parent do
+			task.wait(6 + math.random() * 6)
+			waveTrack:Play(0.25)
+		end
+	end)
+end
+task.spawn(function()
+	local plaza = map:WaitForChild("Praca", 30)
+	if not plaza then
+		return
+	end
+	for _, item in ipairs(plaza:GetDescendants()) do
+		if item:IsA("Model") and item:GetAttribute("NPC") then
+			animateVendor(item)
 		end
 	end
 end)

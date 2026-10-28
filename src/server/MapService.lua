@@ -29,9 +29,9 @@ local MapService = {}
 local FONT = Enum.Font.FredokaOne
 local rgb = Color3.fromRGB
 
-local SAND = rgb(222, 198, 145) -- menos clara (a de antes estourava com a luz)
-local SAND_DARK = rgb(206, 182, 130)
-local WET_SAND = rgb(190, 165, 115)
+local SAND = rgb(214, 184, 126) -- mais "areia" (no jogo a de antes ficava quase branca)
+local SAND_DARK = rgb(198, 168, 112)
+local WET_SAND = rgb(178, 150, 102)
 local GRASS = rgb(124, 198, 62)
 local WOOD = rgb(160, 108, 60)
 local WOOD_DARK = rgb(110, 72, 40)
@@ -860,9 +860,8 @@ local function buildBeach(map)
 			prev = point
 		end
 	end
-	-- só um fio atravessa o píer (no alto, entre os postes da entrada); os outros vão pelos
-	-- lados, de mastro em mastro, e não tapam a vista da placa do fim
-	bunting(Vector3.new(-7.6, top + ENTRANCE_H - 0.4, 2), Vector3.new(7.6, top + ENTRANCE_H - 0.4, 2), 9, 1.1, 0)
+	-- os fios vão pelos lados, de mastro em mastro, e não tapam a vista da placa do fim
+	-- (sem fio atravessando a entrada: visto da câmera ele cobria o texto da placa do fim)
 	for i = 1, #poleZs - 1 do
 		for side = -1, 1, 2 do
 			local x = side * 6.8
@@ -1677,7 +1676,7 @@ local function buildPlot(parent, plot)
 				Name = "Chao",
 				Size = Vector3.new(tileX, 1, tileZ),
 				Position = Vector3.new(c.X - half.X + tileX * (ix + 0.5), c.Y + 0.5, c.Z - half.Z + tileZ * (iz + 0.5)),
-				Color = ((ix + iz) % 2 == 0) and accent or Brick.Shade(accent, 0.25),
+				Color = ((ix + iz) % 2 == 0) and accent or Brick.Shade(accent, 0.12), -- xadrez mais forte (no jogo ficava quase branco)
 			})
 		end
 	end

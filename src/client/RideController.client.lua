@@ -1263,9 +1263,9 @@ local function updateCamera(dt)
 		eye = focus + Vector3.new(0, 12, 14)
 		look = focus
 	elseif state == "Diving" then
-		-- de lado e um pouco atrás, para ver o pulo inteiro
-		eye = focus + Vector3.new(15, 5, 9)
-		look = focus + Vector3.new(0, -1, -7)
+		-- atrás e acima (de lado a câmera batia no lampião do píer)
+		eye = focus + Vector3.new(3, 8, 17)
+		look = focus + Vector3.new(0, -2, -10)
 	end
 	-- a câmera fica debaixo d'água (só sobe junto quando o peixe salta para fora)
 	if focus.Y < Track.WATER_Y then

@@ -139,7 +139,7 @@ Config.LIGHTING = {
 		BloomSize = 24,
 		BloomThreshold = 2,
 		Glare = 0,
-		Haze = 1.2,
+		Haze = 0.6, -- menos "leitoso" ao longe
 		Density = 0.3,
 		ColorCorrection = { Contrast = 0.08, Saturation = 0.18, Tint = { 255, 255, 255 } },
 	},

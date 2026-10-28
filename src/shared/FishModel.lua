@@ -19,6 +19,8 @@ local Brick = require(Shared:WaitForChild("Brick"))
 
 local FishModel = {}
 
+local meshFolder, buildFromMesh -- (definidas mais abaixo)
+
 local WHITE = Color3.fromRGB(250, 250, 250)
 local BLACK = Color3.fromRGB(20, 20, 25)
 local SADDLE = Color3.fromRGB(120, 70, 35)
@@ -92,6 +94,129 @@ local LOOK = {
 FishModel.Look = LOOK
 
 
+-- Modelos 3D prontos -----------------------------------------------------------------------
+-- Ficam em ReplicatedStorage > FishMeshes > <id da espécie> (um Model com uma MeshPart, já
+-- virado para -Z e centrado na origem). Se a espécie não tiver modelo pronto, o peixe é
+-- montado com peças, como antes.
+local cachedFolder = nil
+meshFolder = function()
+	if cachedFolder == nil then
+		cachedFolder = ReplicatedStorage:FindFirstChild("FishMeshes") or false
+	end
+	return cachedFolder or nil
+end
+
+-- Mutação num modelo pintado: tira a pintura e aplica a cor/material da mutação.
+local MESH_MUTATION = {
+	Prata = { Color = Color3.fromRGB(190, 200, 215), Material = Enum.Material.SmoothPlastic, Reflectance = 0.15 },
+	Dourado = { Color = Color3.fromRGB(245, 170, 20), Material = Enum.Material.SmoothPlastic, Reflectance = 0.12 },
+	Diamante = { Color = Color3.fromRGB(130, 235, 255), Material = Enum.Material.Glass, Reflectance = 0.25, Transparency = 0.15 },
+	ArcoIris = { Color = Color3.fromRGB(255, 130, 230), Material = Enum.Material.ForceField, Reflectance = 0 },
+}
+
+buildFromMesh = function(template, species, mutation, size, s, L, palette, opts, family)
+	local model = Instance.new("Model")
+	model.Name = species.Name
+
+	local root = Brick.Part(model, {
+		Name = "Root",
+		Size = Vector3.new(1, 1, 1) * s,
+		CFrame = CFrame.new(),
+		Transparency = 1,
+		CanCollide = false,
+		Studs = false,
+		CastShadow = false,
+		Anchored = opts.Anchored ~= false,
+	})
+	model.PrimaryPart = root
+
+	local source = template:FindFirstChildWhichIsA("MeshPart", true)
+	local body = source:Clone()
+	body.Name = "Body"
+	-- tamanho: a maior medida do modelo vira o comprimento do peixe deste tamanho
+	local extents = function(cf, sizeV)
+		local r = cf.Rotation
+		local x, y, z = r:VectorToWorldSpace(Vector3.new(sizeV.X, 0, 0)), r:VectorToWorldSpace(Vector3.new(0, sizeV.Y, 0)), r:VectorToWorldSpace(Vector3.new(0, 0, sizeV.Z))
+		return Vector3.new(
+			math.abs(x.X) + math.abs(y.X) + math.abs(z.X),
+			math.abs(x.Y) + math.abs(y.Y) + math.abs(z.Y),
+			math.abs(x.Z) + math.abs(y.Z) + math.abs(z.Z)
+		)
+	end
+	local srcExt = extents(source.CFrame, source.Size)
+	local biggest = math.max(srcExt.X, srcExt.Y, srcExt.Z)
+	local target = (template:GetAttribute("Length") or 6.5) * (L / 5)
+	local k = target / biggest
+	body.Size = source.Size * k
+	-- mantém o giro e o centro do modelo pronto (ele já olha para -Z)
+	body.CFrame = source.CFrame.Rotation + source.CFrame.Position * k
+	body.Anchored = false
+	body.CanCollide = false
+	body.CanTouch = false
+	body.CanQuery = false
+	body.Massless = true
+	local look = MESH_MUTATION[mutation]
+	if look then
+		body.TextureID = ""
+		body.Color = look.Color
+		body.Material = look.Material
+		body.Reflectance = look.Reflectance
+		body.Transparency = look.Transparency or 0
+	end
+	body.Parent = model
+
+	-- o corpo inteiro ondula (o modelo é uma peça só)
+	local joint = Instance.new("Motor6D")
+	joint.Name = "BodyJoint"
+	joint.Part0 = root
+	joint.Part1 = body
+	joint.Parent = root
+
+	joint.C0 = body.CFrame
+	local ext = extents(body.CFrame, body.Size)
+	local W, H, Lm = ext.X, ext.Y, ext.Z
+	local seatY = H * (template:GetAttribute("SeatY") or 0.42)
+	local seatZ = Lm * (template:GetAttribute("SeatZ") or -0.05)
+
+	local function attach(props)
+		props.Anchored = false
+		props.CanCollide = false
+		props.Studs = false
+		local part = Brick.Part(model, props)
+		part.Massless = true
+		local weld = Instance.new("Weld")
+		weld.Part0 = body
+		weld.Part1 = part
+		weld.C0 = body.CFrame:Inverse() * props.CFrame
+		weld.Parent = part
+		return part
+	end
+	if opts.Saddle ~= false then
+		local sw = math.min(W, 3 * s)
+		attach({ Name = "Blanket", Size = Vector3.new(sw + 0.5 * s, 0.25 * s, 2.3 * s), CFrame = CFrame.new(0, seatY + 0.125 * s, seatZ), Color = BLANKET })
+		attach({ Name = "Saddle", Size = Vector3.new(sw * 0.7, 0.45 * s, 1.5 * s), CFrame = CFrame.new(0, seatY + 0.45 * s, seatZ), Color = SADDLE })
+		attach({ Name = "SaddleBack", Size = Vector3.new(sw * 0.7, 0.5 * s, 0.35 * s), CFrame = CFrame.new(0, seatY + 0.75 * s, seatZ + 0.6 * s), Color = SADDLE })
+	end
+
+	if palette.Sparkle then
+		local sparkles = Instance.new("Sparkles")
+		sparkles.SparkleColor = palette.Sparkle
+		sparkles.Parent = body
+	end
+
+	model:SetAttribute("Species", species.Id)
+	model:SetAttribute("Mutation", mutation)
+	model:SetAttribute("Size", size)
+	model:SetAttribute("Family", family)
+	model:SetAttribute("Mesh", true)
+	model:SetAttribute("SeatY", seatY + 0.7 * s)
+	model:SetAttribute("SeatZ", seatZ)
+	model:SetAttribute("Length", Lm)
+	model:SetAttribute("Height", H)
+	model:SetAttribute("Width", W)
+	return model
+end
+
 -- Monta o peixe. opts: { Saddle = true/false, Scale = número (sobrepõe o tamanho), Anchored = true }
 function FishModel.Build(speciesId, mutation, size, opts)
 	opts = opts or {}
@@ -109,6 +234,13 @@ function FishModel.Build(speciesId, mutation, size, opts)
 	local W = 2.4 * s
 
 	local palette = paletteFor(species, mutation)
+
+	-- Modelo 3D pronto (gerado no Studio) para esta espécie? Usa ele no lugar das peças.
+	local template = meshFolder() and meshFolder():FindFirstChild(species.Id)
+	if template then
+		return buildFromMesh(template, species, mutation, size, s, L, palette, opts, family)
+	end
+
 	local function color(key)
 		if palette.Rainbow then
 			return rainbow()
@@ -455,6 +587,13 @@ function FishModel.Wag(model, t, speed)
 	local joint = root and root:FindFirstChild("TailJoint")
 	if joint then
 		joint.Transform = CFrame.Angles(0, math.sin(t * (speed or 6)) * 0.38, 0)
+		return
+	end
+	-- modelo de peça única: o corpo todo ondula de leve
+	local bodyJoint = root and root:FindFirstChild("BodyJoint")
+	if bodyJoint then
+		local a = t * (speed or 6)
+		bodyJoint.Transform = CFrame.Angles(0, math.sin(a) * 0.14, math.sin(a + 1.2) * 0.04)
 	end
 end
 

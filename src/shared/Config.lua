@@ -93,17 +93,17 @@ Config.AREA_REWARD = {
 -- 3 Robux por "x" (x2 = 6, x4 = 12, x6 = 18, x8 = 24), bem barato para incentivar a compra.
 -- Só dá para comprar o próximo degrau, e vale o maior que o jogador tiver.
 Config.GAMEPASSES = {
-	{ Key = "MoneyX2", Id = 0, Name = "Dinheiro x2", Desc = "O aquário rende o dobro. Para sempre!", Price = 115 },
-	{ Key = "StaminaX2", Id = 0, Name = "Stamina x2", Desc = "A esteira dá 2x stamina. Para sempre!", Price = 6, Ladder = "Stamina", Mult = 2 },
-	{ Key = "StaminaX4", Id = 0, Name = "Stamina x4", Desc = "A esteira dá 4x stamina. Para sempre!", Price = 12, Ladder = "Stamina", Mult = 4 },
-	{ Key = "StaminaX6", Id = 0, Name = "Stamina x6", Desc = "A esteira dá 6x stamina. Para sempre!", Price = 18, Ladder = "Stamina", Mult = 6 },
-	{ Key = "StaminaX8", Id = 0, Name = "Stamina x8", Desc = "A esteira dá 8x stamina. Para sempre!", Price = 24, Ladder = "Stamina", Mult = 8 },
+	{ Key = "MoneyX2", Id = 0, Name = "Money x2", Desc = "Your aquarium earns double. Forever!", Price = 115 },
+	{ Key = "StaminaX2", Id = 0, Name = "Stamina x2", Desc = "The treadmill gives 2x stamina. Forever!", Price = 6, Ladder = "Stamina", Mult = 2 },
+	{ Key = "StaminaX4", Id = 0, Name = "Stamina x4", Desc = "The treadmill gives 4x stamina. Forever!", Price = 12, Ladder = "Stamina", Mult = 4 },
+	{ Key = "StaminaX6", Id = 0, Name = "Stamina x6", Desc = "The treadmill gives 6x stamina. Forever!", Price = 18, Ladder = "Stamina", Mult = 6 },
+	{ Key = "StaminaX8", Id = 0, Name = "Stamina x8", Desc = "The treadmill gives 8x stamina. Forever!", Price = 24, Ladder = "Stamina", Mult = 8 },
 }
 Config.PRODUCTS = {
-	{ Key = "Revive", Id = 0, Name = "Reviver", Price = 25 },
-	{ Key = "Cash1", Id = 0, Name = "Pacote pequeno", Price = 29, Minutes = 10, Minimum = 2000 },
-	{ Key = "Cash2", Id = 0, Name = "Pacote médio", Price = 99, Minutes = 45, Minimum = 15000 },
-	{ Key = "Cash3", Id = 0, Name = "Pacote grande", Price = 249, Minutes = 150, Minimum = 60000 },
+	{ Key = "Revive", Id = 0, Name = "Revive", Price = 25 },
+	{ Key = "Cash1", Id = 0, Name = "Small Pack", Price = 29, Minutes = 10, Minimum = 2000 },
+	{ Key = "Cash2", Id = 0, Name = "Medium Pack", Price = 99, Minutes = 45, Minimum = 15000 },
+	{ Key = "Cash3", Id = 0, Name = "Big Pack", Price = 249, Minutes = 150, Minimum = 60000 },
 }
 -- Enquanto você treina na esteira, o botão Índex vira a oferta do PRÓXIMO degrau desta
 -- escada (some quando o jogador já tem o x8)

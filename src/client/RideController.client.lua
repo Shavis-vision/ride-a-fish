@@ -219,7 +219,7 @@ local hint = UIKit.Text(gui, {
 UIKit.AutoScale(hint)
 
 local backButton = UIKit.Button(gui, {
-	Text = "Voltar à praia",
+	Text = "Back to beach",
 	Icon = "🏖️",
 	Color = "Red",
 	Size = UDim2.fromOffset(250, 60),
@@ -230,7 +230,7 @@ local backButton = UIKit.Button(gui, {
 UIKit.AutoScale(backButton)
 
 local jumpButton = UIKit.Button(gui, {
-	Text = "PULAR",
+	Text = "JUMP",
 	Color = "Green",
 	Size = UDim2.fromOffset(150, 150),
 	Position = UDim2.new(1, -30, 1, -40),
@@ -261,11 +261,11 @@ local fallPanel = UIKit.Frame(gui, {
 })
 UIKit.AutoScale(fallPanel, Vector2.new(520, 300))
 fallPanel.Visible = false
-UIKit.Text(fallPanel, { Text = "VOCÊ CAIU!", Size = UDim2.new(1, -20, 0, 66), Position = UDim2.fromOffset(10, 14), Color = Color3.fromRGB(255, 90, 80), Stroke = 4, Max = 60 })
+UIKit.Text(fallPanel, { Text = "YOU FELL!", Size = UDim2.new(1, -20, 0, 66), Position = UDim2.fromOffset(10, 14), Color = Color3.fromRGB(255, 90, 80), Stroke = 4, Max = 60 })
 local fallInfo = UIKit.Text(fallPanel, { Text = "", Size = UDim2.new(1, -30, 0, 34), Position = UDim2.fromOffset(15, 86), Max = 28 })
 local fallCountdown = UIKit.Text(fallPanel, { Text = "", Size = UDim2.new(1, -30, 0, 30), Position = UDim2.fromOffset(15, 124), Color = Color3.fromRGB(200, 200, 210), Max = 26 })
 local reviveButton = UIKit.Button(fallPanel, {
-	Text = "Reviver",
+	Text = "Revive",
 	Icon = "❤️",
 	Color = "Green",
 	Size = UDim2.fromOffset(230, 70),
@@ -274,7 +274,7 @@ local reviveButton = UIKit.Button(fallPanel, {
 	Max = 32,
 })
 local homeButton = UIKit.Button(fallPanel, {
-	Text = "Voltar",
+	Text = "Leave",
 	Color = "Gray",
 	Size = UDim2.fromOffset(200, 70),
 	Position = UDim2.new(0.5, 8, 1, -20),
@@ -290,7 +290,7 @@ for _, product in ipairs(Config.PRODUCTS) do
 end
 local reviveAvailable = reviveProduct ~= nil and (reviveProduct.Id ~= 0 or RunService:IsStudio())
 if reviveProduct then
-	reviveButton.Label.Text = "Reviver " .. utf8.char(0xE002) .. reviveProduct.Price
+	reviveButton.Label.Text = "Revive " .. utf8.char(0xE002) .. reviveProduct.Price
 end
 
 -- Círculo de stamina (como no Zelda) ---------------------------------------------------------
@@ -548,7 +548,7 @@ end
 local function refreshLabel(obj)
 	if obj.StaminaLabel then
 		local color = stateColor(obj.Required)
-		obj.StaminaLabel.Text = ('<i>Precisa:</i> ⚡ <font color="#%s">%s</font>'):format(color:ToHex(), NumberFormat.Abbreviate(obj.Required))
+		obj.StaminaLabel.Text = ('<i>Needs:</i> ⚡ <font color="#%s">%s</font>'):format(color:ToHex(), NumberFormat.Abbreviate(obj.Required))
 	end
 end
 
@@ -744,7 +744,7 @@ local function fall()
 	local floorY = Track.SeabedY(rider.Dist)
 	rider.Pos = Vector3.new(rider.Pos.X, floorY + 1.2, rider.Pos.Z)
 	placeRider(CFrame.new(rider.Pos) * CFrame.Angles(-math.pi / 2, 0, 0))
-	showBanner("Caiu!", Color3.fromRGB(255, 90, 80))
+	showBanner("You fell!", Color3.fromRGB(255, 90, 80))
 	highlight.Parent = nil
 end
 
@@ -757,7 +757,7 @@ local function revive()
 	local species = Fish.ByArea[area.Index][1]
 	local obj = spawnFish({ S = species.Id, M = "Normal", Z = "Normal", Dist = rider.Dist + 3, X = rider.Pos.X, Phase = 0, SpeedMul = 1 }, true)
 	mount(obj)
-	showBanner("De volta!", UIKit.MoneyGreen)
+	showBanner("Back in!", UIKit.MoneyGreen)
 end
 
 -- Começo e fim ------------------------------------------------------------------------------
@@ -886,14 +886,14 @@ local function updateDiving(now)
 		if not rider.Splashed and pos.Y <= Track.WATER_Y + 0.5 and p > 0.6 then
 			rider.Splashed = true
 			splash(pos)
-			showBanner("MERGULHO!", Color3.fromRGB(120, 230, 255))
+			showBanner("DIVE!", Color3.fromRGB(120, 230, 255))
 		end
 	else
 		local p = math.clamp((t - walk - DIVE_CROUCH - DIVE_AIR) / DIVE_GLIDE, 0, 1)
 		if not rider.Splashed then
 			rider.Splashed = true
 			splash(entry)
-			showBanner("MERGULHO!", Color3.fromRGB(120, 230, 255))
+			showBanner("DIVE!", Color3.fromRGB(120, 230, 255))
 		end
 		local fish = rider.DiveTarget
 		if not fish or not fish.Model then
@@ -952,9 +952,9 @@ endRun = function(reason)
 		ClientState.Request("EndRun", reason)
 	end)
 	if count > 0 then
-		ClientState.Toast(("Corrida terminada: %d peixe(s) domado(s)!"):format(count), "ok")
+		ClientState.Toast(("Run over: %d fish tamed!"):format(count), "ok")
 	elseif reason == "caiu" then
-		ClientState.Toast("Treine na esteira para domar peixes mais fortes.", "info")
+		ClientState.Toast("Train on the treadmill to tame stronger fish.", "info")
 	end
 end
 
@@ -982,7 +982,7 @@ local function updateRiding(dt, now, t)
 		if not rider.LeapStart and now - rider.SaltoClock > RIDE.SALTO_INTERVAL then
 			rider.LeapStart = now
 			rider.LeapPeak = math.max(Track.WATER_Y + 8, baseY + 8)
-			showBanner("SALTO!", Color3.fromRGB(120, 230, 255))
+			showBanner("LEAP!", Color3.fromRGB(120, 230, 255))
 		end
 		if rider.LeapStart then
 			local p = (now - rider.LeapStart) / 1.6
@@ -1015,9 +1015,9 @@ local function updateRiding(dt, now, t)
 				if species.Ability == "Casco" and not rider.CascoUsed then
 					rider.CascoUsed = true
 					obj.X += (obj.X >= ob.X and 1 or -1) * (ob.Radius + obj.Width)
-					showBanner("O CASCO TE PROTEGEU!", Color3.fromRGB(120, 230, 255))
+					showBanner("YOUR SHELL PROTECTED YOU!", Color3.fromRGB(120, 230, 255))
 				else
-					buck("Bateu!")
+					buck("Crash!")
 				end
 				return
 			end
@@ -1045,23 +1045,23 @@ local function updateRiding(dt, now, t)
 						rider.RideTime = math.clamp(species.TameTime * (ratio - 1), RIDE.BASE_RIDE_TIME, RIDE.MAX_RIDE_TIME)
 						rider.RideEnd = os.clock() + rider.RideTime
 						rider.WheelAtTame = math.max(0.2, 1 - obj.Required / stamina)
-						showBanner("DOMADO!", UIKit.MoneyGreen)
+						showBanner("TAMED!", UIKit.MoneyGreen)
 					else
-						buck("Escapou!")
+						buck("It got away!")
 					end
 				end)
 			end
 		elseif elapsed >= rider.BuckAt then
-			buck("Stamina baixa! Ele te derrubou")
+			buck("Low stamina! It threw you off")
 			return
 		end
 	elseif rider.RideEnd and now >= rider.RideEnd then
-		buck("O peixe cansou!")
+		buck("The fish got tired!")
 		return
 	end
 
 	if obj.Dist > Track.LENGTH - 25 then
-		ClientState.Toast("Você chegou ao fim! Novas áreas em breve.", "raro")
+		ClientState.Toast("You reached the end! New areas coming soon.", "raro")
 		endRun("fim")
 	end
 end
@@ -1173,11 +1173,11 @@ end
 
 local function updateHud(now)
 	local area = Track.AreaAt(rider.Dist)
-	areaLabel.Text = ("ÁREA %d • %s"):format(area.Index, area.Name)
-	distLabel.Text = ("%d m  •  ⚡ %s  •  domados: %d"):format(math.max(0, math.floor(rider.Dist)), NumberFormat.Abbreviate(ClientState.Stat("Stamina")), run.Tamed)
+	areaLabel.Text = ("AREA %d • %s"):format(area.Index, area.Name)
+	distLabel.Text = ("%d m  •  ⚡ %s  •  tamed: %d"):format(math.max(0, math.floor(rider.Dist)), NumberFormat.Abbreviate(ClientState.Stat("Stamina")), run.Tamed)
 	if area.Index ~= lastAreaIndex then
 		if lastAreaIndex ~= 0 then
-			showBanner(("ÁREA %d • %s"):format(area.Index, string.upper(area.Name)), area.Deco[1])
+			showBanner(("AREA %d • %s"):format(area.Index, string.upper(area.Name)), area.Deco[1])
 		end
 		lastAreaIndex = area.Index
 	end
@@ -1221,7 +1221,7 @@ local function updateHud(now)
 			tameFill.Size = UDim2.fromScale(math.clamp(left / rider.RideTime, 0, 1), 1)
 			tameGradient.Color = ColorSequence.new(UIKit.Colors.Blue[1], UIKit.Colors.Blue[2])
 			buckMarker.Visible = false
-			tameStatus.Text = ("Domado! Fôlego: %.1fs — pule para o próximo"):format(left)
+			tameStatus.Text = ("Tamed! Ride time: %.1fs — jump to the next one"):format(left)
 			tameStatus.TextColor3 = Color3.fromRGB(150, 210, 255)
 		else
 			local tameTime = obj.Species.TameTime
@@ -1229,13 +1229,13 @@ local function updateHud(now)
 			if rider.CanTame then
 				tameGradient.Color = ColorSequence.new(UIKit.Colors.Green[1], UIKit.Colors.Green[2])
 				buckMarker.Visible = false
-				tameStatus.Text = ("Domando... %.1fs"):format(math.max(0, tameTime - elapsed))
+				tameStatus.Text = ("Taming... %.1fs"):format(math.max(0, tameTime - elapsed))
 				tameStatus.TextColor3 = UIKit.MoneyGreen
 			else
 				tameGradient.Color = ColorSequence.new(UIKit.Colors.Red[1], UIKit.Colors.Red[2])
 				buckMarker.Visible = true
 				buckMarker.Position = UDim2.new(math.clamp(rider.BuckAt / tameTime, 0, 1), -2, -0.13, 0)
-				tameStatus.Text = ("Precisa de ⚡%s — ele vai te derrubar!"):format(NumberFormat.Abbreviate(obj.Required))
+				tameStatus.Text = ("Needs ⚡%s — it will throw you off!"):format(NumberFormat.Abbreviate(obj.Required))
 				tameStatus.TextColor3 = Color3.fromRGB(255, 120, 100)
 			end
 		end
@@ -1243,13 +1243,13 @@ local function updateHud(now)
 		tamePanel.Visible = false
 	end
 
-	jumpButton.Label.Text = state == "Airborne" and "ARPÃO" or "PULAR"
+	jumpButton.Label.Text = state == "Airborne" and "HARPOON" or "JUMP"
 	if state == "Riding" and obj and not obj.Tamed and rider.CanTame then
-		hint.Text = "Segure firme até domar!  •  A/D (ou analógico): desviar das pedras"
+		hint.Text = "Hold on until it's tamed!  •  A/D: dodge the rocks"
 	elseif state == "Riding" then
-		hint.Text = "ESPAÇO: saltar do peixe  •  A/D: desviar"
+		hint.Text = "SPACE: jump off  •  A/D: dodge"
 	elseif state == "Airborne" then
-		hint.Text = target and "ESPAÇO: lançar o arpão!" or "Nenhum peixe no alcance... (A/D para os lados)"
+		hint.Text = target and "SPACE: throw the harpoon!" or "No fish in range... (A/D to move)"
 	else
 		hint.Text = ""
 	end
@@ -1282,13 +1282,13 @@ local function updateFallen(now)
 	if not rider.FallPanelShown and now - rider.FallAt >= RIDE.FALL_SHOW_TIME then
 		rider.FallPanelShown = true
 		fallPanel.Visible = true
-		fallInfo.Text = ("Peixes domados nesta corrida: %d"):format(run.Tamed)
+		fallInfo.Text = ("Fish tamed this run: %d"):format(run.Tamed)
 		reviveButton.Visible = reviveAvailable
 		rider.ReviveDeadline = now + (reviveAvailable and RIDE.REVIVE_WINDOW or 2.5)
 	end
 	if rider.ReviveDeadline then
 		local left = rider.ReviveDeadline - now
-		fallCountdown.Text = ("Voltando para a praia em %d..."):format(math.max(0, math.ceil(left)))
+		fallCountdown.Text = ("Back to the beach in %d..."):format(math.max(0, math.ceil(left)))
 		if left <= 0 then
 			endRun("caiu")
 		end

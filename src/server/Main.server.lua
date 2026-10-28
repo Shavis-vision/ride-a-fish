@@ -77,9 +77,9 @@ local function onPlayerAdded(player)
 	local data, reason = DataService.Load(player)
 	if not data then
 		if reason == "sessao_em_uso" then
-			player:Kick("Sua conta ainda está aberta em outro servidor. Espere alguns segundos e entre de novo.")
+			player:Kick("Your account is still open on another server. Wait a few seconds and rejoin.")
 		elseif reason ~= "saiu" then
-			player:Kick("Não consegui carregar seus dados. Tente entrar de novo.")
+			player:Kick("Could not load your data. Please try rejoining.")
 		end
 		return
 	end
@@ -87,7 +87,7 @@ local function onPlayerAdded(player)
 	local plot = PlotService.Assign(player)
 	if not plot then
 		DataService.Discard(player)
-		player:Kick("Servidor cheio. Tente outro servidor.")
+		player:Kick("Server is full. Try another server.")
 		return
 	end
 

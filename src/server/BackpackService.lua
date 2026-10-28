@@ -66,7 +66,7 @@ local function makeTool(player, entry)
 	local tool = Instance.new("Tool")
 	local tags = Fish.Tags(entry)
 	tool.Name = species.Name
-	tool.ToolTip = (tags ~= "" and (tags .. " • ") or "") .. "$" .. NumberFormat.Rate(Fish.Income(entry)) .. "/s • clique para pôr no aquário"
+	tool.ToolTip = (tags ~= "" and (tags .. " • ") or "") .. "$" .. NumberFormat.Rate(Fish.Income(entry)) .. "/s • click to place in aquarium"
 	tool.CanBeDropped = false
 	tool.RequiresHandle = true
 	tool:SetAttribute("FishUid", entry.Uid)

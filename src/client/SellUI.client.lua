@@ -3,7 +3,7 @@
 --
 -- Barraca VENDER PEIXES (abre ao pisar no anel vermelho na frente do balcão), no estilo da
 -- referência "Sell Dinos":
---   * à esquerda: ordenar por Valor ou Raridade e "Selecionar todos";
+--   * à esquerda: ordenar por Valor ou Raridade e "Select all";
 --   * no meio: os peixes guardados em cartões (toque para marcar/desmarcar);
 --   * embaixo: o valor total dos marcados e o botão "Vender (n)", que sempre pede confirmação
 --     (e avisa quando há peixes raros ou mutados no meio).
@@ -19,7 +19,7 @@ local NumberFormat = require(Shared:WaitForChild("NumberFormat"))
 local UIKit = require(script.Parent:WaitForChild("UIKit"))
 local ClientState = require(script.Parent:WaitForChild("ClientState"))
 
-local window = UIKit.Window("Sell", { Title = "Vender Peixes", Icon = "🐟", Size = Vector2.new(1040, 660), Header = "Lime" })
+local window = UIKit.Window("Sell", { Title = "Sell Fish", Icon = "🐟", Size = Vector2.new(1040, 660), Header = "Lime" })
 local body = window.Body
 
 local sortBy = "Value"
@@ -36,12 +36,12 @@ local MUTATION_BORDER = {
 
 -- Coluna da esquerda ------------------------------------------------------------------------
 local left = UIKit.Frame(body, { Name = "Left", Size = UDim2.new(0, 240, 1, -96), Transparency = 1, Corner = false })
-UIKit.Text(left, { Text = "Ordenar por:", Size = UDim2.new(1, 0, 0, 38), Max = 32 })
-local valueButton = UIKit.Button(left, { Text = "Valor", Icon = "⬇️", Color = "Green", Size = UDim2.new(1, -10, 0, 62), Position = UDim2.fromOffset(5, 46), Max = 32 })
-local rarityButton = UIKit.Button(left, { Text = "Raridade", Icon = "⬇️", Color = "Gray", Size = UDim2.new(1, -10, 0, 62), Position = UDim2.fromOffset(5, 118), Max = 32 })
+UIKit.Text(left, { Text = "Sort by:", Size = UDim2.new(1, 0, 0, 38), Max = 32 })
+local valueButton = UIKit.Button(left, { Text = "Value", Icon = "⬇️", Color = "Green", Size = UDim2.new(1, -10, 0, 62), Position = UDim2.fromOffset(5, 46), Max = 32 })
+local rarityButton = UIKit.Button(left, { Text = "Rarity", Icon = "⬇️", Color = "Gray", Size = UDim2.new(1, -10, 0, 62), Position = UDim2.fromOffset(5, 118), Max = 32 })
 UIKit.Frame(left, { Size = UDim2.new(1, -20, 0, 4), Position = UDim2.fromOffset(10, 196), Color = Color3.fromRGB(70, 70, 82), Corner = 2 })
 local selectAll, selectAllLabel = UIKit.Button(left, {
-	Text = "Selecionar todos",
+	Text = "Select all",
 	Color = "Green",
 	Size = UDim2.new(1, -10, 0, 62),
 	Position = UDim2.fromOffset(5, 214),
@@ -66,7 +66,7 @@ local dotFill = UIKit.Frame(dot, {
 	ZIndex = 5,
 })
 UIKit.Text(left, {
-	Text = "Os peixes que estão no aquário não podem ser vendidos.",
+	Text = "Fish in your aquarium can't be sold.",
 	Size = UDim2.new(1, -10, 0, 84),
 	Position = UDim2.fromOffset(5, 296),
 	Color = Color3.fromRGB(200, 200, 212),
@@ -110,11 +110,11 @@ local footer = UIKit.Frame(body, {
 	Corner = 10,
 	Stroke = 3,
 })
-UIKit.Text(footer, { Text = "Valor total:", Size = UDim2.fromOffset(240, 50), Position = UDim2.fromOffset(24, 17), Align = Enum.TextXAlignment.Left, Max = 40, Stroke = 3 })
+UIKit.Text(footer, { Text = "Total value:", Size = UDim2.fromOffset(240, 50), Position = UDim2.fromOffset(24, 17), Align = Enum.TextXAlignment.Left, Max = 40, Stroke = 3 })
 UIKit.Text(footer, { Text = "💵", Size = UDim2.fromOffset(56, 56), Position = UDim2.fromOffset(262, 14), Stroke = 1.5 })
 local totalLabel = UIKit.Text(footer, { Text = "$0", Size = UDim2.fromOffset(320, 50), Position = UDim2.fromOffset(326, 17), Align = Enum.TextXAlignment.Left, Max = 44, Stroke = 3 })
 local sellButton, sellLabel = UIKit.Button(footer, {
-	Text = "Vender (0)",
+	Text = "Sell (0)",
 	Color = "Gray",
 	Size = UDim2.fromOffset(320, 64),
 	Position = UDim2.new(1, -12, 0.5, 0),
@@ -282,17 +282,17 @@ render = function()
 	for i, entry in ipairs(entries) do
 		card(entry, i)
 	end
-	empty.Text = #entries == 0 and "Nada para vender. Dome peixes no mar!" or ""
+	empty.Text = #entries == 0 and "Nothing to sell. Tame fish in the sea!" or ""
 
 	local total, count = selection(entries)
 	totalLabel.Text = NumberFormat.Money(total)
-	sellLabel.Text = ("Vender (%d)"):format(count)
+	sellLabel.Text = ("Sell (%d)"):format(count)
 	UIKit.SetButtonColor(sellButton, count > 0 and "Green" or "Gray")
 	UIKit.SetButtonColor(valueButton, sortBy == "Value" and "Green" or "Gray")
 	UIKit.SetButtonColor(rarityButton, sortBy == "Rarity" and "Green" or "Gray")
 	local allSelected = #entries > 0 and count == #entries
 	dotFill.Visible = allSelected
-	selectAllLabel.Text = allSelected and "Desmarcar todos" or "Selecionar todos"
+	selectAllLabel.Text = allSelected and "Deselect all" or "Select all"
 end
 
 valueButton.Activated:Connect(function()
@@ -319,14 +319,14 @@ end)
 sellButton.Activated:Connect(function()
 	local total, count, precious, uids = selection(storedFish())
 	if count == 0 then
-		ClientState.Toast("Toque nos peixes para escolher o que vender", "info")
+		ClientState.Toast("Tap fish to choose what to sell", "info")
 		return
 	end
-	local text = ("Vender %d peixe(s) por %s?"):format(count, NumberFormat.Money(total))
+	local text = ("Sell %d fish for %s?"):format(count, NumberFormat.Money(total))
 	if precious > 0 then
-		text ..= ("\n%d deles são raros ou mutados!"):format(precious)
+		text ..= ("\n%d of them are rare or mutated!"):format(precious)
 	end
-	UIKit.Confirm(text, "Vender", function()
+	UIKit.Confirm(text, "Sell", function()
 		local result = ClientState.Request("SellMany", uids)
 		if result.ok then
 			selected = {}

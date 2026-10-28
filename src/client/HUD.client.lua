@@ -36,7 +36,7 @@ local left = UIKit.Frame(gui, {
 UIKit.AutoScale(left)
 UIKit.Button(left, {
 	Name = "Shop",
-	Text = "Loja",
+	Text = "Shop",
 	Icon = "🎁",
 	IconKey = "Loja",
 	Color = "Pink",
@@ -55,7 +55,7 @@ UIKit.Button(left, {
 })
 local indexButton = UIKit.Button(left, {
 	Name = "Index",
-	Text = "Índex",
+	Text = "Index",
 	Icon = "📘",
 	IconKey = "Indice",
 	Color = "Blue",
@@ -118,7 +118,7 @@ local function updateOffer()
 	offerPass = Progression.NextLadderPass(Config.TREADMILL_OFFER, data and data.Passes)
 	if offerPass then
 		offerLabel.Text = ("x%d Stamina"):format(offerPass.Mult)
-		offerPrice.Text = "SÓ " .. ROBUX .. " " .. offerPass.Price
+		offerPrice.Text = "ONLY " .. ROBUX .. " " .. offerPass.Price
 	end
 	local show = training and offerPass ~= nil
 	offerButton.Visible = show
@@ -220,7 +220,7 @@ local staminaBar, staminaText = statBar(0, "⚡", "Stamina", UIKit.White, functi
 	UIKit.OpenWindow("Shop", "Gamepasses")
 end)
 local _, moneyText = statBar(82, "💵", "Dinheiro", UIKit.MoneyGreen, function()
-	UIKit.OpenWindow("Shop", "Dinheiro")
+	UIKit.OpenWindow("Shop", "Cash")
 end)
 local rateText = UIKit.Text(staminaBar, {
 	Name = "Rate",
@@ -255,7 +255,7 @@ local popupClock = 0
 RunService.Heartbeat:Connect(function(dt)
 	local training = player:GetAttribute("Training") == true
 	updateOffer()
-	rateText.Text = training and ("Treinando: +" .. NumberFormat.Rate(ClientState.Stat("StaminaRate")) .. "/s") or ""
+	rateText.Text = training and ("Training: +" .. NumberFormat.Rate(ClientState.Stat("StaminaRate")) .. "/s") or ""
 	if training then
 		popupClock += dt
 		if popupClock >= 0.5 then

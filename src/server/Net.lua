@@ -39,12 +39,12 @@ function Net.Start()
 	Net.Action.OnServerInvoke = function(player, action, ...)
 		local handler = type(action) == "string" and handlers[action]
 		if not handler then
-			return { ok = false, msg = "Ação desconhecida" }
+			return { ok = false, msg = "Unknown action" }
 		end
 		local ok, result = pcall(handler, player, ...)
 		if not ok then
 			warn(("[Net] erro na ação %s de %s: %s"):format(action, player.Name, tostring(result)))
-			return { ok = false, msg = "Algo deu errado. Tente de novo." }
+			return { ok = false, msg = "Something went wrong. Try again." }
 		end
 		return result or { ok = true }
 	end

@@ -30,7 +30,7 @@ end
 function ClientState.Request(name, ...)
 	local ok, result = pcall(action.InvokeServer, action, name, ...)
 	if not ok then
-		ClientState.Toast("Sem conexão com o servidor", "erro")
+		ClientState.Toast("No connection to the server", "erro")
 		return { ok = false }
 	end
 	result = result or { ok = false }

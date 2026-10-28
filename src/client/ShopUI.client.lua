@@ -15,7 +15,7 @@ local ClientState = require(script.Parent:WaitForChild("ClientState"))
 
 local ROBUX = utf8.char(0xE002) .. " " -- ícone do Robux nas fontes do Roblox
 
-local window = UIKit.Window("Shop", { Title = "Loja", Size = Vector2.new(940, 620), Header = "Blue" })
+local window = UIKit.Window("Shop", { Title = "Shop", Size = Vector2.new(940, 620), Header = "Blue" })
 local scroll = UIKit.Scroll(window.Body, { Padding = 14 })
 
 local PASS_STYLE = {
@@ -90,7 +90,7 @@ for i, pass in ipairs(Config.GAMEPASSES) do
 end
 
 -- Pacotes de dinheiro
-sectionTitle("Dinheiro", 10)
+sectionTitle("Cash", 10)
 local grid = UIKit.Frame(scroll, { Name = "CashGrid", Size = UDim2.new(1, -20, 0, 230), Transparency = 1, LayoutOrder = 11, Corner = false })
 local gridLayout = Instance.new("UIGridLayout")
 gridLayout.CellSize = UDim2.new(1 / 3, -10, 1, 0)
@@ -130,7 +130,7 @@ for _, product in ipairs(Config.PRODUCTS) do
 end
 
 UIKit.Text(scroll, {
-	Text = "Os pacotes crescem junto com a sua renda.",
+	Text = "Packs grow with your income.",
 	Size = UDim2.new(1, -20, 0, 30),
 	LayoutOrder = 20,
 	Color = Color3.fromRGB(190, 190, 200),
@@ -145,7 +145,7 @@ local function refresh()
 		local label = info.Button:FindFirstChild("Label")
 		local previous = Progression.PreviousLadderPass(info.Pass)
 		if passes[key] then
-			label.Text = "COMPRADO"
+			label.Text = "OWNED"
 			UIKit.SetButtonColor(info.Button, "Gray")
 		elseif previous and not passes[previous.Key] then
 			label.Text = "🔒 " .. previous.Name:gsub("Stamina ", "")

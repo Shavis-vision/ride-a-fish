@@ -2,9 +2,9 @@
 -- Fica em: StarterPlayerScripts > Client > AquariumUI
 --
 -- Painel lateral do AQUÁRIO (botão laranja 🐟), no estilo da referência: aparece do lado
--- direito e mostra SÓ os peixes que estão no aquário rendendo dinheiro, com o botão "Tirar".
+-- direito e mostra SÓ os peixes que estão no aquário rendendo dinheiro, com o botão "Remove".
 -- Os peixes guardados ficam na mochila do Roblox (barra de baixo): segure um e clique para
--- colocar no aquário. "Colocar melhores" enche o aquário com os que mais rendem.
+-- colocar no aquário. "Place best" enche o aquário com os que mais rendem.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -40,9 +40,9 @@ local panel = UIKit.Frame(holder, {
 })
 UIKit.Studs(panel, SIZE, { Spacing = 30, Transparency = 0.93 })
 
-local countLabel = UIKit.Text(panel, { Text = "0/4 no aquário", Size = UDim2.new(0.62, 0, 0, 50), Position = UDim2.fromOffset(16, 10), Align = Enum.TextXAlignment.Left, Max = 44, Stroke = 3.5, ZIndex = 2 })
+local countLabel = UIKit.Text(panel, { Text = "0/4 in aquarium", Size = UDim2.new(0.62, 0, 0, 50), Position = UDim2.fromOffset(16, 10), Align = Enum.TextXAlignment.Left, Max = 44, Stroke = 3.5, ZIndex = 2 })
 local storedLabel = UIKit.Text(panel, {
-	Text = "0 na mochila",
+	Text = "0 in backpack",
 	Size = UDim2.new(0.34, 0, 0, 30),
 	Position = UDim2.new(1, -14, 0, 20),
 	AnchorPoint = Vector2.new(1, 0),
@@ -75,7 +75,7 @@ UIKit.Button(holder, {
 })
 
 UIKit.Button(holder, {
-	Text = "Colocar melhores",
+	Text = "Place best",
 	Color = "Green",
 	Size = UDim2.fromOffset(300, 62),
 	Position = UDim2.new(0, 60 + SIZE.X, 0, SIZE.Y + 8),
@@ -87,7 +87,7 @@ UIKit.Button(holder, {
 	end,
 })
 UIKit.Text(holder, {
-	Text = "Segure um peixe da mochila e clique para pôr no aquário",
+	Text = "Hold a fish from your backpack and click to place it",
 	Size = UDim2.fromOffset(SIZE.X, 30),
 	Position = UDim2.fromOffset(60, SIZE.Y + 74),
 	Max = 22,
@@ -150,7 +150,7 @@ local function row(entry, order)
 		ZIndex = 2,
 	})
 	UIKit.Button(frame, {
-		Text = "Tirar",
+		Text = "Remove",
 		Color = "Red",
 		Size = UDim2.fromOffset(126, 54),
 		Position = UDim2.new(1, -8, 0.5, 0),
@@ -170,7 +170,7 @@ local function render()
 	UIKit.Clear(list)
 	local data = ClientState.Data
 	if not data then
-		empty.Text = "Carregando..."
+		empty.Text = "Loading..."
 		return
 	end
 	local entries = {}
@@ -182,9 +182,9 @@ local function render()
 	table.sort(entries, function(a, b)
 		return Fish.Income(a) > Fish.Income(b)
 	end)
-	countLabel.Text = ("%d/%d no aquário"):format(#entries, data.Slots)
-	storedLabel.Text = ("%d na mochila"):format(#data.Fish - #data.Aquarium)
-	empty.Text = #entries == 0 and "Aquário vazio. Segure um peixe da mochila e clique, ou use Colocar melhores." or ""
+	countLabel.Text = ("%d/%d in aquarium"):format(#entries, data.Slots)
+	storedLabel.Text = ("%d in backpack"):format(#data.Fish - #data.Aquarium)
+	empty.Text = #entries == 0 and "Aquarium is empty. Hold a fish from your backpack and click, or use Place best." or ""
 	for i, entry in ipairs(entries) do
 		row(entry, i)
 	end

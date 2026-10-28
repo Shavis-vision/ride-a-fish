@@ -44,9 +44,9 @@ stripPad.Parent = strip
 
 -- parte de baixo: tirar a aura (só visual) e o aviso do bônus
 local bottom = UIKit.Frame(body, { Name = "Bottom", Size = UDim2.new(1, 0, 0, 118), Position = UDim2.new(0, 0, 1, -118), Transparency = 1, Corner = false })
-UIKit.Text(bottom, { Text = "AURA EQUIPADA • O VISUAL É SÓ COSMÉTICO", Size = UDim2.new(1, 0, 0, 36), Max = 32, Stroke = 3 })
+UIKit.Text(bottom, { Text = "EQUIPPED AURA • THE LOOK IS COSMETIC ONLY", Size = UDim2.new(1, 0, 0, 36), Max = 32, Stroke = 3 })
 local noneButton, noneLabel = UIKit.Button(bottom, {
-	Text = "Sem aura",
+	Text = "No aura",
 	Color = "Green",
 	Size = UDim2.fromOffset(250, 62),
 	Position = UDim2.fromOffset(20, 48),
@@ -56,7 +56,7 @@ local noneButton, noneLabel = UIKit.Button(bottom, {
 	end,
 })
 UIKit.Text(bottom, {
-	Text = "O bônus da esteira é sempre o da melhor aura que você comprou.",
+	Text = "The treadmill bonus always comes from the best aura you bought.",
 	Size = UDim2.new(1, -300, 0, 50),
 	Position = UDim2.fromOffset(290, 54),
 	Align = Enum.TextXAlignment.Left,
@@ -123,7 +123,7 @@ local function render()
 		return
 	end
 	local money = ClientState.Stat("Money")
-	noneLabel.Text = data.Aura == 0 and "✓ Sem aura" or "Sem aura"
+	noneLabel.Text = data.Aura == 0 and "✓ No aura" or "No aura"
 	UIKit.SetButtonColor(noneButton, data.Aura == 0 and "Gray" or "Green")
 
 	for i, aura in ipairs(Progression.Auras) do
@@ -148,13 +148,13 @@ local function render()
 		UIKit.Text(card, { Text = aura.Name, Size = UDim2.new(1, -16, 0, 32), Position = UDim2.fromOffset(8, 8), Max = 28, Stroke = 3, ZIndex = 2 })
 		local status, statusColor
 		if data.Aura == i then
-			status, statusColor = "Equipada", UIKit.MoneyGreen
+			status, statusColor = "Equipped", UIKit.MoneyGreen
 		elseif owned then
-			status, statusColor = "Comprada", UIKit.MoneyGreen
+			status, statusColor = "Owned", UIKit.MoneyGreen
 		elseif isNext then
-			status, statusColor = "Próxima", UIKit.StaminaYellow
+			status, statusColor = "Next", UIKit.StaminaYellow
 		else
-			status, statusColor = "Bloqueada", Color3.fromRGB(200, 200, 210)
+			status, statusColor = "Locked", Color3.fromRGB(200, 200, 210)
 		end
 		UIKit.Text(card, {
 			Text = ('Nv %d <font color="#%s">%s</font>'):format(i, statusColor:ToHex(), status),
@@ -199,9 +199,9 @@ local function render()
 
 		local text, color, action
 		if data.Aura == i then
-			text, color = "Equipada", "Gray"
+			text, color = "Equipped", "Gray"
 		elseif owned then
-			text, color, action = "Equipar", "Green", "EquipAura"
+			text, color, action = "Equip", "Green", "EquipAura"
 		elseif isNext then
 			text = NumberFormat.Money(aura.Price)
 			color = money >= aura.Price and "Green" or "Red"
@@ -220,7 +220,7 @@ local function render()
 				if action then
 					ClientState.Request(action, i)
 				elseif locked then
-					ClientState.Toast("Compre a aura anterior primeiro", "info")
+					ClientState.Toast("Buy the previous aura first", "info")
 				end
 			end,
 		})

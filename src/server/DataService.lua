@@ -335,7 +335,7 @@ local function saveData(player, data, release)
 		warn(("[DataService] %s: os dados passaram para outro servidor; gravação cancelada"):format(player.Name))
 		unsaved[player] = true
 		if player.Parent == Players then
-			player:Kick("Sua conta foi aberta em outro servidor. Entre de novo.")
+			player:Kick("Your account was opened on another server. Please rejoin.")
 		end
 		return false
 	end

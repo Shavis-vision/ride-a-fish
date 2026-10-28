@@ -666,7 +666,7 @@ function UIKit.Confirm(text, yesText, onYes, color)
 	UIKit.Text(box, { Text = text, Size = UDim2.new(1, -40, 0, 130), Position = UDim2.fromOffset(20, 20), Max = 34 })
 	local gui = confirmGui
 	UIKit.Button(box, {
-		Text = "Cancelar",
+		Text = "Cancel",
 		Color = "Gray",
 		Size = UDim2.fromOffset(200, 64),
 		Position = UDim2.new(0.5, -10, 1, -24),
@@ -676,7 +676,7 @@ function UIKit.Confirm(text, yesText, onYes, color)
 		end,
 	})
 	UIKit.Button(box, {
-		Text = yesText or "Sim",
+		Text = yesText or "Yes",
 		Color = color or "Green",
 		Size = UDim2.fromOffset(200, 64),
 		Position = UDim2.new(0.5, 10, 1, -24),

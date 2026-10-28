@@ -42,7 +42,7 @@ local function equip(player, uid)
 		return { ok = false }
 	end
 	if #data.Aquarium >= DataService.AquariumSlots(data) then
-		return { ok = false, msg = "Aquário cheio. Melhore o aquário para ter mais vagas." }
+		return { ok = false, msg = "Aquarium full. Upgrade it for more slots." }
 	end
 	table.insert(data.Aquarium, uid)
 	changed(player, true)
@@ -56,7 +56,7 @@ local function unequip(player, uid)
 		return { ok = false }
 	end
 	if DataService.StoredCount(data) >= Config.MAX_STORED_FISH then
-		return { ok = false, msg = "Coleção cheia. Venda peixes antes." }
+		return { ok = false, msg = "Collection full. Sell some fish first." }
 	end
 	table.remove(data.Aquarium, index)
 	changed(player, true)
@@ -97,12 +97,12 @@ local function sell(player, uid)
 		return { ok = false }
 	end
 	if DataService.InAquarium(data, uid) then
-		return { ok = false, msg = "Tire o peixe do aquário antes de vender" }
+		return { ok = false, msg = "Remove the fish from the aquarium before selling" }
 	end
 	local value = Fish.SellValue(entry, Config.SELL_SECONDS)
 	removeFish(data, uid)
 	data.Money += value
-	Net.Notify(player, "Vendido por " .. NumberFormat.Money(value), "ok")
+	Net.Notify(player, "Sold for " .. NumberFormat.Money(value), "ok")
 	changed(player, false)
 	return { ok = true, Value = value }
 end
@@ -124,11 +124,11 @@ local function sellAll(player, includePrecious)
 		end
 	end
 	if count == 0 then
-		return { ok = false, msg = "Nada para vender" }
+		return { ok = false, msg = "Nothing to sell" }
 	end
 	data.Fish = keep
 	data.Money += total
-	Net.Notify(player, ("%d peixes vendidos por %s"):format(count, NumberFormat.Money(total)), "ok")
+	Net.Notify(player, ("%d fish sold for %s"):format(count, NumberFormat.Money(total)), "ok")
 	changed(player, false)
 	return { ok = true, Value = total, Count = count }
 end
@@ -156,11 +156,11 @@ local function sellMany(player, uids)
 		end
 	end
 	if count == 0 then
-		return { ok = false, msg = "Nada para vender" }
+		return { ok = false, msg = "Nothing to sell" }
 	end
 	data.Fish = keep
 	data.Money += total
-	Net.Notify(player, ("%d peixe(s) vendido(s) por %s"):format(count, NumberFormat.Money(total)), "ok")
+	Net.Notify(player, ("%d fish sold for %s"):format(count, NumberFormat.Money(total)), "ok")
 	changed(player, false)
 	return { ok = true, Value = total, Count = count }
 end
@@ -215,16 +215,16 @@ local function buyAura(player, index)
 	end
 	local aura = Progression.Auras[index]
 	if not aura or index ~= data.BestAura + 1 then
-		return { ok = false, msg = "Compre as auras em ordem" }
+		return { ok = false, msg = "Buy the auras in order" }
 	end
 	if data.Money < aura.Price then
-		return { ok = false, msg = "Falta " .. NumberFormat.Money(aura.Price - data.Money) }
+		return { ok = false, msg = "You need " .. NumberFormat.Money(aura.Price - data.Money) }
 	end
 	data.Money -= aura.Price
 	data.BestAura = index
 	data.Aura = index
 	ShopService.ApplyAura(player)
-	Net.Notify(player, "Aura " .. aura.Name .. " comprada! Stamina da esteira melhorou.", "raro")
+	Net.Notify(player, "Aura " .. aura.Name .. " bought! Treadmill stamina improved.", "raro")
 	changed(player, false)
 	return { ok = true }
 end
@@ -261,9 +261,9 @@ local function claimIndex(player, speciesId)
 	end
 	local ok, money, stamina = claimSpecies(player, data, speciesId)
 	if not ok then
-		return { ok = false, msg = "Prêmio indisponível" }
+		return { ok = false, msg = "Reward unavailable" }
 	end
-	Net.Notify(player, ("+%s e +⚡%s"):format(NumberFormat.Money(money), NumberFormat.Abbreviate(stamina)), "ok")
+	Net.Notify(player, ("+%s and +⚡%s"):format(NumberFormat.Money(money), NumberFormat.Abbreviate(stamina)), "ok")
 	changed(player, false)
 	return { ok = true }
 end
@@ -283,9 +283,9 @@ local function claimAllIndex(player)
 		end
 	end
 	if count == 0 then
-		return { ok = false, msg = "Nenhum prêmio para pegar" }
+		return { ok = false, msg = "No rewards to claim" }
 	end
-	Net.Notify(player, ("%d prêmios: +%s e +⚡%s"):format(count, NumberFormat.Money(totalMoney), NumberFormat.Abbreviate(totalStamina)), "ok")
+	Net.Notify(player, ("%d rewards: +%s and +⚡%s"):format(count, NumberFormat.Money(totalMoney), NumberFormat.Abbreviate(totalStamina)), "ok")
 	changed(player, false)
 	return { ok = true }
 end
@@ -296,19 +296,19 @@ local function claimArea(player, area)
 		return { ok = false }
 	end
 	if data.Areas[tostring(area)] then
-		return { ok = false, msg = "Prêmio já pego" }
+		return { ok = false, msg = "Reward already claimed" }
 	end
 	for _, species in ipairs(Fish.ByArea[area]) do
 		local rec = data.Index[species.Id]
 		if not rec or not rec.F then
-			return { ok = false, msg = "Dome a versão normal de todos os peixes da área" }
+			return { ok = false, msg = "Tame the normal version of every fish in this area" }
 		end
 	end
 	local money, stamina = Progression.AreaReward(area)
 	data.Areas[tostring(area)] = true
 	data.Money += money
 	data.Stamina += stamina
-	Net.Notify(player, ("Área completa! +%s e +⚡%s"):format(NumberFormat.Money(money), NumberFormat.Abbreviate(stamina)), "raro")
+	Net.Notify(player, ("Area complete! +%s and +⚡%s"):format(NumberFormat.Money(money), NumberFormat.Abbreviate(stamina)), "raro")
 	changed(player, false)
 	return { ok = true }
 end
@@ -319,7 +319,7 @@ function ShopService.Equip(player, uid)
 	if result.msg then
 		Net.Notify(player, result.msg, "erro")
 	elseif result.ok then
-		Net.Notify(player, "Peixe colocado no aquário!", "ok")
+		Net.Notify(player, "Fish placed in the aquarium!", "ok")
 	end
 	return result
 end

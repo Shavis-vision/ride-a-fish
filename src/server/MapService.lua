@@ -925,8 +925,8 @@ local function buildBeach(map)
 		local signBoard = Brick.Part(sign, { Name = "Placa", Size = Vector3.new(10, 3.4, 0.5), Position = Vector3.new(0, y0 + 12.1, z), Color = rgb(30, 120, 240), Studs = false, CanCollide = false })
 		Brick.Part(sign, { Name = "Moldura", Size = Vector3.new(10.6, 4, 0.4), Position = Vector3.new(0, y0 + 12.1, z - 0.15), Color = rgb(255, 210, 50), Studs = false, CanCollide = false })
 		surfaceText(signBoard, Enum.NormalId.Back, {
-			{ Text = "MERGULHE!", Size = 0.58, Color = WHITE, Stroke = 5 },
-			{ Text = "pule do trampolim", Size = 0.3, Color = rgb(190, 235, 255), Stroke = 3 },
+			{ Text = "DIVE IN!", Size = 0.58, Color = WHITE, Stroke = 5 },
+			{ Text = "jump off the diving board", Size = 0.3, Color = rgb(190, 235, 255), Stroke = 3 },
 		}, nil, 60)
 	end
 end
@@ -1444,8 +1444,8 @@ local function buildOcean(map)
 		CanCollide = false,
 	})
 	surfaceText(endSign, Enum.NormalId.Back, {
-		{ Text = "EM BREVE", Size = 0.5, Color = rgb(255, 220, 60) },
-		{ Text = "novas áreas e peixes", Size = 0.3, Color = WHITE },
+		{ Text = "COMING SOON", Size = 0.5, Color = rgb(255, 220, 60) },
+		{ Text = "new areas and fish", Size = 0.3, Color = WHITE },
 	})
 	endWall:SetAttribute("TrackEnd", true)
 end
@@ -1554,7 +1554,7 @@ local function buildPlaza(map)
 	end
 
 	-- barraca de vender peixes (com peixes no balcão)
-	local sell = stall(folder, Layout.SellStall + Vector3.new(0, 0.4, 0), "VENDER PEIXES", rgb(255, 70, 70), rgb(230, 40, 40), rgb(230, 60, 60))
+	local sell = stall(folder, Layout.SellStall + Vector3.new(0, 0.4, 0), "SELL FISH", rgb(255, 70, 70), rgb(230, 40, 40), rgb(230, 60, 60))
 	for i, id in ipairs({ "palhaco", "cirurgiao", "baiacu" }) do
 		local fish = FishModel.Build(id, "Normal", "Normal", { Saddle = false, Scale = 0.45 })
 		fish:PivotTo(CFrame.new(Layout.SellStall + Vector3.new(-6 + i * 3.5, 5.6, -4)) * CFrame.Angles(0, math.pi / 2, 0))
@@ -1639,7 +1639,7 @@ local function buildPlaza(map)
 	title.Size = UDim2.fromScale(1, 0.16)
 	title.BackgroundTransparency = 1
 	title.Font = FONT
-	title.Text = "TOP RENDA"
+	title.Text = "TOP INCOME"
 	title.TextScaled = true
 	title.TextColor3 = rgb(255, 220, 60)
 	title.Parent = gui
@@ -1843,7 +1843,7 @@ local function buildPlot(parent, plot)
 	owner.Position = UDim2.fromScale(0, 0.5)
 	owner.BackgroundTransparency = 1
 	owner.Font = FONT
-	owner.Text = "Lote livre"
+	owner.Text = "Free plot"
 	owner.TextScaled = true
 	owner.TextColor3 = WHITE
 	owner.Parent = billboard
@@ -1889,7 +1889,7 @@ local function buildPlot(parent, plot)
 		Color = rgb(40, 45, 55),
 	})
 	surfaceText(console, Enum.NormalId.Front, {
-		{ Name = "Title", Text = "ESTEIRA", Size = 0.4, Color = rgb(120, 230, 255) },
+		{ Name = "Title", Text = "TREADMILL", Size = 0.4, Color = rgb(120, 230, 255) },
 		{ Name = "Rate", Text = "⚡ +2/s", Size = 0.45, Color = rgb(255, 230, 60) },
 	}, rgb(20, 25, 35))
 	local zone = Brick.Part(tm, {
@@ -1955,7 +1955,7 @@ local function buildPlot(parent, plot)
 		end
 		line("Icon", icon, 0.04, 0.08, 0.18, 0.4, WHITE)
 		line("Title", title, 0.22, 0.08, 0.74, 0.3, WHITE)
-		line("Level", "Nível 1 > Nível 2", 0.22, 0.4, 0.74, 0.22, rgb(120, 255, 90))
+		line("Level", "Level 1 > Level 2", 0.22, 0.4, 0.74, 0.22, rgb(120, 255, 90))
 		line("Info", "", 0.05, 0.66, 0.9, 0.24, rgb(255, 225, 80))
 
 		-- botão de preço (peça clicável)
@@ -2033,8 +2033,8 @@ local function buildPlot(parent, plot)
 		stroke(mark, 4)
 		return sign
 	end
-	upgradeSign("PlacaEsteira", plot.TreadmillSign, "Melhorar Esteira", "⚡")
-	upgradeSign("PlacaAquario", plot.AquariumSign, "Melhorar Aquário", "🐟")
+	upgradeSign("PlacaEsteira", plot.TreadmillSign, "Upgrade Treadmill", "⚡")
+	upgradeSign("PlacaAquario", plot.AquariumSign, "Upgrade Aquarium", "🐟")
 
 	-- marca de onde o jogador nasce
 	Brick.Part(model, {

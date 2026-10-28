@@ -19,11 +19,11 @@ local NumberFormat = require(Shared:WaitForChild("NumberFormat"))
 local UIKit = require(script.Parent:WaitForChild("UIKit"))
 local ClientState = require(script.Parent:WaitForChild("ClientState"))
 
-local window = UIKit.Window("Index", { Title = "Índex de Peixes", Icon = "📘", Size = Vector2.new(1100, 680), Header = "Blue" })
+local window = UIKit.Window("Index", { Title = "Fish Index", Icon = "📘", Size = Vector2.new(1100, 680), Header = "Blue" })
 
 UIKit.Button(window.Inner, {
 	Name = "ClaimAll",
-	Text = "PEGAR TUDO",
+	Text = "CLAIM ALL",
 	Color = "Green",
 	Size = UDim2.fromOffset(230, 58),
 	Position = UDim2.new(1, -84, 0, 8),
@@ -99,7 +99,7 @@ local function fishCard(parent, species, order)
 	})
 	if rec and rec.F and not rec.C then
 		UIKit.Button(footer, {
-			Text = "PEGAR",
+			Text = "CLAIM",
 			Color = "Green",
 			Size = UDim2.fromScale(1, 1),
 			Max = 24,
@@ -111,9 +111,9 @@ local function fishCard(parent, species, order)
 	else
 		local text
 		if rec and rec.C then
-			text = "✓ Prêmio pego"
+			text = "✓ Claimed"
 		elseif rec then
-			text = "Dome o normal"
+			text = "Tame the normal one"
 		else
 			text = ("💵%s ⚡%s"):format(NumberFormat.Abbreviate(money), NumberFormat.Abbreviate(stamina))
 		end
@@ -152,11 +152,11 @@ local function biomeSection(area)
 	})
 	UIKit.Gradient(art, area.FogColor:Lerp(Color3.new(1, 1, 1), 0.35), area.FogColor:Lerp(Color3.new(0, 0, 0), 0.35), 90)
 	UIKit.Studs(art, Vector2.new(232, 290), { Spacing = 29, Transparency = 0.86, EdgeTransparency = 0.8 })
-	UIKit.Text(art, { Text = ("ÁREA %d"):format(area.Index), Size = UDim2.new(1, -16, 0, 28), Position = UDim2.fromOffset(8, 10), Color = Color3.fromRGB(230, 240, 255), Max = 24, ZIndex = 2 })
+	UIKit.Text(art, { Text = ("AREA %d"):format(area.Index), Size = UDim2.new(1, -16, 0, 28), Position = UDim2.fromOffset(8, 10), Color = Color3.fromRGB(230, 240, 255), Max = 24, ZIndex = 2 })
 	UIKit.Text(art, { Text = area.Name, Size = UDim2.new(1, -16, 0, 44), Position = UDim2.fromOffset(8, 38), Max = 36, Stroke = 3.5, ZIndex = 2 })
 	UIKit.Text(art, { Text = BIOME_ART[area.Index] or "🐟", Size = UDim2.fromOffset(130, 130), Position = UDim2.new(0.5, 0, 0, 92), AnchorPoint = Vector2.new(0.5, 0), Stroke = 2, ZIndex = 2 })
 	UIKit.Text(art, {
-		Text = "⚡ " .. NumberFormat.Abbreviate(area.Recommended) .. " recomendado",
+		Text = "⚡ " .. NumberFormat.Abbreviate(area.Recommended) .. " recommended",
 		Size = UDim2.new(1, -16, 0, 26),
 		Position = UDim2.new(0, 8, 1, -40),
 		Color = UIKit.StaminaYellow,
@@ -202,7 +202,7 @@ local function biomeSection(area)
 	local fill = UIKit.Frame(progress, { Size = UDim2.fromScale(math.max(0.05, found / 8), 1), Color = UIKit.White, Corner = 8 })
 	UIKit.Gradient(fill, UIKit.Colors.Green[1], UIKit.Colors.Green[2], 90)
 	UIKit.Text(progress, {
-		Text = found >= 8 and "COMPLETO! 8/8" or ("Normais domados: %d/8"):format(found),
+		Text = found >= 8 and "COMPLETE! 8/8" or ("Normal tamed: %d/8"):format(found),
 		Size = UDim2.new(1, -12, 0.8, 0),
 		Position = UDim2.new(0, 6, 0.1, 0),
 		Max = 30,
@@ -212,7 +212,7 @@ local function biomeSection(area)
 
 	local money, stamina = Progression.AreaReward(area.Index)
 	UIKit.Text(bar, {
-		Text = ("Completar: 💵 %s  ⚡ +%s"):format(NumberFormat.Money(money), NumberFormat.Abbreviate(stamina)),
+		Text = ("Complete: 💵 %s  ⚡ +%s"):format(NumberFormat.Money(money), NumberFormat.Abbreviate(stamina)),
 		Size = UDim2.new(0.32, 0, 0, 40),
 		Position = UDim2.new(0.49, 0, 0, 17),
 		Align = Enum.TextXAlignment.Left,
@@ -223,9 +223,9 @@ local function biomeSection(area)
 	local claimed = data and data.Areas[tostring(area.Index)]
 	local text, color, canClaim
 	if claimed then
-		text, color = "PEGO ✓", "Gray"
+		text, color = "CLAIMED ✓", "Gray"
 	elseif found >= 8 then
-		text, color, canClaim = "PEGAR", "Green", true
+		text, color, canClaim = "CLAIM", "Green", true
 	else
 		text, color = "🔒", "Gray"
 	end
@@ -240,7 +240,7 @@ local function biomeSection(area)
 			if canClaim then
 				ClientState.Request("ClaimArea", area.Index)
 			else
-				ClientState.Toast("Dome a versão normal dos 8 peixes do bioma", "info")
+				ClientState.Toast("Tame the normal version of all 8 fish in this biome", "info")
 			end
 		end,
 	})
@@ -261,7 +261,7 @@ local function render()
 		total += foundCount(area)
 	end
 	totalFill.Size = UDim2.fromScale(math.max(0.03, total / #Fish.Species), 1)
-	totalText.Text = ("Desbloqueados: %d/%d"):format(total, #Fish.Species)
+	totalText.Text = ("Unlocked: %d/%d"):format(total, #Fish.Species)
 end
 
 window.Opened.Event:Connect(render)

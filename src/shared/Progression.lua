@@ -16,14 +16,14 @@ local Progression = {}
 -- Só se compra com dinheiro do jogo. As antigas podem ser equipadas só pelo visual:
 -- o bônus é sempre o da MELHOR aura comprada.
 Progression.Auras = {
-	{ Name = "Bolhas", Mult = 1.5, Price = 5000, Color = Color3.fromRGB(160, 230, 255) },
+	{ Name = "Bubbles", Mult = 1.5, Price = 5000, Color = Color3.fromRGB(160, 230, 255) },
 	{ Name = "Coral", Mult = 2, Price = 60000, Color = Color3.fromRGB(255, 120, 140) },
-	{ Name = "Maré", Mult = 2.5, Price = 700000, Color = Color3.fromRGB(40, 170, 255) },
-	{ Name = "Água-viva", Mult = 3, Price = 8000000, Color = Color3.fromRGB(230, 120, 255) },
-	{ Name = "Tempestade", Mult = 3.5, Price = 90000000, Color = Color3.fromRGB(255, 240, 90) },
-	{ Name = "Abissal", Mult = 4, Price = 1000000000, Color = Color3.fromRGB(120, 60, 255) },
+	{ Name = "Tide", Mult = 2.5, Price = 700000, Color = Color3.fromRGB(40, 170, 255) },
+	{ Name = "Jellyfish", Mult = 3, Price = 8000000, Color = Color3.fromRGB(230, 120, 255) },
+	{ Name = "Storm", Mult = 3.5, Price = 90000000, Color = Color3.fromRGB(255, 240, 90) },
+	{ Name = "Abyssal", Mult = 4, Price = 1000000000, Color = Color3.fromRGB(120, 60, 255) },
 	{ Name = "Kraken", Mult = 4.5, Price = 12000000000, Color = Color3.fromRGB(255, 70, 70) },
-	{ Name = "Netuno", Mult = 5, Price = 150000000000, Color = Color3.fromRGB(80, 255, 200) },
+	{ Name = "Neptune", Mult = 5, Price = 150000000000, Color = Color3.fromRGB(80, 255, 200) },
 }
 
 -- Esteira ----------------------------------------------------------------------------------

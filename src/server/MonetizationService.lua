@@ -87,7 +87,7 @@ local function grantProduct(player, product)
 	local income = player:GetAttribute("Income") or 0
 	local amount = MonetizationService.CashAmount(product, income)
 	data.Money += amount
-	Net.Notify(player, "+" .. NumberFormat.Money(amount) .. " de dinheiro!", "ok")
+	Net.Notify(player, "+" .. NumberFormat.Money(amount) .. " cash!", "ok")
 	if hooks.Changed then
 		hooks.Changed(player)
 	end
@@ -119,22 +119,22 @@ function MonetizationService.Start()
 			return { ok = false }
 		end
 		if MonetizationService.HasPass(player, key) then
-			return { ok = false, msg = "Você já tem este gamepass" }
+			return { ok = false, msg = "You already own this gamepass" }
 		end
 		local previous = Progression.PreviousLadderPass(pass)
 		if previous and not MonetizationService.HasPass(player, previous.Key) then
-			return { ok = false, msg = "Compre o " .. previous.Name .. " antes" }
+			return { ok = false, msg = "Buy " .. previous.Name .. " first" }
 		end
 		if pass.Id == 0 then
 			if RunService:IsStudio() then
 				passes[player][key] = true
-				Net.Notify(player, pass.Name .. " liberado (teste no Studio)", "ok")
+				Net.Notify(player, pass.Name .. " unlocked (Studio test)", "ok")
 				if hooks.Changed then
 					hooks.Changed(player)
 				end
 				return { ok = true }
 			end
-			return { ok = false, msg = "Em breve!" }
+			return { ok = false, msg = "Coming soon!" }
 		end
 		MarketplaceService:PromptGamePassPurchase(player, pass.Id)
 		return { ok = true }
@@ -148,9 +148,9 @@ function MonetizationService.Start()
 		if product.Id == 0 then
 			if RunService:IsStudio() then
 				local granted = grantProduct(player, product)
-				return { ok = granted, msg = if granted then nil else "Não deu para usar agora" }
+				return { ok = granted, msg = if granted then nil else "Can't use that right now" }
 			end
-			return { ok = false, msg = "Em breve!" }
+			return { ok = false, msg = "Coming soon!" }
 		end
 		MarketplaceService:PromptProductPurchase(player, product.Id)
 		return { ok = true }
@@ -163,7 +163,7 @@ function MonetizationService.Start()
 		for _, pass in ipairs(Config.GAMEPASSES) do
 			if pass.Id == passId and passes[player] then
 				passes[player][pass.Key] = true
-				Net.Notify(player, pass.Name .. " ativado. Obrigado!", "raro")
+				Net.Notify(player, pass.Name .. " activated. Thank you!", "raro")
 				if hooks.Changed then
 					hooks.Changed(player)
 				end

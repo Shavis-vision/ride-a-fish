@@ -46,7 +46,7 @@ end
 
 local function startRun(player)
 	if runs[player] then
-		return { ok = false, msg = "Você já está correndo" }
+		return { ok = false, msg = "You are already in a run" }
 	end
 	local data = DataService.Get(player)
 	local character = player.Character
@@ -57,7 +57,7 @@ local function startRun(player)
 	local offset = root.Position - Layout.StartZone
 	local flat = Vector3.new(offset.X, 0, offset.Z).Magnitude
 	if flat > Track.START_RADIUS + 8 or root.Position.Y > Track.PIER_TOP + 8 then
-		return { ok = false, msg = "Entre na zona de mergulho" }
+		return { ok = false, msg = "Go to the dive zone" }
 	end
 	local seed = rng:NextInteger(1, 2 ^ 30)
 	runs[player] = {
@@ -104,17 +104,17 @@ local function tame(player, index)
 	-- montou mesmo neste peixe e ficou o tempo da doma?
 	local now = os.clock()
 	if run.Mount ~= index or now - run.MountAt < species.TameTime * Config.RIDE.TAME_TOLERANCE then
-		return { ok = false, msg = "Doma inválida" }
+		return { ok = false, msg = "Invalid tame" }
 	end
 	-- deu tempo de chegar até ele?
 	local minTime = math.max(0, (fish.Dist - Track.START_DIST - 40)) / Track.MAX_SPEED
 	if now - run.Started < minTime then
-		return { ok = false, msg = "Doma inválida" }
+		return { ok = false, msg = "Invalid tame" }
 	end
 	-- stamina suficiente?
 	local required = Fish.RequiredStamina(fish.S, fish.Z)
 	if data.Stamina < required then
-		return { ok = false, msg = "Stamina insuficiente" }
+		return { ok = false, msg = "Not enough stamina" }
 	end
 
 	run.Tamed[index] = true
@@ -128,10 +128,10 @@ local function tame(player, index)
 		data.NextUid += 1
 		table.insert(data.Fish, entry)
 	else
-		Net.Notify(player, "Coleção cheia! Venda peixes na barraca para guardar mais.", "erro")
+		Net.Notify(player, "Collection full! Sell fish at the stall to keep more.", "erro")
 	end
 	if isNew then
-		Net.Notify(player, "Novo no índex: " .. species.Name .. "! Pegue o prêmio no Índex.", "raro")
+		Net.Notify(player, "New in the index: " .. species.Name .. "! Claim your reward in the Index.", "raro")
 	end
 	Net.Sync(player)
 	return { ok = true, New = isNew, Stored = stored, Entry = entry }

@@ -50,7 +50,7 @@ function EconomyService.Publish(player)
 
 	local stats = player:FindFirstChild("leaderstats")
 	if stats then
-		stats.Renda.Value = "$" .. NumberFormat.Rate(income) .. "/s"
+		stats.Income.Value = "$" .. NumberFormat.Rate(income) .. "/s"
 		stats.Stamina.Value = "⚡" .. NumberFormat.Abbreviate(data.Stamina)
 	end
 	PlotService.UpdateIncome(player, income)
@@ -60,7 +60,7 @@ function EconomyService.PlayerAdded(player)
 	local stats = Instance.new("Folder")
 	stats.Name = "leaderstats"
 	local renda = Instance.new("StringValue")
-	renda.Name = "Renda"
+	renda.Name = "Income"
 	renda.Parent = stats
 	local stamina = Instance.new("StringValue")
 	stamina.Name = "Stamina"

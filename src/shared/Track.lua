@@ -42,7 +42,7 @@ Track.FIRST_FISH_DIST = 74 -- o peixe garantido fica depois da queda, já no fun
 Track.Areas = {
 	{
 		Index = 1,
-		Name = "Recife Raso",
+		Name = "Shallow Reef",
 		Start = 0,
 		Finish = 900,
 		FogColor = Color3.fromRGB(70, 180, 205),
@@ -56,7 +56,7 @@ Track.Areas = {
 	},
 	{
 		Index = 2,
-		Name = "Floresta de Algas",
+		Name = "Kelp Forest",
 		Start = 900,
 		Finish = 1800,
 		FogColor = Color3.fromRGB(70, 160, 140),
@@ -70,7 +70,7 @@ Track.Areas = {
 	},
 	{
 		Index = 3,
-		Name = "Abismo",
+		Name = "The Abyss",
 		Start = 1800,
 		Finish = 2700,
 		FogColor = Color3.fromRGB(45, 90, 160),

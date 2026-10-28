@@ -168,14 +168,14 @@ function PlotService.RefreshSigns(player)
 		local nextRate = Progression.TreadmillRate(level + 1) * mult
 		setSign(
 			model.PlacaEsteira,
-			"Melhorar Esteira",
-			("Nível %d > Nível %d"):format(level, level + 1),
+			"Upgrade Treadmill",
+			("Level %d > Level %d"):format(level, level + 1),
 			("+%s > +%s Stamina/s"):format(NumberFormat.Rate(now), NumberFormat.Rate(nextRate)),
 			NumberFormat.Money(cost),
 			data.Money >= cost
 		)
 	else
-		setSign(model.PlacaEsteira, "Esteira", ("Nível %d (máximo)"):format(level), ("+%s Stamina/s"):format(NumberFormat.Rate(now)), "MÁXIMO", nil)
+		setSign(model.PlacaEsteira, "Esteira", ("Level %d (max)"):format(level), ("+%s Stamina/s"):format(NumberFormat.Rate(now)), "MAX", nil)
 	end
 
 	-- painel da própria esteira
@@ -193,14 +193,14 @@ function PlotService.RefreshSigns(player)
 	if aqCost then
 		setSign(
 			model.PlacaAquario,
-			"Melhorar Aquário",
-			("Nível %d > Nível %d"):format(aqLevel, aqLevel + 1),
-			("%d > %d vagas para peixes"):format(slots, Progression.AquariumSlots(aqLevel + 1)),
+			"Upgrade Aquarium",
+			("Level %d > Level %d"):format(aqLevel, aqLevel + 1),
+			("%d > %d fish slots"):format(slots, Progression.AquariumSlots(aqLevel + 1)),
 			NumberFormat.Money(aqCost),
 			data.Money >= aqCost
 		)
 	else
-		setSign(model.PlacaAquario, "Aquário", ("Nível %d (máximo)"):format(aqLevel), ("%d vagas para peixes"):format(slots), "MÁXIMO", nil)
+		setSign(model.PlacaAquario, "Aquarium", ("Level %d (max)"):format(aqLevel), ("%d fish slots"):format(slots), "MAX", nil)
 	end
 end
 
@@ -229,7 +229,7 @@ function PlotService.Upgrade(player, kind)
 		end
 	elseif kind == "Aquarium" then
 		cost = Progression.AquariumCost(data.AquariumLevel)
-		name = "Aquário"
+		name = "Aquarium"
 		apply = function()
 			data.AquariumLevel += 1
 		end
@@ -237,16 +237,16 @@ function PlotService.Upgrade(player, kind)
 		return { ok = false }
 	end
 	if not cost then
-		Net.Notify(player, name .. " já está no nível máximo", "info")
+		Net.Notify(player, name .. " is already at max level", "info")
 		return { ok = false }
 	end
 	if data.Money < cost then
-		Net.Notify(player, "Falta " .. NumberFormat.Money(cost - data.Money) .. " para melhorar", "erro")
+		Net.Notify(player, "You need " .. NumberFormat.Money(cost - data.Money) .. " more to upgrade", "erro")
 		return { ok = false }
 	end
 	data.Money -= cost
 	apply()
-	Net.Notify(player, name .. " melhorado!", "ok")
+	Net.Notify(player, name .. " upgraded!", "ok")
 	PlotService.RefreshSigns(player)
 	Net.Sync(player)
 	if PlotService.OnChanged then
@@ -290,7 +290,7 @@ function PlotService.Release(player)
 		model:SetAttribute("Owner", nil)
 		model.Aquario.Peixes:ClearAllChildren()
 		local gui = model.Aquario.NomeDono.Gui
-		gui.Owner.Text = "Lote livre"
+		gui.Owner.Text = "Free plot"
 		gui.Income.Text = ""
 		gui.Avatar.Image = ""
 	end
@@ -324,7 +324,7 @@ function PlotService.Start()
 						if plotOf[player] == index then
 							PlotService.Upgrade(player, kind)
 						else
-							Net.Notify(player, "Este lote não é seu", "erro")
+							Net.Notify(player, "This plot isn't yours", "erro")
 						end
 					end)
 				end

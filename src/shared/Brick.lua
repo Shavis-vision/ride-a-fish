@@ -49,7 +49,8 @@ function Brick.Part(parent, props)
 		part.CFrame = CFrame.new(props.Position)
 	end
 	part.Color = props.Color or Color3.new(1, 1, 1)
-	part.Material = props.Material or Enum.Material.SmoothPlastic -- liso, sem o "chuvisco" do Plastic
+	-- Plastic: é o único material em que os studs do Roblox (superfície Studs) aparecem
+	part.Material = props.Material or Enum.Material.Plastic
 	local wantsStuds = props.Studs ~= false
 	-- textura só em peças com topo de pelo menos 2x2 studs (peixes e detalhes ficam lisos)
 	local textured = wantsStuds and STUD_IMAGE ~= nil and part.Size.X >= 2 and part.Size.Z >= 2 and (props.Class == nil or props.Class == "Part") and props.Shape == nil

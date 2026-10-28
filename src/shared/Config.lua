@@ -188,8 +188,8 @@ Config.ICONS = {
 -- Studs grandes nas peças --------------------------------------------------------------------
 -- Envie assets/textures/studs.png no Studio (Gerenciador de Ativos > Importar) e cole o ID aqui.
 -- Com 0, ficam os studs normais (pequenos) do Roblox.
-Config.STUD_TEXTURE = 18878365966 -- "Classic stud texture" (Creator Store); trocar pela nossa (studs.png) quando for enviada
-Config.STUD_SPACING = 12 -- tamanho de uma repetição da textura, em studs (esta imagem tem vários studs por repetição)
+Config.STUD_TEXTURE = 0 -- 0 = usa os studs do próprio Roblox (superfície Studs + material Plastic)
+Config.STUD_SPACING = 2
 
 -- Céu --------------------------------------------------------------------------------------
 -- Opção 1: coloque um Sky em Lighting pelo Studio COM O JOGO PARADO e salve o lugar (Ctrl+S).

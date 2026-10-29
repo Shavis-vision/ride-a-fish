@@ -46,7 +46,7 @@ Config.RIDE = {
 	SLOWMO_TIME = 1.9, -- segundos (reais) de câmera lenta
 	AUTO_HARPOON_AFTER = 1.25, -- o arpão sai sozinho no alvo depois disto (nil = só apertando)
 	-- Mira: um ponto à frente (A/D move); o alvo é o peixe mais perto do ponto, dentro do alcance
-	ASSIST_BEHIND = 15, -- aceita peixes até esta distância para trás
+	ASSIST_BEHIND = 25, -- aceita peixes até esta distância para trás
 	ASSIST_OBSTACLE_AHEAD = 60, -- evita peixes com uma pedra a menos disto na frente
 	RETICLE_SIZE = 10, -- tamanho do círculo (studs)
 	HARPOON_TIME = 0.42, -- segundos voando pela corda até o peixe (suave: acelera e freia)

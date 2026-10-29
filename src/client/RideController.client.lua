@@ -1210,11 +1210,15 @@ end
 -- os lados. O alvo é o peixe mais perto desse ponto, e ele fica "grudado" até outro ficar
 -- bem mais perto — assim o círculo não fica pulando de um peixe para outro.
 -- O ponto de mira segue a direção que você aperta: A/D puxa para a esquerda/direita
--- (prioriza os peixes daquele lado) e W/S para mais longe/mais perto.
+-- (prioriza os peixes daquele lado), W para os da frente e S para os de trás.
 local function aimPoint()
 	local forward = math.clamp(-rider.Vel.Z, 14, 40) * 0.9
 	local side, ahead = moveX(), moveZ()
-	forward = math.clamp(forward + ahead * 20, 6, 60)
+	if ahead > 0.3 then
+		forward += 25 -- W: os peixes da frente (mais longe)
+	elseif ahead < -0.3 then
+		forward = -(RIDE.ASSIST_BEHIND - 2) -- S: os peixes de trás
+	end
 	return Vector3.new(rider.Pos.X + side * 26, rider.Pos.Y, rider.Pos.Z - forward)
 end
 

@@ -51,6 +51,8 @@ Net.SetSnapshotBuilder(function(player)
 		Passes = MonetizationService.GetPasses(player),
 		MaxStored = Config.MAX_STORED_FISH,
 		Tamed = data.Tamed,
+		BestDist = data.BestDist,
+		Tut = data.Tut,
 		Plot = PlotService.GetIndex(player),
 	}
 end)
@@ -65,6 +67,15 @@ MonetizationService.SetHooks({ Revive = RideService.Revive, Changed = onChanged 
 ShopService.OnChanged = EconomyService.Publish
 BackpackService.PlaceInAquarium = ShopService.Equip
 PlotService.OnChanged = EconomyService.Publish
+
+-- Tutorial: o cliente avisa que o jogador terminou um passo (só aumenta).
+Net.On("Tutorial", function(player, step)
+	local data = DataService.Get(player)
+	if data and type(step) == "number" and step == math.floor(step) then
+		data.Tut = math.max(data.Tut, math.clamp(step, 0, 99))
+	end
+	return { ok = true }
+end)
 
 Net.On("GetData", function(player)
 	Net.Sync(player)

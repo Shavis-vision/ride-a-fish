@@ -207,5 +207,29 @@ Config.SKY = nil
 
 -- Placar -----------------------------------------------------------------------------------
 Config.LEADERBOARD_REFRESH = 5
+-- Placares globais (todos os servidores): maior distância e mais peixes domados
+Config.GLOBAL_BOARD_REFRESH = 60 -- segundos entre leituras do ranking global
+Config.GLOBAL_BOARD_STORES = { Distance = "RideAFish_TopDistancia_v1", Tamed = "RideAFish_TopDomados_v1" }
+
+-- Sons (áudios prontos do Creator Store). Id = 0 desliga o som.
+-- Efeitos: Pro Sound Effects (licenciados pelo Roblox) e alguns curtos públicos.
+-- Música: faixas da DistroKid (licenciadas, liberadas para qualquer jogo).
+Config.SOUNDS = {
+	MusicVolume = 0.3,
+	EffectsVolume = 0.7,
+	Music = { 132521872324308, 97159266806924 }, -- "Beach Tropical Coffee Bossa Nova", "Palm Shimmer"
+	Effects = {
+		Splash = { Id = 9125703162, Volume = 0.8 }, -- entrar na água
+		Jump = { Id = 9120972321, Volume = 0.5 }, -- pular do peixe
+		Harpoon = { Id = 9120972444, Volume = 0.6, Speed = 1.2 }, -- arpão voando
+		Fall = { Id = 9125409840, Volume = 0.7 }, -- caiu no fundo
+		Buck = { Id = 9120310477, Volume = 0.7 }, -- o peixe derrubou
+		Tame = { Id = 8630860073, Volume = 0.6 }, -- domou
+		TameNew = { Id = 85188102085028, Volume = 0.7 }, -- domou uma espécie nova
+		Revive = { Id = 120005759558278, Volume = 0.7 }, -- reviveu
+		Click = { Id = 110948579458469, Volume = 0.4 }, -- botões
+		Coins = { Id = 1319346243, Volume = 0.5 }, -- dinheiro
+	},
+}
 
 return Config

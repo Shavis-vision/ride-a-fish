@@ -27,6 +27,9 @@ function ClientState.Toast(text, kind)
 	ClientState.ToastEvent:Fire(text, kind or "info")
 end
 
+-- ações que dão dinheiro: tocam o som de moedas quando dão certo
+local COIN_ACTIONS = { SellMany = true, Sell = true, ClaimIndex = true, ClaimAllIndex = true, ClaimArea = true }
+
 function ClientState.Request(name, ...)
 	local ok, result = pcall(action.InvokeServer, action, name, ...)
 	if not ok then
@@ -34,6 +37,12 @@ function ClientState.Request(name, ...)
 		return { ok = false }
 	end
 	result = result or { ok = false }
+	if result.ok and COIN_ACTIONS[name] then
+		local okSound, SoundFx = pcall(require, script.Parent:WaitForChild("SoundFx"))
+		if okSound then
+			SoundFx.Play("Coins")
+		end
+	end
 	if result.msg then
 		ClientState.Toast(result.msg, result.ok and "info" or "erro")
 	end

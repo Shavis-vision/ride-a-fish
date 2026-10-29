@@ -34,6 +34,8 @@ local NumberFormat = require(Shared:WaitForChild("NumberFormat"))
 
 local UIKit = require(script.Parent:WaitForChild("UIKit"))
 local ClientState = require(script.Parent:WaitForChild("ClientState"))
+local RunPanel = require(script.Parent:WaitForChild("RunPanel"))
+local SoundFx = require(script.Parent:WaitForChild("SoundFx"))
 
 local player = Players.LocalPlayer
 local camera = Workspace.CurrentCamera
@@ -186,9 +188,11 @@ UIKit.AutoScale(topBar)
 local areaLabel = UIKit.Text(topBar, { Text = "", Size = UDim2.new(1, -20, 0, 34), Position = UDim2.fromOffset(10, 4), Stroke = 3, Max = 32 })
 local distLabel = UIKit.Text(topBar, { Text = "", Size = UDim2.new(1, -20, 0, 22), Position = UDim2.fromOffset(10, 38), Color = Color3.fromRGB(170, 220, 255), Max = 22 })
 
+RunPanel.Init(gui) -- lista da corrida, barra dos biomas com recorde
+
 local tamePanel = UIKit.Frame(gui, {
 	Size = UDim2.fromOffset(460, 104),
-	Position = UDim2.new(0.5, 0, 0, 96),
+	Position = UDim2.new(0.5, 0, 0, 150),
 	AnchorPoint = Vector2.new(0.5, 0),
 	Transparency = 1,
 	Corner = false,
@@ -266,13 +270,35 @@ local fallInfo = UIKit.Text(fallPanel, { Text = "", Size = UDim2.new(1, -30, 0, 
 local fallCountdown = UIKit.Text(fallPanel, { Text = "", Size = UDim2.new(1, -30, 0, 30), Position = UDim2.fromOffset(15, 124), Color = Color3.fromRGB(200, 200, 210), Max = 26 })
 local reviveButton = UIKit.Button(fallPanel, {
 	Text = "Revive",
-	Icon = "❤️",
 	Color = "Green",
 	Size = UDim2.fromOffset(230, 70),
 	Position = UDim2.new(0.5, -8, 1, -20),
 	AnchorPoint = Vector2.new(1, 1),
 	Max = 32,
 })
+-- coração pixelado que pulsa (só aparece na tela de queda, junto com o botão)
+local reviveHeart = RunPanel.PixelHeart(reviveButton, 5)
+reviveHeart.AnchorPoint = Vector2.new(0, 0.5)
+reviveHeart.Position = UDim2.new(0, 10, 0.5, 0)
+reviveHeart.ZIndex = reviveButton.ZIndex + 2
+local heartScale = Instance.new("UIScale")
+heartScale.Parent = reviveHeart
+reviveButton.Label.Size = UDim2.new(1, -70, 0.78, 0)
+reviveButton.Label.Position = UDim2.new(0, 62, 0.11, 0)
+task.spawn(function()
+	while true do
+		if fallPanel.Visible and reviveButton.Visible then
+			UIKit.Tween(heartScale, 0.28, { Scale = 1.25 }, Enum.EasingStyle.Sine)
+			task.wait(0.3)
+			UIKit.Tween(heartScale, 0.42, { Scale = 1 }, Enum.EasingStyle.Sine)
+			task.wait(0.55)
+		else
+			heartScale.Scale = 1
+			task.wait(0.25)
+		end
+	end
+end)
+
 local homeButton = UIKit.Button(fallPanel, {
 	Text = "Leave",
 	Color = "Gray",
@@ -534,7 +560,7 @@ local function makeLabel(obj)
 		})
 	end
 	UIKit.Text(labelGui, { Text = rarity.Name, Size = UDim2.fromScale(1, 0.3), Position = UDim2.fromScale(0, 0.18), Color = rarity.Color, Stroke = 3 })
-	UIKit.Text(labelGui, { Text = species.Name, Size = UDim2.fromScale(1, 0.24), Position = UDim2.fromScale(0, 0.47), Stroke = 2.5 })
+	obj.NameLabel = UIKit.Text(labelGui, { Text = species.Name, Rich = true, Size = UDim2.fromScale(1, 0.24), Position = UDim2.fromScale(0, 0.47), Stroke = 2.5 })
 	obj.StaminaLabel = UIKit.Text(labelGui, {
 		Text = "",
 		Rich = true,
@@ -546,6 +572,11 @@ local function makeLabel(obj)
 end
 
 local function refreshLabel(obj)
+	if obj.NameLabel then
+		-- espécie que o jogador ainda não tem no índex: "*NEW" em rosa ao lado do nome
+		local isNew = not obj.Tamed and RunPanel.IsNew(obj.Species.Id)
+		obj.NameLabel.Text = isNew and ('%s <font color="#%s">*NEW</font>'):format(obj.Species.Name, RunPanel.NEW_COLOR:ToHex()) or obj.Species.Name
+	end
 	if obj.StaminaLabel then
 		local color = stateColor(obj.Required)
 		obj.StaminaLabel.Text = ('<i>Needs:</i> ⚡ <font color="#%s">%s</font>'):format(color:ToHex(), NumberFormat.Abbreviate(obj.Required))
@@ -692,6 +723,7 @@ local function buck(reason)
 	rider.Vel = Vector3.new(0, RIDE.BUCK_UP, -speed * 0.55)
 	state = "Airborne"
 	startAim()
+	SoundFx.Play("Buck")
 	if reason then
 		showBanner(reason, Color3.fromRGB(255, 120, 90))
 	end
@@ -703,6 +735,7 @@ local function freeJump()
 	rider.Vel = Vector3.new(0, RIDE.JUMP_UP, -math.max(speed, 20) * 0.6)
 	state = "Airborne"
 	startAim()
+	SoundFx.Play("Jump")
 end
 
 local function harpoon(obj, duration)
@@ -713,6 +746,7 @@ local function harpoon(obj, duration)
 	rider.ZipStart = os.clock()
 	rider.ZipDuration = duration or RIDE.HARPOON_TIME
 	state = "Zipping"
+	SoundFx.Play("Harpoon")
 end
 
 local function onAction()
@@ -745,6 +779,7 @@ local function fall()
 	rider.Pos = Vector3.new(rider.Pos.X, floorY + 1.2, rider.Pos.Z)
 	placeRider(CFrame.new(rider.Pos) * CFrame.Angles(-math.pi / 2, 0, 0))
 	showBanner("You fell!", Color3.fromRGB(255, 90, 80))
+	SoundFx.Play("Fall")
 	highlight.Parent = nil
 end
 
@@ -758,6 +793,7 @@ local function revive()
 	local obj = spawnFish({ S = species.Id, M = "Normal", Z = "Normal", Dist = rider.Dist + 3, X = rider.Pos.X, Phase = 0, SpeedMul = 1 }, true)
 	mount(obj)
 	showBanner("Back in!", UIKit.MoneyGreen)
+	SoundFx.Play("Revive")
 end
 
 -- Começo e fim ------------------------------------------------------------------------------
@@ -781,7 +817,9 @@ local function beginRun(seed)
 		Folder = folder,
 		Tamed = 0,
 		LabelClock = 0,
+		MaxDist = 0,
 	}
+	RunPanel.Begin(ClientState.Data and ClientState.Data.BestDist or 0)
 	rider = {
 		Pos = root.Position :: any,
 		Vel = Vector3.new(0, RIDE.DIVE_UP, -RIDE.DIVE_FORWARD),
@@ -805,6 +843,7 @@ end
 
 -- splash na água: anel branco que abre e gotinhas que espirram
 local function splash(position)
+	SoundFx.Play("Splash")
 	local folder = Instance.new("Folder")
 	folder.Name = "Splash"
 	folder.Parent = Workspace
@@ -929,6 +968,7 @@ endRun = function(reason)
 	state = "Idle"
 	highlight.Parent = nil
 	local count = run and run.Tamed or 0
+	local reached = run and run.MaxDist or 0
 	if run then
 		for _, obj in ipairs(run.Active) do
 			destroyFish(obj)
@@ -949,7 +989,7 @@ endRun = function(reason)
 	restoreCharacter()
 	cooldownUntil = os.clock() + 2
 	task.spawn(function()
-		ClientState.Request("EndRun", reason)
+		ClientState.Request("EndRun", reason, reached)
 	end)
 	if count > 0 then
 		ClientState.Toast(("Run over: %d fish tamed!"):format(count), "ok")
@@ -1031,6 +1071,7 @@ local function updateRiding(dt, now, t)
 			if elapsed >= species.TameTime and not rider.TameSent then
 				rider.TameSent = true
 				local index = obj.Data.Index
+				local wasNew = RunPanel.IsNew(species.Id)
 				task.spawn(function()
 					local result = ClientState.Request("Tame", index)
 					if rider.Mount ~= obj or state ~= "Riding" then
@@ -1046,6 +1087,8 @@ local function updateRiding(dt, now, t)
 						rider.RideEnd = os.clock() + rider.RideTime
 						rider.WheelAtTame = math.max(0.2, 1 - obj.Required / stamina)
 						showBanner("TAMED!", UIKit.MoneyGreen)
+						RunPanel.AddTamed(obj.Data, wasNew)
+						SoundFx.Play(wasNew and "TameNew" or "Tame")
 					else
 						buck("It got away!")
 					end
@@ -1175,6 +1218,8 @@ local function updateHud(now)
 	local area = Track.AreaAt(rider.Dist)
 	areaLabel.Text = ("AREA %d • %s"):format(area.Index, area.Name)
 	distLabel.Text = ("%d m  •  ⚡ %s  •  tamed: %d"):format(math.max(0, math.floor(rider.Dist)), NumberFormat.Abbreviate(ClientState.Stat("Stamina")), run.Tamed)
+	run.MaxDist = math.max(run.MaxDist or 0, rider.Dist)
+	RunPanel.Update(rider.Dist)
 	if area.Index ~= lastAreaIndex then
 		if lastAreaIndex ~= 0 then
 			showBanner(("AREA %d • %s"):format(area.Index, string.upper(area.Name)), area.Deco[1])

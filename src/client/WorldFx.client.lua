@@ -20,6 +20,7 @@ local Layout = require(Shared:WaitForChild("Layout"))
 local FishModel = require(Shared:WaitForChild("FishModel"))
 
 local UIKit = require(script.Parent:WaitForChild("UIKit"))
+local SoundFx = require(script.Parent:WaitForChild("SoundFx"))
 
 local player = Players.LocalPlayer
 local camera = Workspace.CurrentCamera
@@ -110,6 +111,7 @@ local function setUnderwater(value)
 		return
 	end
 	underwater = value
+	SoundFx.SetUnderwater(value)
 	showRays(value)
 	tint.Enabled = value
 	blur.Enabled = value

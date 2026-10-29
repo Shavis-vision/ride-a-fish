@@ -364,6 +364,12 @@ function UIKit.Button(parent, props)
 	end
 
 	pressFeedback(button)
+	button.Activated:Connect(function()
+		local ok, SoundFx = pcall(require, script.Parent:WaitForChild("SoundFx"))
+		if ok then
+			SoundFx.Play("Click")
+		end
+	end)
 	if props.OnClick then
 		button.Activated:Connect(props.OnClick)
 	end

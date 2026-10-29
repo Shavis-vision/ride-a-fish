@@ -33,10 +33,27 @@ function RideService.IsRunning(player)
 	return runs[player] ~= nil
 end
 
-local function endRun(player, reason)
-	if not runs[player] then
+-- Recorde de distância: o cliente diz até onde chegou; o servidor limita ao que daria para
+-- nadar no tempo da corrida (velocidade máxima) e ao tamanho da pista.
+local function recordDistance(player, run, dist)
+	local data = DataService.Get(player)
+	if not data or type(dist) ~= "number" or dist ~= dist then
 		return
 	end
+	local possible = (os.clock() - run.Started) * Track.MAX_SPEED + 60
+	dist = math.clamp(dist, 0, math.min(possible, Track.LENGTH))
+	if dist > data.BestDist then
+		data.BestDist = math.floor(dist)
+		Net.Sync(player)
+	end
+end
+
+local function endRun(player, reason, dist)
+	local run = runs[player]
+	if not run then
+		return
+	end
+	recordDistance(player, run, dist)
 	runs[player] = nil
 	player:SetAttribute("Running", false)
 	if reason ~= "saiu" then
@@ -150,8 +167,8 @@ function RideService.Start()
 	Net.On("StartRun", startRun)
 	Net.On("Mount", mount)
 	Net.On("Tame", tame)
-	Net.On("EndRun", function(player, reason)
-		endRun(player, type(reason) == "string" and reason or "voltou")
+	Net.On("EndRun", function(player, reason, dist)
+		endRun(player, type(reason) == "string" and reason or "voltou", dist)
 		return { ok = true }
 	end)
 

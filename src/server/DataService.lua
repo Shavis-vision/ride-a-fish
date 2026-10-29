@@ -23,6 +23,8 @@
 --     Areas = { ["1"] = true }, -- prêmios de área completa já pegos
 --     BestAura = 0, Aura = 0, -- melhor aura comprada e aura equipada (0 = nenhuma)
 --     Tamed = 0, -- total de peixes domados
+--     BestDist = 0, -- recorde de distância numa corrida (studs)
+--     Tut = 0, -- passos do tutorial já feitos (0 = jogador novo)
 --     Purchases = { "id-do-recibo" }, -- últimas compras com Robux (evita dar duas vezes)
 --     LastSave = 1760000000,
 -- }
@@ -63,6 +65,8 @@ local function newData()
 		BestAura = 0,
 		Aura = 0,
 		Tamed = 0,
+		BestDist = 0,
+		Tut = 0,
 		Purchases = {},
 	}
 end
@@ -136,6 +140,9 @@ local function sanitize(raw)
 	data.BestAura = isWhole(raw.BestAura) and math.clamp(raw.BestAura, 0, #Progression.Auras) or 0
 	data.Aura = isWhole(raw.Aura) and math.clamp(raw.Aura, 0, data.BestAura) or data.BestAura
 	data.Tamed = isWhole(raw.Tamed) and math.max(0, raw.Tamed) or 0
+	data.BestDist = isNumber(raw.BestDist) and math.clamp(raw.BestDist, 0, 100000) or 0
+	-- quem já jogou antes do tutorial existir (já domou peixes) não precisa dele
+	data.Tut = isWhole(raw.Tut) and math.clamp(raw.Tut, 0, 99) or (data.Tamed > 0 and 99 or 0)
 
 	-- peixes
 	local used = {}

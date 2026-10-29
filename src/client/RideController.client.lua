@@ -1179,27 +1179,45 @@ end
 
 -- Mira: o peixe MAIS PERTO dentro do alcance. Peixes prestes a bater numa pedra só são
 -- escolhidos se não houver outro.
+-- Mira: um ponto À FRENTE de você, mais ou menos onde você vai cair. A/D move o ponto para
+-- os lados. O alvo é o peixe mais perto desse ponto, e ele fica "grudado" até outro ficar
+-- bem mais perto — assim o círculo não fica pulando de um peixe para outro.
+local function aimPoint()
+	local forward = math.clamp(-rider.Vel.Z, 14, 40)
+	return Vector3.new(rider.Pos.X + (rider.Steer or 0) * 16, rider.Pos.Y, rider.Pos.Z - forward * 0.9)
+end
+
+local function canTarget(obj, now)
+	if not obj or not obj.Model or obj == rider.Mount or obj.Escaped or now < obj.TargetableAt then
+		return false
+	end
+	if obj.Dist - rider.Dist < -RIDE.ASSIST_BEHIND then
+		return false
+	end
+	return (obj.Root.Position - rider.Pos).Magnitude < RIDE.HARPOON_RANGE
+end
+
 local function chooseTarget(now)
-	local best, bestDistance = nil, math.huge
-	local fallback, fallbackDistance = nil, math.huge
+	local aim = aimPoint()
+	local function score(obj)
+		local p = obj.Root.Position
+		local flat = Vector2.new(p.X - aim.X, p.Z - aim.Z).Magnitude
+		return flat + (aboutToHit(obj) and 40 or 0) -- prefere peixe que não vai bater numa pedra
+	end
+	local best, bestScore = nil, math.huge
 	for _, obj in ipairs(run.Active) do
-		if obj.Model and obj ~= rider.Mount and not obj.Escaped and now >= obj.TargetableAt then
-			local ahead = obj.Dist - rider.Dist
-			if ahead > -RIDE.ASSIST_BEHIND then
-				local distance = (obj.Root.Position - rider.Pos).Magnitude
-				if distance < RIDE.HARPOON_RANGE then
-					if aboutToHit(obj) then
-						if distance < fallbackDistance then
-							fallback, fallbackDistance = obj, distance
-						end
-					elseif distance < bestDistance then
-						best, bestDistance = obj, distance
-					end
-				end
+		if canTarget(obj, now) then
+			local sc = score(obj)
+			if sc < bestScore then
+				best, bestScore = obj, sc
 			end
 		end
 	end
-	return best or fallback
+	-- mantém o alvo atual se ele ainda serve e não está muito pior que o melhor
+	if target ~= best and canTarget(target, now) and score(target) < bestScore * 1.35 + 4 then
+		return target
+	end
+	return best
 end
 
 local function updateReticle(dt)
@@ -1210,7 +1228,9 @@ local function updateReticle(dt)
 	reticle.Enabled = true
 	-- o círculo fica no fundo, embaixo de você; com um peixe pego pela assistência, desliza
 	-- para baixo dele e gira devagar
-	local goal = Vector3.new(rider.Pos.X, Track.SeabedY(rider.Dist) + 0.3, rider.Pos.Z)
+	-- sem alvo, o círculo fica no ponto de mira (à frente), mostrando para onde você aponta
+	local aim = aimPoint()
+	local goal = Vector3.new(aim.X, Track.SeabedY(Track.DistOf(aim.Z)) + 0.3, aim.Z)
 	if target and target.Model then
 		local p = target.Root.Position
 		goal = Vector3.new(p.X, Track.SeabedY(target.Dist) + 0.3, p.Z)

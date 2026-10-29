@@ -460,28 +460,52 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		totalLength += 1.1 * s + tailLength
 		seatY, seatZ = H * 0.43, -L * 0.05
 	elseif family == "Baiacu" then
-		-- bola cheia de espinhos
+		-- "bola" de blocos: três caixas cruzadas (cubo arredondado), pintas e espinhos
 		local D = math.max(H, W * 1.3)
-		body = ball("Body", D, Vector3.new(), palette.Body, { Reflectance = palette.Reflectance })
-		ball("Belly", D * 0.86, Vector3.new(0, -D * 0.12, -D * 0.02), palette.Belly, { Reflectance = palette.Reflectance })
-		for i = 0, 11 do
-			local a = i / 12 * math.pi * 2
-			local dir = Vector3.new(math.cos(a), math.sin(a) * 0.9, 0)
-			for _, z in ipairs({ -D * 0.2, D * 0.2 }) do
-				local pos = dir * D * 0.48 + Vector3.new(0, 0, z)
-				box("Spike", Vector3.new(0.22 * s, 0.22 * s, 0.7 * s), CFrame.lookAt(pos, pos + dir + Vector3.new(0, 0, z > 0 and 0.3 or -0.3)), "Fin")
+		body = box("Body", Vector3.new(D, D * 0.72, D * 0.72), CFrame.new(), "Body")
+		box("Body", Vector3.new(D * 0.72, D, D * 0.72), CFrame.new(), "Body")
+		box("Body", Vector3.new(D * 0.72, D * 0.72, D), CFrame.new(), "Body")
+		box("Belly", Vector3.new(D * 0.8, D * 0.3, D * 0.8), CFrame.new(0, -D * 0.36, 0), "Belly")
+		box("Belly", Vector3.new(D * 0.6, D * 0.22, D * 0.12), CFrame.new(0, -D * 0.2, -D * 0.47), "Belly")
+		for _, p in ipairs({ { -0.2, 0.2 }, { 0.22, -0.1 }, { 0, 0.32 }, { -0.28, -0.22 } }) do
+			box("Spot", Vector3.new(D * 0.16, 0.08 * s, D * 0.16), CFrame.new(p[1] * D, D * 0.5, p[2] * D), "Stripe")
+		end
+		for _, side in ipairs({ -1, 1 }) do
+			box("Spot", Vector3.new(0.08 * s, D * 0.14, D * 0.16), CFrame.new(side * D * 0.5, D * 0.12, D * 0.12), "Stripe")
+		end
+		-- espinhos: cunhas curtas saindo de cada face
+		local spikes = {
+			{ Vector3.new(0, 1, 0), { { -0.25, -0.25 }, { 0.25, -0.25 }, { -0.25, 0.25 }, { 0.25, 0.25 } } },
+			{ Vector3.new(1, 0, 0), { { 0.15, -0.2 }, { 0.15, 0.2 }, { -0.2, 0 } } },
+			{ Vector3.new(-1, 0, 0), { { 0.15, -0.2 }, { 0.15, 0.2 }, { -0.2, 0 } } },
+			{ Vector3.new(0, 0, 1), { { -0.22, 0.1 }, { 0.22, 0.1 } } },
+		}
+		for _, face in ipairs(spikes) do
+			local n = face[1]
+			for _, uv in ipairs(face[2]) do
+				local pos
+				if n.Y ~= 0 then
+					pos = Vector3.new(uv[1] * D, D * 0.5, uv[2] * D)
+				elseif n.X ~= 0 then
+					pos = Vector3.new(n.X * D * 0.5, uv[1] * D, uv[2] * D)
+				else
+					pos = Vector3.new(uv[1] * D, uv[2] * D, D * 0.5)
+				end
+				-- espinho = cubinho girado 45° (vira um "diamante" pontudo saindo da face)
+				box("Spike", Vector3.new(0.38, 0.38, 0.38) * s, CFrame.new(pos + n * 0.12 * s) * CFrame.Angles(math.rad(45), math.rad(45), 0), "Fin")
 			end
 		end
-		eyes(D * 0.34, D * 0.14, -D * 0.3, 0.75 * s)
-		box("Mouth", Vector3.new(0.7 * s, 0.4 * s, 0.4 * s), CFrame.new(0, -D * 0.06, -D * 0.5), Brick.Shade(palette.Body, -0.3))
+		eyes(D * 0.36, D * 0.18, -D * 0.38, 0.75 * s)
+		box("Mouth", Vector3.new(D * 0.3, D * 0.14, 0.3 * s), CFrame.new(0, -D * 0.06, -D * 0.5 - 0.1 * s), Brick.Shade(palette.Body, -0.35))
 		for _, side in ipairs({ -1, 1 }) do
-			wedge("SideFin", Vector3.new(1.1 * s, 0.22 * s, 1 * s), CFrame.new(side * D * 0.52, -D * 0.05, -D * 0.05) * CFrame.Angles(0, math.pi, side * 0.5), "Fin")
+			wedge("SideFin", Vector3.new(1.1 * s, 0.22 * s, 1 * s), CFrame.new(side * (D * 0.5 + 0.4 * s), -D * 0.05, -D * 0.05) * CFrame.Angles(0, math.pi, side * 0.5), "Fin")
 		end
-		local tail = tailJoint(D * 0.5, 0)
-		forkTail(tail, D * 0.5, D * 0.6, 1.4 * s)
+		box("TailStalk", Vector3.new(D * 0.3, D * 0.3, 0.8 * s), CFrame.new(0, 0, D * 0.5 + 0.3 * s), "Body")
+		local tail = tailJoint(D * 0.5 + 0.6 * s, 0)
+		forkTail(tail, D * 0.5 + 0.6 * s, D * 0.6, 1.4 * s)
 		L, H, W = D, D, D
-		totalLength = D + 1.4 * s
-		seatY, seatZ = D * 0.48, 0
+		totalLength = D + 2 * s
+		seatY, seatZ = D * 0.5, 0
 	elseif family == "Tartaruga" then
 		-- casco em degraus (domo) com placas, cabeça, nadadeiras
 		local SW, SL = W * 1.8, L * 1.0
@@ -506,22 +530,45 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		totalLength = SL + 2.4 * s
 		seatY, seatZ = H * 0.64, 0
 	elseif family == "Arraia" then
-		-- corpo chato em losango com asas largas e cauda fina
-		local span = W * 3.2
-		body = box("Body", Vector3.new(W * 1.1, H * 0.55, L * 0.75), CFrame.new(), "Body")
-		box("Belly", Vector3.new(W * 1.12, H * 0.18, L * 0.72), CFrame.new(0, -H * 0.22, 0), "Belly")
+		-- corpo chato em losango feito de degraus de blocos (como pixel art), asas largas,
+		-- pintas por cima, barriga clara e cauda fina de blocos
+		local span = W * 3.4
+		local T = math.max(H * 0.4, 0.8 * s)
+		body = box("Body", Vector3.new(W * 1.2, T, L * 0.8), CFrame.new(), "Body")
+		box("Head", Vector3.new(W * 0.9, T * 0.85, L * 0.16), CFrame.new(0, -T * 0.02, -L * 0.46), "Body")
+		box("Belly", Vector3.new(W * 1.15, T * 0.3, L * 0.78), CFrame.new(0, -T * 0.42, 0), "Belly")
+		local steps = 4
+		local stepW = (span / 2 - W * 0.6) / steps
 		for _, side in ipairs({ -1, 1 }) do
-			-- asa: duas cunhas (frente e trás) para formar o triângulo
-			wedge("Wing", Vector3.new(span / 2, H * 0.22, L * 0.38), CFrame.new(side * (W * 0.55 + span / 4), 0, -L * 0.19) * CFrame.Angles(0, side * math.pi / 2, 0), "Body")
-			wedge("Wing", Vector3.new(span / 2, H * 0.22, L * 0.38), CFrame.new(side * (W * 0.55 + span / 4), 0, L * 0.19) * CFrame.Angles(0, side * math.pi / 2, 0) * CFrame.Angles(0, 0, math.pi), "Body")
-			box("Spot", Vector3.new(span * 0.1, 0.06 * s, span * 0.1), CFrame.new(side * (W * 0.55 + span * 0.12), H * 0.12, 0), "Stripe")
+			for i = 1, steps do
+				local f = 1 - i / (steps + 1)
+				local len = L * 0.8 * f
+				local x = side * (W * 0.6 + stepW * (i - 0.5))
+				local z = -L * 0.08 * (i / steps) -- a ponta da asa vai um pouco para a frente
+				box("Wing", Vector3.new(stepW + 0.05 * s, T * (0.85 - i * 0.12), len), CFrame.new(x, -T * 0.02 * i, z), "Body")
+				box("WingBelly", Vector3.new(stepW, T * 0.18, len * 0.95), CFrame.new(x, -T * (0.36 - i * 0.04), z), "Belly")
+				if i == 2 or i == 3 then
+					box("Spot", Vector3.new(stepW * 0.45, 0.07 * s, len * 0.2), CFrame.new(x, T * (0.43 - i * 0.06), z - len * 0.15), "Stripe")
+					box("Spot", Vector3.new(stepW * 0.35, 0.07 * s, len * 0.16), CFrame.new(x, T * (0.43 - i * 0.06), z + len * 0.2), "Stripe")
+				end
+			end
+			wedge("WingTip", Vector3.new(T * 0.3, stepW * 0.9, L * 0.12), CFrame.new(side * (span / 2 + stepW * 0.2), -T * 0.1, -L * 0.1) * CFrame.Angles(0, 0, side * math.pi / 2), "Body")
 		end
-		eyes(W * 0.4, H * 0.24, -L * 0.28, 0.5 * s)
-		local tail = tailJoint(L * 0.37, 0)
-		piece({ Name = "TailWhip", Shape = Enum.PartType.Cylinder, Size = Vector3.new(L * 0.9, 0.25 * s, 0.25 * s), CFrame = CFrame.new(0, 0, L * 0.37 + L * 0.45) * CFrame.Angles(0, math.pi / 2, 0), Color = color("Fin") }, tail)
+		-- olhos em cima da cabeça
+		for _, side in ipairs({ -1, 1 }) do
+			ball("Eye", 0.55 * s, Vector3.new(side * W * 0.32, T * 0.55, -L * 0.36), WHITE)
+			ball("Pupil", 0.32 * s, Vector3.new(side * W * 0.32, T * 0.7, -L * 0.4), BLACK)
+		end
+		local tail = tailJoint(L * 0.4, 0)
+		for i = 0, 3 do
+			local w = (0.5 - i * 0.08) * s
+			box("Tail", Vector3.new(w, w, L * 0.28), CFrame.new(0, 0, L * 0.4 + L * 0.14 + i * L * 0.27), i % 2 == 0 and "Body" or "Fin", { AttachTo = tail })
+		end
+		wedge("TailFin", Vector3.new(0.2 * s, 0.7 * s, 0.8 * s), CFrame.new(0, 0.3 * s, L * 0.4 + L * 1.1), "Fin", tail)
 		W = span
+		H = T
 		totalLength = L * 1.6
-		seatY, seatZ = H * 0.28, 0
+		seatY, seatZ = T * 0.5, -L * 0.02
 	elseif family == "Cavalo" then
 		-- corpo em pé, curvado, com focinho de tubo e cauda enrolada
 		local seg = H * 0.3
@@ -529,7 +576,8 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		box("Chest", Vector3.new(W * 0.85, seg, L * 0.34), CFrame.new(0, seg * 0.95, -L * 0.06), "Body")
 		box("Belly", Vector3.new(W * 0.92, seg * 1.6, L * 0.14), CFrame.new(0, seg * 0.3, -L * 0.2), "Belly")
 		box("Head", Vector3.new(W * 0.8, seg * 0.9, L * 0.36), CFrame.new(0, seg * 1.8, -L * 0.14), "Body")
-		piece({ Name = "Snout", Shape = Enum.PartType.Cylinder, Size = Vector3.new(L * 0.36, 0.5 * s, 0.5 * s), CFrame = CFrame.new(0, seg * 1.7, -L * 0.48) * CFrame.Angles(0, math.pi / 2, 0), Color = color("Body") })
+		box("Snout", Vector3.new(0.55 * s, 0.55 * s, L * 0.34), CFrame.new(0, seg * 1.7, -L * 0.46), "Body")
+		box("SnoutTip", Vector3.new(0.7 * s, 0.7 * s, 0.35 * s), CFrame.new(0, seg * 1.7, -L * 0.64), "Belly")
 		eyes(W * 0.38, seg * 1.95, -L * 0.18, 0.55 * s)
 		for i = 0, 3 do
 			wedge("Crest", Vector3.new(0.25 * s, 0.6 * s, 0.6 * s), CFrame.new(0, seg * 2.2 - i * seg * 0.6, L * 0.06 + i * 0.15 * s), "Fin")
@@ -542,7 +590,8 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		end
 		H = seg * 4
 		totalLength = L * 1.2
-		seatY, seatZ = seg * 0.6, L * 0.08
+		-- monta em cima da cabeça/pescoço (ele nada em pé)
+		seatY, seatZ = seg * 2.25, -L * 0.1
 	elseif family == "Enguia" then
 		-- corpo comprido em gomos (o fim balança)
 		local n = 5
@@ -585,11 +634,24 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		seatY, seatZ = H * 0.45, -L * 0.1
 	end
 
-	-- sela (para montar)
+	-- sela (para montar): de blocos, no estilo dos peixes — manta com borda, assento,
+	-- pito na frente, encosto atrás e estribos pendurados dos lados
 	if opts.Saddle ~= false then
-		box("Blanket", Vector3.new(math.min(W, 3 * s) + 0.5 * s, 0.25 * s, 2.3 * s), CFrame.new(0, seatY + 0.125 * s, seatZ), BLANKET, { Reflectance = 0 })
-		box("Saddle", Vector3.new(math.min(W, 3 * s) * 0.7, 0.45 * s, 1.5 * s), CFrame.new(0, seatY + 0.45 * s, seatZ), SADDLE, { Reflectance = 0 })
-		box("SaddleBack", Vector3.new(math.min(W, 3 * s) * 0.7, 0.5 * s, 0.35 * s), CFrame.new(0, seatY + 0.75 * s, seatZ + 0.6 * s), SADDLE, { Reflectance = 0 })
+		local sw = math.min(W * 0.8, 3 * s)
+		local base = CFrame.new(0, seatY, seatZ)
+		local trim = Color3.fromRGB(255, 205, 60)
+		local strap = Color3.fromRGB(70, 40, 20)
+		box("Blanket", Vector3.new(sw + 0.6 * s, 0.22 * s, 2.4 * s), base * CFrame.new(0, 0.11 * s, 0), BLANKET, { Reflectance = 0 })
+		box("BlanketTrim", Vector3.new(sw + 0.7 * s, 0.12 * s, 0.25 * s), base * CFrame.new(0, 0.18 * s, -1.15 * s), trim, { Reflectance = 0 })
+		box("BlanketTrim", Vector3.new(sw + 0.7 * s, 0.12 * s, 0.25 * s), base * CFrame.new(0, 0.18 * s, 1.15 * s), trim, { Reflectance = 0 })
+		box("Saddle", Vector3.new(sw * 0.72, 0.38 * s, 1.6 * s), base * CFrame.new(0, 0.4 * s, 0), SADDLE, { Reflectance = 0 })
+		box("SaddleSeat", Vector3.new(sw * 0.6, 0.12 * s, 1 * s), base * CFrame.new(0, 0.62 * s, 0.05 * s), Brick.Shade(SADDLE, 0.15), { Reflectance = 0 })
+		box("Pommel", Vector3.new(0.4 * s, 0.55 * s, 0.35 * s), base * CFrame.new(0, 0.8 * s, -0.7 * s), Brick.Shade(SADDLE, -0.2), { Reflectance = 0 })
+		box("SaddleBack", Vector3.new(sw * 0.72, 0.6 * s, 0.35 * s), base * CFrame.new(0, 0.82 * s, 0.68 * s), SADDLE, { Reflectance = 0 })
+		for _, side in ipairs({ -1, 1 }) do
+			box("Strap", Vector3.new(0.12 * s, 1 * s, 0.28 * s), base * CFrame.new(side * (sw * 0.36 + 0.06 * s), -0.15 * s, 0), strap, { Reflectance = 0 })
+			box("Stirrup", Vector3.new(0.3 * s, 0.14 * s, 0.4 * s), base * CFrame.new(side * (sw * 0.36 + 0.1 * s), -0.68 * s, 0), Color3.fromRGB(180, 180, 190), { Reflectance = 0 })
+		end
 	end
 
 	if palette.Sparkle then

@@ -461,8 +461,8 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		local tailLength = (shark and 2.8 or 2.2) * s
 		forkTail(tail, jointZ, H * (shark and 1.5 or 1.3), tailLength, shark and 1.35 or 1)
 		totalLength += 1.1 * s + tailLength
-		seatY, seatZ = H * 0.43, -L * 0.05
-		seatW, seatL = W, L * 0.42
+		seatY, seatZ = H * 0.43, -L * 0.02 -- no meio do bloco do corpo (o mais alto e largo)
+		seatW, seatL = W, L * 0.36
 	elseif family == "Baiacu" then
 		-- "bola" de blocos: três caixas cruzadas (cubo arredondado), pintas e espinhos
 		local D = math.max(H, W * 1.3)

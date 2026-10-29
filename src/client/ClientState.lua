@@ -27,8 +27,8 @@ function ClientState.Toast(text, kind)
 	ClientState.ToastEvent:Fire(text, kind or "info")
 end
 
--- ações que dão dinheiro: tocam o som de moedas quando dão certo
-local COIN_ACTIONS = { SellMany = true, Sell = true, ClaimIndex = true, ClaimAllIndex = true, ClaimArea = true }
+-- ações que dão dinheiro: tocam um som quando dão certo (venda = caixa registradora)
+local COIN_ACTIONS = { SellMany = "Sell", Sell = "Sell", ClaimIndex = "Coins", ClaimAllIndex = "Coins", ClaimArea = "Coins" }
 
 function ClientState.Request(name, ...)
 	local ok, result = pcall(action.InvokeServer, action, name, ...)
@@ -40,7 +40,7 @@ function ClientState.Request(name, ...)
 	if result.ok and COIN_ACTIONS[name] then
 		local okSound, SoundFx = pcall(require, script.Parent:WaitForChild("SoundFx"))
 		if okSound then
-			SoundFx.Play("Coins")
+			SoundFx.Play(COIN_ACTIONS[name])
 		end
 	end
 	if result.msg then
@@ -70,6 +70,20 @@ function ClientState.InAquarium(uid)
 	local data = ClientState.Data
 	return data ~= nil and table.find(data.Aquarium, uid) ~= nil
 end
+
+-- Compra com dinheiro (melhorias, auras...): o dinheiro diminuiu = som de compra.
+-- (o dinheiro só diminui quando o jogador gasta)
+local lastMoney = player:GetAttribute("Money")
+player:GetAttributeChangedSignal("Money"):Connect(function()
+	local money = player:GetAttribute("Money") or 0
+	if lastMoney and money < lastMoney - 0.5 then
+		local okSound, SoundFx = pcall(require, script.Parent:WaitForChild("SoundFx"))
+		if okSound then
+			SoundFx.Play("Buy")
+		end
+	end
+	lastMoney = money
+end)
 
 remotes:WaitForChild("Sync").OnClientEvent:Connect(function(snapshot)
 	ClientState.Data = snapshot

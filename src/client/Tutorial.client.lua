@@ -253,7 +253,13 @@ player:GetAttributeChangedSignal("Training"):Connect(function()
 		complete(4)
 	end
 end)
+local lastTut = nil
 ClientState.Changed.Event:Connect(function(data)
+	-- tutorial reiniciado (comando /tutorial): libera os passos de novo
+	if lastTut and (data.Tut or DONE) < lastTut then
+		sent = {}
+	end
+	lastTut = data.Tut or DONE
 	if (data.Tut or DONE) == 2 and #(data.Aquarium or {}) > 0 then
 		complete(3)
 	end

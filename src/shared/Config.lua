@@ -229,6 +229,8 @@ Config.SOUNDS = {
 		Revive = { Id = 120005759558278, Volume = 0.7 }, -- reviveu
 		Click = { Id = 110948579458469, Volume = 0.4 }, -- botões
 		Coins = { Id = 1319346243, Volume = 0.5 }, -- dinheiro
+		Sell = { Id = 134810204798705, Volume = 0.6 }, -- vender peixes (caixa registradora)
+		Buy = { Id = 3406813517, Volume = 0.55 }, -- comprar com dinheiro (melhorias, auras)
 	},
 }
 

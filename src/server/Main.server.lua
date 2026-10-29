@@ -77,6 +77,49 @@ Net.On("Tutorial", function(player, step)
 	return { ok = true }
 end)
 
+-- Rever o tutorial (para testar): digite /tutorial no chat. Só funciona no Studio ou
+-- para o dono do jogo, para jogador comum não ficar reiniciando sem querer.
+local RunServiceMain = game:GetService("RunService")
+local function canReplayTutorial(player)
+	return RunServiceMain:IsStudio() or player.UserId == game.CreatorId
+end
+local function replayTutorial(player)
+	if not player or not canReplayTutorial(player) then
+		return
+	end
+	local data = DataService.Get(player)
+	if data then
+		data.Tut = 0
+		Net.Sync(player)
+		Net.Notify(player, "Tutorial restarted!", "ok")
+	end
+end
+-- chat novo (TextChatService): comando de verdade, não aparece como mensagem
+pcall(function()
+	local TextChatService = game:GetService("TextChatService")
+	local command = Instance.new("TextChatCommand")
+	command.Name = "TutorialCommand"
+	command.PrimaryAlias = "/tutorial"
+	command.Parent = TextChatService
+	command.Triggered:Connect(function(source)
+		replayTutorial(Players:GetPlayerByUserId(source.UserId))
+	end)
+end)
+-- chat antigo
+local function hookTutorialCommand(player)
+	pcall(function()
+		player.Chatted:Connect(function(message)
+			if string.lower(message) == "/tutorial" then
+				replayTutorial(player)
+			end
+		end)
+	end)
+end
+Players.PlayerAdded:Connect(hookTutorialCommand)
+for _, existing in ipairs(Players:GetPlayers()) do
+	hookTutorialCommand(existing)
+end
+
 Net.On("GetData", function(player)
 	Net.Sync(player)
 	return { ok = true }

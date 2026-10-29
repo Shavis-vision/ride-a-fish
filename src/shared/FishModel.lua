@@ -192,10 +192,14 @@ buildFromMesh = function(template, species, mutation, size, s, L, palette, opts,
 		return part
 	end
 	if opts.Saddle ~= false then
-		local sw = math.min(W, 3 * s)
-		attach({ Name = "Blanket", Size = Vector3.new(sw + 0.5 * s, 0.25 * s, 2.3 * s), CFrame = CFrame.new(0, seatY + 0.125 * s, seatZ), Color = BLANKET })
-		attach({ Name = "Saddle", Size = Vector3.new(sw * 0.7, 0.45 * s, 1.5 * s), CFrame = CFrame.new(0, seatY + 0.45 * s, seatZ), Color = SADDLE })
-		attach({ Name = "SaddleBack", Size = Vector3.new(sw * 0.7, 0.5 * s, 0.35 * s), CFrame = CFrame.new(0, seatY + 0.75 * s, seatZ + 0.6 * s), Color = SADDLE })
+		-- sela proporcional ao peixe (em peixe pequeno/estreito não fica gigante), deitada
+		-- sobre a superfície real do modelo (SeatY foi medido no Studio com raio)
+		local sw = math.min(W * 0.7, 2.6 * s)
+		local sl = math.min(Lm * 0.32, 2.1 * s)
+		local t = 0.22 * s
+		attach({ Name = "Blanket", Size = Vector3.new(sw + 0.3 * s, t, sl), CFrame = CFrame.new(0, seatY + t / 2, seatZ), Color = BLANKET })
+		attach({ Name = "Saddle", Size = Vector3.new(sw * 0.72, 0.4 * s, sl * 0.65), CFrame = CFrame.new(0, seatY + t + 0.2 * s, seatZ), Color = SADDLE })
+		attach({ Name = "SaddleBack", Size = Vector3.new(sw * 0.72, 0.45 * s, 0.3 * s), CFrame = CFrame.new(0, seatY + t + 0.42 * s, seatZ + sl * 0.3), Color = SADDLE })
 	end
 
 	if palette.Sparkle then
@@ -209,7 +213,7 @@ buildFromMesh = function(template, species, mutation, size, s, L, palette, opts,
 	model:SetAttribute("Size", size)
 	model:SetAttribute("Family", family)
 	model:SetAttribute("Mesh", true)
-	model:SetAttribute("SeatY", seatY + 0.7 * s)
+	model:SetAttribute("SeatY", seatY + 0.6 * s)
 	model:SetAttribute("SeatZ", seatZ)
 	model:SetAttribute("Length", Lm)
 	model:SetAttribute("Height", H)

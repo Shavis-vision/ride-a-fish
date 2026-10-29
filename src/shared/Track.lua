@@ -21,7 +21,7 @@ local Track = {}
 Track.WATER_Y = 0 -- altura da superfície da água
 Track.BEACH_Y = 2 -- altura do chão de areia da praia (topo)
 Track.SHORE_Z = 0
-Track.HALF_WIDTH = 80 -- meia largura da pista (160 studs de largura)
+Track.HALF_WIDTH = 100 -- meia largura da pista (200 studs de largura)
 Track.AREA_LENGTH = 900 -- comprimento de cada área
 Track.LENGTH = Track.AREA_LENGTH * 3
 Track.DEEP_FLOOR_Y = -185 -- fundo escuro bem lá embaixo (só visual)
@@ -210,8 +210,8 @@ end
 -- Gera SEMPRE a mesma lista para o mesmo seed. Cada peixe:
 -- { Index, S = espécie, M = mutação, Z = tamanho, Dist, X, Phase, SpeedMul }
 -- Distância entre um peixe e o próximo na pista (maior = menos peixes)
-Track.FISH_GAP_MIN = 8
-Track.FISH_GAP_MAX = 13
+Track.FISH_GAP_MIN = 12
+Track.FISH_GAP_MAX = 18
 
 function Track.GenerateRun(seed)
 	local rng = Random.new(seed)

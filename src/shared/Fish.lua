@@ -37,11 +37,11 @@ Fish.Mutations = {
 -- Tamanhos (mudam renda, stamina necessária, velocidade e o tamanho do modelo) ---------------
 Fish.SizeOrder = { "Mini", "Normal", "Grande", "Enorme", "Gigante" }
 Fish.Sizes = {
-	Mini = { Name = "Mini", Scale = 0.65, Income = 0.5, Stamina = 0.6, Speed = 1.1, Chance = 0.12 },
-	Normal = { Name = "Normal", Scale = 1, Income = 1, Stamina = 1, Speed = 1, Chance = 0.6 },
-	Grande = { Name = "Big", Scale = 1.3, Income = 1.6, Stamina = 1.4, Speed = 0.95, Chance = 0.18 },
-	Enorme = { Name = "Huge", Scale = 1.65, Income = 2.5, Stamina = 2, Speed = 0.9, Chance = 0.08 },
-	Gigante = { Name = "Giant", Scale = 2.1, Income = 4, Stamina = 3, Speed = 0.85, Chance = 0.02 },
+	Mini = { Name = "Mini", Scale = 0.85, Income = 0.5, Stamina = 0.6, Speed = 1.1, Chance = 0.12 },
+	Normal = { Name = "Normal", Scale = 1.3, Income = 1, Stamina = 1, Speed = 1, Chance = 0.6 },
+	Grande = { Name = "Big", Scale = 1.6, Income = 1.6, Stamina = 1.4, Speed = 0.95, Chance = 0.18 },
+	Enorme = { Name = "Huge", Scale = 1.95, Income = 2.5, Stamina = 2, Speed = 0.9, Chance = 0.08 },
+	Gigante = { Name = "Giant", Scale = 2.4, Income = 4, Stamina = 3, Speed = 0.85, Chance = 0.02 },
 }
 
 local function rgb(r, g, b)

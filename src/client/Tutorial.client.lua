@@ -31,7 +31,7 @@ local SPACING = 4
 local gui = UIKit.Gui("Tutorial", 3)
 local card = UIKit.Frame(gui, {
 	Size = UDim2.fromOffset(560, 92),
-	Position = UDim2.new(0.5, 0, 1, -130),
+	Position = UDim2.new(0.5, 0, 1, -100),
 	AnchorPoint = Vector2.new(0.5, 1),
 	Color = Color3.fromRGB(14, 22, 38),
 	Transparency = 0.3,
@@ -285,8 +285,10 @@ RunService.RenderStepped:Connect(function()
 		cardScale.Scale = 0.7
 		UIKit.Tween(cardScale, 0.35, { Scale = 1 }, Enum.EasingStyle.Back)
 		-- na corrida o cartão sobe (lá embaixo ficam as dicas e o botão de pular)
-		card.Position = step.Target and UDim2.new(0.5, 0, 1, -130) or UDim2.new(0.5, 0, 0, 250)
-		card.AnchorPoint = step.Target and Vector2.new(0.5, 1) or Vector2.new(0.5, 0)
+		-- sempre embaixo (não tampa o meio da tela): na base fica acima da barra da mochila;
+		-- na corrida fica logo acima das dicas, mais à esquerda do botão de pular
+		card.AnchorPoint = Vector2.new(0.5, 1)
+		card.Position = step.Target and UDim2.new(0.5, 0, 1, -100) or UDim2.new(0.5, 0, 1, -66)
 	end
 	if step.Target then
 		rayParams.FilterDescendantsInstances = { character, folder }

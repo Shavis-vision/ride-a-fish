@@ -575,11 +575,17 @@ local function refreshLabel(obj)
 	if obj.NameLabel then
 		-- espécie que o jogador ainda não tem no índex: "*NEW" em rosa ao lado do nome
 		local isNew = not obj.Tamed and RunPanel.IsNew(obj.Species.Id)
-		obj.NameLabel.Text = isNew and ('%s <font color="#%s">*NEW</font>'):format(obj.Species.Name, RunPanel.NEW_COLOR:ToHex()) or obj.Species.Name
+		local text = isNew and ('%s <font color="#%s">*NEW</font>'):format(obj.Species.Name, RunPanel.NEW_COLOR:ToHex()) or obj.Species.Name
+		if obj.NameLabel.Text ~= text then
+			obj.NameLabel.Text = text
+		end
 	end
 	if obj.StaminaLabel then
 		local color = stateColor(obj.Required)
-		obj.StaminaLabel.Text = ('<i>Needs:</i> ⚡ <font color="#%s">%s</font>'):format(color:ToHex(), NumberFormat.Abbreviate(obj.Required))
+		local text = ('<i>Needs:</i> ⚡ <font color="#%s">%s</font>'):format(color:ToHex(), NumberFormat.Abbreviate(obj.Required))
+		if obj.StaminaLabel.Text ~= text then
+			obj.StaminaLabel.Text = text
+		end
 	end
 end
 
@@ -642,8 +648,11 @@ local function updateFreeFish(obj, dt, t)
 	local bob = math.sin(t * 1.6 + obj.Phase) * 0.6
 	local targetY = Track.SeabedY(obj.Dist) + SWIM + obj.Height / 2 + bob
 	obj.Y += (targetY - obj.Y) * math.min(1, dt * 2.5)
-	local yaw = math.clamp(-(obj.X - previousX) / math.max(dt, 1e-3) * 0.02, -0.5, 0.5)
-	obj.Root.CFrame = CFrame.new(obj.X, obj.Y, Track.ZOf(obj.Dist)) * CFrame.Angles(0, yaw, 0)
+	-- o giro do peixe acompanha a direção suavemente (antes vinha direto da velocidade de
+	-- cada quadro e tremia quando o quadro demorava mais ou menos)
+	local targetYaw = math.clamp(-(obj.X - previousX) / math.max(dt, 1e-3) * 0.02, -0.5, 0.5)
+	obj.Yaw = (obj.Yaw or 0) + (targetYaw - (obj.Yaw or 0)) * math.min(1, dt * 4)
+	obj.Root.CFrame = CFrame.new(obj.X, obj.Y, Track.ZOf(obj.Dist)) * CFrame.Angles(0, obj.Yaw, 0)
 	FishModel.Wag(obj.Model, t + obj.Phase, 5)
 end
 
@@ -1358,10 +1367,13 @@ RunService.RenderStepped:Connect(function(dt)
 		dt *= scale
 	end
 
-	-- novos peixes à frente
-	while run.Fish[run.NextSpawn] and run.Fish[run.NextSpawn].Dist < rider.Dist + RIDE.ACTIVATE_AHEAD do
+	-- novos peixes à frente (no máximo 2 por quadro: montar muitos modelos de uma vez
+	-- dava umas travadinhas quando o jogador acelerava)
+	local spawned = 0
+	while spawned < 2 and run.Fish[run.NextSpawn] and run.Fish[run.NextSpawn].Dist < rider.Dist + RIDE.ACTIVATE_AHEAD do
 		spawnFish(run.Fish[run.NextSpawn])
 		run.NextSpawn += 1
+		spawned += 1
 	end
 
 	-- peixes soltos

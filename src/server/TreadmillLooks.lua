@@ -188,8 +188,8 @@ DECOR[4] = function(folder, base)
 		ball(0.55, at(-3.9, 2.05, i * 1.9), rgb(250, 245, 255), { Reflectance = 0.25, Material = Enum.Material.SmoothPlastic })
 		ball(0.55, at(3.9, 2.05, i * 1.9), rgb(250, 245, 255), { Reflectance = 0.25, Material = Enum.Material.SmoothPlastic })
 	end
-	-- ostra em cima da barra da frente
-	local clam = at(0, 9.6, 6.6)
+	-- ostra em cima do painel (sem tampar o texto)
+	local clam = at(0, 12.15, 6.3)
 	block(Vector3.new(2.6, 0.35, 1.8), clam * CFrame.new(0, -0.2, 0), rgb(200, 190, 230))
 	block(Vector3.new(2.6, 0.35, 1.8), clam * CFrame.new(0, 0.8, -0.6) * CFrame.Angles(-1.0, 0, 0), rgb(215, 205, 240))
 	local pearl = ball(1.1, clam * CFrame.new(0, 0.45, 0.1), rgb(255, 250, 255), { Reflectance = 0.3, Material = Enum.Material.SmoothPlastic })
@@ -200,8 +200,8 @@ end
 DECOR[5] = function(folder, base)
 	local at, block = maker(folder, base)
 	-- barbatana dorsal (duas cunhas) em cima da barra
-	block(Vector3.new(0.5, 3, 2.4), at(0, 10.6, 6.0), rgb(95, 115, 140), { Class = "WedgePart" })
-	block(Vector3.new(0.5, 3, 1.2), at(0, 10.6, 7.8, 0, math.pi, 0), rgb(95, 115, 140), { Class = "WedgePart" })
+	block(Vector3.new(0.6, 3.4, 2.6), at(0, 13.4, 6.2), rgb(95, 115, 140), { Class = "WedgePart" })
+	block(Vector3.new(0.6, 3.4, 1.3), at(0, 13.4, 8.15, 0, math.pi, 0), rgb(95, 115, 140), { Class = "WedgePart" })
 	-- dentes na beira do capô
 	for i = -4, 4 do
 		block(Vector3.new(0.6, 0.7, 0.3), at(i * 0.95, 1.5, 9.05, 0, 0, math.pi), rgb(250, 250, 250), { Class = "WedgePart" })
@@ -212,8 +212,10 @@ DECOR[5] = function(folder, base)
 		block(Vector3.new(0.13, 0.25, 0.25), at(side * 4.63, 1.55, 7.75), rgb(255, 255, 255))
 	end
 	-- cauda atrás (duas barbatanas abertas)
-	block(Vector3.new(0.5, 2.6, 1.6), at(0, 2.9, -10.6, 0.55, 0, 0), rgb(95, 115, 140), { Class = "WedgePart" })
-	block(Vector3.new(0.5, 2.0, 1.4), at(0, 0.6, -10.6, math.pi - 0.55, 0, 0), rgb(95, 115, 140), { Class = "WedgePart" })
+	-- (de lado, saindo da traseira: não fica na frente de quem sobe na esteira)
+	for side = -1, 1, 2 do
+		block(Vector3.new(0.5, 2.2, 1.4), at(side * 4.9, 1.9, -9.6, 0.5, 0, side * 0.5), rgb(95, 115, 140), { Class = "WedgePart" })
+	end
 end
 
 -- 6. abismo: luzes neon nas laterais e a "lanterna" do peixe-diabo pendurada na frente
@@ -226,12 +228,13 @@ DECOR[6] = function(folder, base, tier)
 		block(Vector3.new(0.25, 0.25, 0.25), at(side * 3.9, 1.9, 6), tier.Neon, { Material = Enum.Material.Neon })
 	end
 	-- haste curva saindo de cima da barra
+	-- (sai de trás do painel, passa por cima e a luz fica pendurada acima do texto)
 	local points = {
-		Vector3.new(0, 9.2, 5.8),
-		Vector3.new(0, 10.6, 5.6),
-		Vector3.new(0, 11.6, 6.4),
-		Vector3.new(0, 11.8, 7.6),
-		Vector3.new(0, 11.2, 8.5),
+		Vector3.new(0, 11.4, 7.2),
+		Vector3.new(0, 13.2, 7.0),
+		Vector3.new(0, 14.0, 6.0),
+		Vector3.new(0, 13.9, 4.9),
+		Vector3.new(0, 13.3, 4.4),
 	}
 	for i = 1, #points - 1 do
 		local a, b = points[i], points[i + 1]
@@ -239,7 +242,7 @@ DECOR[6] = function(folder, base, tier)
 		local cf = base.CFrame * CFrame.lookAt(mid, b)
 		block(Vector3.new(0.25, 0.25, (b - a).Magnitude + 0.15), cf, rgb(30, 30, 40))
 	end
-	local lure = ball(0.9, at(0, 10.6, 8.6), tier.Neon, { Material = Enum.Material.Neon })
+	local lure = ball(0.9, at(0, 12.75, 4.3), tier.Neon, { Material = Enum.Material.Neon })
 	glow(lure, tier.Neon, 16, 2)
 end
 
@@ -249,8 +252,8 @@ DECOR[7] = function(folder, base, tier)
 	local function tentacle(x, z, curl)
 		local cf = at(x, 1.6, z)
 		local width = 1.1
-		for step = 1, 8 do
-			cf = cf * CFrame.new(0, 0.75, 0) * CFrame.Angles(0, 0, curl * 0.18)
+		for step = 1, 7 do
+			cf = cf * CFrame.new(0, 0.75, 0) * CFrame.Angles(0, 0, curl * 0.15)
 			block(Vector3.new(width, 0.85, width), cf, tier.Frame:Lerp(tier.Rail, step / 10))
 			if step % 2 == 1 then
 				block(Vector3.new(0.12, 0.35, 0.35), cf * CFrame.new(-curl * width / 2, 0, 0), rgb(255, 170, 220))

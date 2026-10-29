@@ -372,6 +372,7 @@ function FishModel.Build(speciesId, mutation, size, opts)
 	end
 
 	local seatY, seatZ = H / 2, -L * 0.1
+	local saddleWidth = nil -- largura do corpo onde vai a sela (se diferente de W)
 	local totalLength = L
 	local body
 
@@ -532,18 +533,18 @@ function FishModel.Build(speciesId, mutation, size, opts)
 	elseif family == "Arraia" then
 		-- corpo chato em losango feito de degraus de blocos (como pixel art), asas largas,
 		-- pintas por cima, barriga clara e cauda fina de blocos
-		local span = W * 3.4
+		local span = W * 4.4
 		local T = math.max(H * 0.4, 0.8 * s)
-		body = box("Body", Vector3.new(W * 1.2, T, L * 0.8), CFrame.new(), "Body")
+		body = box("Body", Vector3.new(W * 1.4, T, L * 0.9), CFrame.new(), "Body")
 		box("Head", Vector3.new(W * 0.9, T * 0.85, L * 0.16), CFrame.new(0, -T * 0.02, -L * 0.46), "Body")
 		box("Belly", Vector3.new(W * 1.15, T * 0.3, L * 0.78), CFrame.new(0, -T * 0.42, 0), "Belly")
 		local steps = 4
-		local stepW = (span / 2 - W * 0.6) / steps
+		local stepW = (span / 2 - W * 0.7) / steps
 		for _, side in ipairs({ -1, 1 }) do
 			for i = 1, steps do
 				local f = 1 - i / (steps + 1)
-				local len = L * 0.8 * f
-				local x = side * (W * 0.6 + stepW * (i - 0.5))
+				local len = L * 0.9 * f
+				local x = side * (W * 0.7 + stepW * (i - 0.5))
 				local z = -L * 0.08 * (i / steps) -- a ponta da asa vai um pouco para a frente
 				box("Wing", Vector3.new(stepW + 0.05 * s, T * (0.85 - i * 0.12), len), CFrame.new(x, -T * 0.02 * i, z), "Body")
 				box("WingBelly", Vector3.new(stepW, T * 0.18, len * 0.95), CFrame.new(x, -T * (0.36 - i * 0.04), z), "Belly")
@@ -559,15 +560,16 @@ function FishModel.Build(speciesId, mutation, size, opts)
 			ball("Eye", 0.55 * s, Vector3.new(side * W * 0.32, T * 0.55, -L * 0.36), WHITE)
 			ball("Pupil", 0.32 * s, Vector3.new(side * W * 0.32, T * 0.7, -L * 0.4), BLACK)
 		end
-		local tail = tailJoint(L * 0.4, 0)
-		for i = 0, 3 do
-			local w = (0.5 - i * 0.08) * s
-			box("Tail", Vector3.new(w, w, L * 0.28), CFrame.new(0, 0, L * 0.4 + L * 0.14 + i * L * 0.27), i % 2 == 0 and "Body" or "Fin", { AttachTo = tail })
+		local tail = tailJoint(L * 0.45, 0)
+		for i = 0, 2 do
+			local w = (0.55 - i * 0.12) * s
+			box("Tail", Vector3.new(w, w, L * 0.22), CFrame.new(0, 0, L * 0.45 + L * 0.11 + i * L * 0.21), i % 2 == 0 and "Body" or "Fin", { AttachTo = tail })
 		end
-		wedge("TailFin", Vector3.new(0.2 * s, 0.7 * s, 0.8 * s), CFrame.new(0, 0.3 * s, L * 0.4 + L * 1.1), "Fin", tail)
+		wedge("TailFin", Vector3.new(0.2 * s, 0.6 * s, 0.7 * s), CFrame.new(0, 0.25 * s, L * 0.45 + L * 0.7), "Fin", tail)
+		saddleWidth = W * 1.1
 		W = span
 		H = T
-		totalLength = L * 1.6
+		totalLength = L * 1.3
 		seatY, seatZ = T * 0.5, -L * 0.02
 	elseif family == "Cavalo" then
 		-- corpo em pé, curvado, com focinho de tubo e cauda enrolada
@@ -637,7 +639,7 @@ function FishModel.Build(speciesId, mutation, size, opts)
 	-- sela (para montar): de blocos, no estilo dos peixes — manta com borda, assento,
 	-- pito na frente, encosto atrás e estribos pendurados dos lados
 	if opts.Saddle ~= false then
-		local sw = math.min(W * 0.8, 3 * s)
+		local sw = math.min((saddleWidth or W) * 0.8, 3 * s)
 		local base = CFrame.new(0, seatY, seatZ)
 		local trim = Color3.fromRGB(255, 205, 60)
 		local strap = Color3.fromRGB(70, 40, 20)

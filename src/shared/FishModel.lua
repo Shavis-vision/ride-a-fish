@@ -372,7 +372,9 @@ function FishModel.Build(speciesId, mutation, size, opts)
 	end
 
 	local seatY, seatZ = H / 2, -L * 0.1
-	local saddleWidth = nil -- largura do corpo onde vai a sela (se diferente de W)
+	-- tamanho da "superfície" onde a sela fica (largura x comprimento do topo do corpo);
+	-- a manta nunca passa disso, para não sair para fora do peixe
+	local seatW, seatL = W, L * 0.4
 	local totalLength = L
 	local body
 
@@ -460,6 +462,7 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		forkTail(tail, jointZ, H * (shark and 1.5 or 1.3), tailLength, shark and 1.35 or 1)
 		totalLength += 1.1 * s + tailLength
 		seatY, seatZ = H * 0.43, -L * 0.05
+		seatW, seatL = W, L * 0.42
 	elseif family == "Baiacu" then
 		-- "bola" de blocos: três caixas cruzadas (cubo arredondado), pintas e espinhos
 		local D = math.max(H, W * 1.3)
@@ -507,6 +510,7 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		L, H, W = D, D, D
 		totalLength = D + 2 * s
 		seatY, seatZ = D * 0.5, 0
+		seatW, seatL = D * 0.72, D * 0.72
 	elseif family == "Tartaruga" then
 		-- casco em degraus (domo) com placas, cabeça, nadadeiras
 		local SW, SL = W * 1.8, L * 1.0
@@ -530,14 +534,18 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		W = SW
 		totalLength = SL + 2.4 * s
 		seatY, seatZ = H * 0.64, 0
+		seatW, seatL = SW * 0.56, SL * 0.6
 	elseif family == "Arraia" then
 		-- corpo chato em losango feito de degraus de blocos (como pixel art), asas largas,
 		-- pintas por cima, barriga clara e cauda fina de blocos
 		local span = W * 4.4
-		local T = math.max(H * 0.4, 0.8 * s)
+		local T = math.max(H * 0.6, 1.2 * s)
 		body = box("Body", Vector3.new(W * 1.4, T, L * 0.9), CFrame.new(), "Body")
 		box("Head", Vector3.new(W * 0.9, T * 0.85, L * 0.16), CFrame.new(0, -T * 0.02, -L * 0.46), "Body")
 		box("Belly", Vector3.new(W * 1.15, T * 0.3, L * 0.78), CFrame.new(0, -T * 0.42, 0), "Belly")
+		-- corcova no meio das costas (dá volume) e a "testa" um pouco mais alta
+		box("Back", Vector3.new(W * 1.0, T * 0.35, L * 0.6), CFrame.new(0, T * 0.6, L * 0.02), "Body")
+		box("Back", Vector3.new(W * 0.6, T * 0.2, L * 0.36), CFrame.new(0, T * 0.85, L * 0.02), Brick.Shade(palette.Body, 0.06))
 		local steps = 4
 		local stepW = (span / 2 - W * 0.7) / steps
 		for _, side in ipairs({ -1, 1 }) do
@@ -566,11 +574,11 @@ function FishModel.Build(speciesId, mutation, size, opts)
 			box("Tail", Vector3.new(w, w, L * 0.22), CFrame.new(0, 0, L * 0.45 + L * 0.11 + i * L * 0.21), i % 2 == 0 and "Body" or "Fin", { AttachTo = tail })
 		end
 		wedge("TailFin", Vector3.new(0.2 * s, 0.6 * s, 0.7 * s), CFrame.new(0, 0.25 * s, L * 0.45 + L * 0.7), "Fin", tail)
-		saddleWidth = W * 1.1
+		seatW, seatL = W * 1.0, L * 0.6 -- a corcova das costas
 		W = span
-		H = T
+		H = T * 1.9
 		totalLength = L * 1.3
-		seatY, seatZ = T * 0.5, -L * 0.02
+		seatY, seatZ = T * 0.95, L * 0.02
 	elseif family == "Cavalo" then
 		-- corpo em pé, curvado, com focinho de tubo e cauda enrolada
 		local seg = H * 0.3
@@ -593,7 +601,8 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		H = seg * 4
 		totalLength = L * 1.2
 		-- monta em cima da cabeça/pescoço (ele nada em pé)
-		seatY, seatZ = seg * 2.25, -L * 0.1
+		seatY, seatZ = seg * 2.25, -L * 0.14
+		seatW, seatL = W * 0.8, L * 0.36
 	elseif family == "Enguia" then
 		-- corpo comprido em gomos (o fim balança)
 		local n = 5
@@ -614,6 +623,7 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		L = segL * n
 		totalLength = segL * 7
 		seatY, seatZ = H * 0.4, -segL * 0.6
+		seatW, seatL = W * 0.8, segL
 	else -- Lula
 		-- manto pontudo na frente, olhos grandes e tentáculos para trás (eles balançam)
 		body = box("Body", Vector3.new(W, H * 0.9, L * 0.6), CFrame.new(0, 0, -L * 0.05), "Body")
@@ -634,25 +644,31 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		end
 		totalLength = L * 1.9
 		seatY, seatZ = H * 0.45, -L * 0.1
+		seatW, seatL = W, L * 0.6
 	end
 
 	-- sela (para montar): de blocos, no estilo dos peixes — manta com borda, assento,
 	-- pito na frente, encosto atrás e estribos pendurados dos lados
 	if opts.Saddle ~= false then
-		local sw = math.min((saddleWidth or W) * 0.8, 3 * s)
+		-- a sela se ajusta ao topo do corpo: a manta ocupa no máximo 95% da largura e do
+		-- comprimento da superfície (antes ela passava das bordas em peixes finos)
+		local blanketW = math.min(seatW * 0.95, 3.4 * s)
+		local blanketL = math.min(seatL * 0.95, 2.4 * s)
+		local sw = math.min(blanketW * 0.8, 2.8 * s)
+		local sl = math.min(blanketL * 0.75, 1.6 * s)
 		local base = CFrame.new(0, seatY, seatZ)
 		local trim = Color3.fromRGB(255, 205, 60)
 		local strap = Color3.fromRGB(70, 40, 20)
-		box("Blanket", Vector3.new(sw + 0.6 * s, 0.22 * s, 2.4 * s), base * CFrame.new(0, 0.11 * s, 0), BLANKET, { Reflectance = 0 })
-		box("BlanketTrim", Vector3.new(sw + 0.7 * s, 0.12 * s, 0.25 * s), base * CFrame.new(0, 0.18 * s, -1.15 * s), trim, { Reflectance = 0 })
-		box("BlanketTrim", Vector3.new(sw + 0.7 * s, 0.12 * s, 0.25 * s), base * CFrame.new(0, 0.18 * s, 1.15 * s), trim, { Reflectance = 0 })
-		box("Saddle", Vector3.new(sw * 0.72, 0.38 * s, 1.6 * s), base * CFrame.new(0, 0.4 * s, 0), SADDLE, { Reflectance = 0 })
-		box("SaddleSeat", Vector3.new(sw * 0.6, 0.12 * s, 1 * s), base * CFrame.new(0, 0.62 * s, 0.05 * s), Brick.Shade(SADDLE, 0.15), { Reflectance = 0 })
-		box("Pommel", Vector3.new(0.4 * s, 0.55 * s, 0.35 * s), base * CFrame.new(0, 0.8 * s, -0.7 * s), Brick.Shade(SADDLE, -0.2), { Reflectance = 0 })
-		box("SaddleBack", Vector3.new(sw * 0.72, 0.6 * s, 0.35 * s), base * CFrame.new(0, 0.82 * s, 0.68 * s), SADDLE, { Reflectance = 0 })
+		box("Blanket", Vector3.new(blanketW, 0.22 * s, blanketL), base * CFrame.new(0, 0.11 * s, 0), BLANKET, { Reflectance = 0 })
+		box("BlanketTrim", Vector3.new(blanketW + 0.06 * s, 0.12 * s, 0.22 * s), base * CFrame.new(0, 0.18 * s, -blanketL / 2 + 0.11 * s), trim, { Reflectance = 0 })
+		box("BlanketTrim", Vector3.new(blanketW + 0.06 * s, 0.12 * s, 0.22 * s), base * CFrame.new(0, 0.18 * s, blanketL / 2 - 0.11 * s), trim, { Reflectance = 0 })
+		box("Saddle", Vector3.new(sw, 0.38 * s, sl), base * CFrame.new(0, 0.4 * s, 0), SADDLE, { Reflectance = 0 })
+		box("SaddleSeat", Vector3.new(sw * 0.82, 0.12 * s, sl * 0.62), base * CFrame.new(0, 0.62 * s, 0.05 * s), Brick.Shade(SADDLE, 0.15), { Reflectance = 0 })
+		box("Pommel", Vector3.new(0.4 * s, 0.55 * s, 0.35 * s), base * CFrame.new(0, 0.8 * s, -sl / 2 + 0.1 * s), Brick.Shade(SADDLE, -0.2), { Reflectance = 0 })
+		box("SaddleBack", Vector3.new(sw, 0.6 * s, 0.35 * s), base * CFrame.new(0, 0.82 * s, sl / 2 - 0.1 * s), SADDLE, { Reflectance = 0 })
 		for _, side in ipairs({ -1, 1 }) do
-			box("Strap", Vector3.new(0.12 * s, 1 * s, 0.28 * s), base * CFrame.new(side * (sw * 0.36 + 0.06 * s), -0.15 * s, 0), strap, { Reflectance = 0 })
-			box("Stirrup", Vector3.new(0.3 * s, 0.14 * s, 0.4 * s), base * CFrame.new(side * (sw * 0.36 + 0.1 * s), -0.68 * s, 0), Color3.fromRGB(180, 180, 190), { Reflectance = 0 })
+			box("Strap", Vector3.new(0.12 * s, 1 * s, 0.28 * s), base * CFrame.new(side * (blanketW / 2 + 0.06 * s), -0.3 * s, 0), strap, { Reflectance = 0 })
+			box("Stirrup", Vector3.new(0.3 * s, 0.14 * s, 0.4 * s), base * CFrame.new(side * (blanketW / 2 + 0.1 * s), -0.82 * s, 0), Color3.fromRGB(180, 180, 190), { Reflectance = 0 })
 		end
 	end
 

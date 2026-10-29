@@ -91,6 +91,7 @@ local rider: { [string]: any } = {}
 local requesting = false
 local cooldownUntil = 0
 local target = nil
+local cycleTarget -- (definida mais abaixo)
 local lastAreaIndex = 0
 local lastActionAt = 0
 
@@ -673,10 +674,9 @@ local function releaseMount()
 		end
 		obj.TargetableAt = os.clock() + 1.2
 		if not obj.Tamed then
-			obj.Escaped = true -- fugiu: não dá mais para domar este
-			if obj.Label then
-				obj.Label.Enabled = false
-			end
+			-- fugiu: nada mais rápido por um tempo, mas dá para tentar montar de novo depois
+			-- (antes ele ficava "travado": aparecia na tela mas nunca dava para mirar nele)
+			obj.Escaped = true
 		end
 	end
 	return obj
@@ -721,6 +721,7 @@ end
 
 -- começa a mira: tempo lento e o círculo amarelo à frente
 local function startAim()
+	rider.ManualTarget = nil
 	rider.AirStart = os.clock()
 	rider.SlowUntil = os.clock() + RIDE.SLOWMO_TIME
 	reticle.Enabled = true
@@ -1120,10 +1121,16 @@ end
 
 local function updateAirborne(realDt, dt)
 	rider.Vel += Vector3.new(0, -RIDE.GRAVITY * dt, 0)
-	rider.Steer = (rider.Steer or 0) + (moveX() - (rider.Steer or 0)) * math.min(1, realDt * 7)
+	-- no ar, A/D não empurra mais o jogador: cada toque troca o peixe escolhido
+	local input = moveX()
+	local pressed = math.abs(input) > 0.5 and math.sign(input) or 0
+	if pressed ~= 0 and pressed ~= (rider.LastAirInput or 0) then
+		cycleTarget(pressed, os.clock())
+	end
+	rider.LastAirInput = pressed
+	rider.Steer = (rider.Steer or 0) * math.max(0, 1 - realDt * 6)
 	local steer = rider.Steer
-	-- A/D move o jogador (e o círculo embaixo dele) para os lados, no tempo real
-	local pos = rider.Pos + rider.Vel * dt + Vector3.new(steer * RIDE.AIR_STEER_SPEED * realDt, 0, 0)
+	local pos = rider.Pos + rider.Vel * dt
 	local limit = Track.HALF_WIDTH - 4
 	pos = Vector3.new(math.clamp(pos.X, -limit, limit), pos.Y, pos.Z)
 	rider.Pos = pos
@@ -1184,20 +1191,27 @@ end
 -- bem mais perto — assim o círculo não fica pulando de um peixe para outro.
 local function aimPoint()
 	local forward = math.clamp(-rider.Vel.Z, 14, 40)
-	return Vector3.new(rider.Pos.X + (rider.Steer or 0) * 16, rider.Pos.Y, rider.Pos.Z - forward * 0.9)
+	return Vector3.new(rider.Pos.X, rider.Pos.Y, rider.Pos.Z - forward * 0.9)
 end
 
 local function canTarget(obj, now)
-	if not obj or not obj.Model or obj == rider.Mount or obj.Escaped or now < obj.TargetableAt then
+	if not obj or not obj.Model or obj == rider.Mount or now < obj.TargetableAt then
 		return false
 	end
 	if obj.Dist - rider.Dist < -RIDE.ASSIST_BEHIND then
 		return false
 	end
-	return (obj.Root.Position - rider.Pos).Magnitude < RIDE.HARPOON_RANGE
+	-- alcance medido no plano (no ar você fica bem alto; a altura não deve tirar o peixe do alcance)
+	local p = obj.Root.Position
+	return Vector2.new(p.X - rider.Pos.X, p.Z - rider.Pos.Z).Magnitude < RIDE.HARPOON_RANGE
 end
 
 local function chooseTarget(now)
+	-- escolhido pelo jogador (A/D ou clique/toque no peixe): fica nele enquanto der
+	if rider.ManualTarget and canTarget(rider.ManualTarget, now) then
+		return rider.ManualTarget
+	end
+	rider.ManualTarget = nil
 	local aim = aimPoint()
 	local function score(obj)
 		local p = obj.Root.Position
@@ -1216,6 +1230,48 @@ local function chooseTarget(now)
 	-- mantém o alvo atual se ele ainda serve e não está muito pior que o melhor
 	if target ~= best and canTarget(target, now) and score(target) < bestScore * 1.35 + 4 then
 		return target
+	end
+	return best
+end
+
+-- A/D no ar: troca o alvo para o próximo peixe à esquerda/direita (um toque = um peixe)
+cycleTarget = function(direction, now)
+	local current = target
+	local cx = current and current.Root.Position.X or rider.Pos.X
+	local cz = current and current.Root.Position.Z or rider.Pos.Z - 20
+	local best, bestScore = nil, math.huge
+	for _, obj in ipairs(run.Active) do
+		if obj ~= current and canTarget(obj, now) then
+			local p = obj.Root.Position
+			local dx = (p.X - cx) * direction
+			if dx > 1 then
+				-- o mais perto para o lado pedido, sem ir muito para a frente/trás
+				local sc = dx + math.abs(p.Z - cz) * 0.6
+				if sc < bestScore then
+					best, bestScore = obj, sc
+				end
+			end
+		end
+	end
+	if best then
+		rider.ManualTarget = best
+		SoundFx.Play("Click")
+	end
+end
+
+-- clicar/tocar num peixe no ar: escolhe ele e já lança o arpão
+local function targetAtScreen(position, now)
+	local best, bestDistance = nil, 140
+	for _, obj in ipairs(run.Active) do
+		if canTarget(obj, now) then
+			local screen, visible = camera:WorldToViewportPoint(obj.Root.Position)
+			if visible then
+				local d = (Vector2.new(screen.X, screen.Y) - position).Magnitude
+				if d < bestDistance then
+					best, bestDistance = obj, d
+				end
+			end
+		end
 	end
 	return best
 end
@@ -1323,7 +1379,11 @@ local function updateHud(now)
 	elseif state == "Riding" then
 		hint.Text = "SPACE: jump off  •  A/D: dodge"
 	elseif state == "Airborne" then
-		hint.Text = target and "SPACE: throw the harpoon!" or "No fish in range... (A/D to move)"
+		if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
+			hint.Text = target and "Tap a fish to harpoon it  •  HARPOON: the yellow one" or "No fish in range..."
+		else
+			hint.Text = target and "SPACE: harpoon  •  A/D: change fish  •  or click a fish" or "No fish in range..."
+		end
 	else
 		hint.Text = ""
 	end
@@ -1494,6 +1554,15 @@ UserInputService.InputBegan:Connect(function(input, processed)
 	end
 	if input.KeyCode == Enum.KeyCode.Space or input.KeyCode == Enum.KeyCode.ButtonA then
 		onAction()
+	elseif state == "Airborne" and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+		local now = os.clock()
+		local picked = targetAtScreen(Vector2.new(input.Position.X, input.Position.Y), now)
+		if picked then
+			rider.ManualTarget = picked
+			target = picked
+			harpoon(picked)
+			target = nil
+		end
 	end
 end)
 jumpButton.Activated:Connect(onAction)

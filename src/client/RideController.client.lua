@@ -84,6 +84,32 @@ local function moveX()
 	return x
 end
 
+-- W/S (frente/trás): +1 = frente (W), -1 = trás (S)
+local function moveZ()
+	if controls then
+		local ok, vector = pcall(function()
+			return controls:GetMoveVector()
+		end)
+		if ok and vector and vector.Z ~= 0 then
+			return math.clamp(-vector.Z, -1, 1)
+		end
+	end
+	if humanoid and humanoid.Parent then
+		local direction = humanoid.MoveDirection
+		if math.abs(direction.Z) > 0.05 then
+			return math.clamp(-direction.Z / math.max(direction.Magnitude, 1e-3), -1, 1)
+		end
+	end
+	local z = 0
+	if UserInputService:IsKeyDown(Enum.KeyCode.W) or UserInputService:IsKeyDown(Enum.KeyCode.Up) then
+		z += 1
+	end
+	if UserInputService:IsKeyDown(Enum.KeyCode.S) or UserInputService:IsKeyDown(Enum.KeyCode.Down) then
+		z -= 1
+	end
+	return z
+end
+
 -- Estado ------------------------------------------------------------------------------------
 local state = "Idle" -- Idle, Airborne, Riding, Zipping, Fallen
 local run = nil
@@ -1183,9 +1209,13 @@ end
 -- Mira: um ponto À FRENTE de você, mais ou menos onde você vai cair. A/D move o ponto para
 -- os lados. O alvo é o peixe mais perto desse ponto, e ele fica "grudado" até outro ficar
 -- bem mais perto — assim o círculo não fica pulando de um peixe para outro.
+-- O ponto de mira segue a direção que você aperta: A/D puxa para a esquerda/direita
+-- (prioriza os peixes daquele lado) e W/S para mais longe/mais perto.
 local function aimPoint()
-	local forward = math.clamp(-rider.Vel.Z, 14, 40)
-	return Vector3.new(rider.Pos.X, rider.Pos.Y, rider.Pos.Z - forward * 0.9)
+	local forward = math.clamp(-rider.Vel.Z, 14, 40) * 0.9
+	local side, ahead = moveX(), moveZ()
+	forward = math.clamp(forward + ahead * 20, 6, 60)
+	return Vector3.new(rider.Pos.X + side * 26, rider.Pos.Y, rider.Pos.Z - forward)
 end
 
 local function canTarget(obj, now)
@@ -1222,7 +1252,10 @@ local function chooseTarget(now)
 		end
 	end
 	-- mantém o alvo atual se ele ainda serve e não está muito pior que o melhor
-	if target ~= best and canTarget(target, now) and score(target) < bestScore * 1.35 + 4 then
+	-- (apertando uma direção, troca mais fácil para o peixe daquele lado)
+	local steering = math.abs(moveX()) > 0.3 or math.abs(moveZ()) > 0.3
+	local keep = steering and 1.12 or 1.35
+	if target ~= best and canTarget(target, now) and score(target) < bestScore * keep + (steering and 1 or 4) then
 		return target
 	end
 	return best

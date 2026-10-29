@@ -174,28 +174,14 @@ do
 			x += w
 		end
 	end
-	local water = {}
-	local ocean = map:FindFirstChild("Oceano")
-	for _, child in ipairs(ocean and ocean:GetChildren() or {}) do
-		if child:IsA("BasePart") and child.Name == "Agua" then
-			table.insert(water, child)
-		end
-	end
-	if #water > 0 then
-		-- retângulo coberto pela água de verdade
-		local minX, maxX, minZ, maxZ = math.huge, -math.huge, math.huge, -math.huge
-		for _, part in ipairs(water) do
-			minX = math.min(minX, part.Position.X - part.Size.X / 2)
-			maxX = math.max(maxX, part.Position.X + part.Size.X / 2)
-			minZ = math.min(minZ, part.Position.Z - part.Size.Z / 2)
-			maxZ = math.max(maxZ, part.Position.Z + part.Size.Z / 2)
-		end
-		local far = 4000
-		sea(minX - far, minX, minZ - far, maxZ) -- lado esquerdo
-		sea(maxX, maxX + far, minZ - far, maxZ) -- lado direito
-		sea(minX, maxX, minZ - far, minZ) -- depois do fim da pista
-		folder.Parent = Workspace
-	end
+	-- retângulo coberto pela água de verdade (Map > Oceano > Agua). Fica escrito aqui porque,
+	-- com o StreamingEnabled, as peças de água longe do jogador nem chegam no seu computador.
+	local minX, maxX, minZ, maxZ = -360, 360, -2820, 4
+	local far = 4000
+	sea(minX - far, minX, minZ - far, maxZ) -- lado esquerdo
+	sea(maxX, maxX + far, minZ - far, maxZ) -- lado direito
+	sea(minX, maxX, minZ - far, minZ) -- depois do fim da pista
+	folder.Parent = Workspace
 end
 
 local function setUnderwater(value)

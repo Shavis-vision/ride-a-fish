@@ -513,3 +513,26 @@ task.spawn(function()
 		end
 	end
 end)
+
+-- Superfície da água: as texturas marcadas com a tag "AguaMovendo" deslizam devagar, cada
+-- camada para um lado (atributos SpeedU/SpeedV em studs por segundo) — dá o brilho da água
+-- se mexendo. Só mexe no deslocamento da textura: custo quase zero.
+local CollectionService = game:GetService("CollectionService")
+local waterTextures = {}
+local function trackWater(texture)
+	if texture:IsA("Texture") then
+		table.insert(waterTextures, texture)
+	end
+end
+for _, texture in ipairs(CollectionService:GetTagged("AguaMovendo")) do
+	trackWater(texture)
+end
+CollectionService:GetInstanceAddedSignal("AguaMovendo"):Connect(trackWater)
+RunService.Heartbeat:Connect(function(dt)
+	for _, texture in ipairs(waterTextures) do
+		local u = texture:GetAttribute("SpeedU") or 1
+		local v = texture:GetAttribute("SpeedV") or 1
+		texture.OffsetStudsU = (texture.OffsetStudsU + u * dt) % texture.StudsPerTileU
+		texture.OffsetStudsV = (texture.OffsetStudsV + v * dt) % texture.StudsPerTileV
+	end
+end)

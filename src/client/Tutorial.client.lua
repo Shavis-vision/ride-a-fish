@@ -97,8 +97,10 @@ local rayParams = RaycastParams.new()
 rayParams.FilterType = Enum.RaycastFilterType.Exclude
 
 local function groundY(position, fallback)
-	local result = Workspace:Raycast(position + Vector3.new(0, 12, 0), Vector3.new(0, -40, 0), rayParams)
-	return result and result.Position.Y or fallback
+	local ok, result = pcall(function()
+		return Workspace:Raycast(position + Vector3.new(0, 12, 0), Vector3.new(0, -40, 0), rayParams)
+	end)
+	return ok and result and result.Position.Y or fallback
 end
 
 local function drawArrows(root, target, t)

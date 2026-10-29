@@ -75,11 +75,13 @@ function SoundFx.Play(key)
 	local copy = sound:Clone()
 	copy.PlaybackSpeed = sound.PlaybackSpeed * (0.95 + math.random() * 0.1)
 	copy.Parent = SoundService
-	copy:Play()
-	copy.Ended:Connect(function()
+	if not pcall(function()
+		copy:Play()
+	end) then
 		copy:Destroy()
-	end)
-	task.delay(10, function()
+		return
+	end
+	task.delay(math.max(2, sound.TimeLength / copy.PlaybackSpeed + 0.5), function()
 		if copy.Parent then
 			copy:Destroy()
 		end
@@ -107,7 +109,12 @@ task.spawn(function()
 			track.Volume = 1
 			track.SoundGroup = musicGroup
 			track.Parent = SoundService
-			track:Play()
+			if not pcall(function()
+				track:Play()
+			end) then
+				track:Destroy()
+				return
+			end
 			local started = os.clock()
 			track.Ended:Wait()
 			track:Destroy()

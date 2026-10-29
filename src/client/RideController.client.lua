@@ -220,7 +220,7 @@ RunPanel.Init(gui) -- lista da corrida, barra dos biomas com recorde
 
 local tamePanel = UIKit.Frame(gui, {
 	Size = UDim2.fromOffset(460, 104),
-	Position = UDim2.new(0.5, 0, 0, 150),
+	Position = UDim2.new(0.5, 0, 0, 178),
 	AnchorPoint = Vector2.new(0.5, 0),
 	Transparency = 1,
 	Corner = false,

@@ -17,6 +17,7 @@ local Progression = require(Shared:WaitForChild("Progression"))
 local NumberFormat = require(Shared:WaitForChild("NumberFormat"))
 
 local UIKit = require(script.Parent:WaitForChild("UIKit"))
+local BiomeArt = require(script.Parent:WaitForChild("BiomeArt"))
 local ClientState = require(script.Parent:WaitForChild("ClientState"))
 
 local window = UIKit.Window("Index", { Title = "Fish Index", Icon = "📘", Size = Vector2.new(1100, 680), Header = "Blue" })
@@ -54,7 +55,6 @@ UIKit.Gradient(totalFill, UIKit.Colors.Blue[1], UIKit.Colors.Blue[2], 90)
 local totalText = UIKit.Text(totalBar, { Text = "", Size = UDim2.fromScale(1, 0.8), Position = UDim2.fromScale(0, 0.1), ZIndex = 3, Stroke = 3, Max = 34 })
 UIKit.Text(totalBar, { Text = "📘", Size = UDim2.fromOffset(56, 56), Position = UDim2.fromOffset(6, -3), ZIndex = 4, Stroke = 1 })
 
-local BIOME_ART = { "🐠", "🌿", "🦑" }
 
 local function record(speciesId)
 	local data = ClientState.Data
@@ -154,7 +154,10 @@ local function biomeSection(area)
 	UIKit.Studs(art, Vector2.new(232, 290), { Spacing = 29, Transparency = 0.86, EdgeTransparency = 0.8 })
 	UIKit.Text(art, { Text = ("AREA %d"):format(area.Index), Size = UDim2.new(1, -16, 0, 28), Position = UDim2.fromOffset(8, 10), Color = Color3.fromRGB(230, 240, 255), Max = 24, ZIndex = 2 })
 	UIKit.Text(art, { Text = area.Name, Size = UDim2.new(1, -16, 0, 44), Position = UDim2.fromOffset(8, 38), Max = 36, Stroke = 3.5, ZIndex = 2 })
-	UIKit.Text(art, { Text = BIOME_ART[area.Index] or "🐟", Size = UDim2.fromOffset(130, 130), Position = UDim2.new(0.5, 0, 0, 92), AnchorPoint = Vector2.new(0.5, 0), Stroke = 2, ZIndex = 2 })
+	-- quadro do bioma (imagem pintada ou cena 3D), com a borda da cor do bioma
+	local pictureFrame = UIKit.Frame(art, { Name = "Imagem", Size = UDim2.fromOffset(200, 150), Position = UDim2.new(0.5, 0, 0, 88), AnchorPoint = Vector2.new(0.5, 0), Corner = 8, Stroke = 3, StrokeColor = BiomeArt.BorderColors[area.Index] or UIKit.White, ZIndex = 2 })
+	pictureFrame.ClipsDescendants = true
+	UIKit.Corner(BiomeArt.Picture(pictureFrame, area.Index, { ZIndex = 2, Zoom = 1.15 }), 8)
 	UIKit.Text(art, {
 		Text = "⚡ " .. NumberFormat.Abbreviate(area.Recommended) .. " recommended",
 		Size = UDim2.new(1, -16, 0, 26),

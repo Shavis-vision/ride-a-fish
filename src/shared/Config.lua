@@ -234,4 +234,8 @@ Config.SOUNDS = {
 	},
 }
 
+-- Imagens pintadas de cada bioma (barra da corrida e índex). Suba a imagem no Creator Hub
+-- e cole o ID aqui. Com 0, o jogo mostra uma cena 3D pequena no lugar.
+Config.BIOME_IMAGES = { 0, 0, 0 }
+
 return Config

@@ -24,6 +24,7 @@ local Track = require(Shared:WaitForChild("Track"))
 
 local UIKit = require(script.Parent:WaitForChild("UIKit"))
 local ClientState = require(script.Parent:WaitForChild("ClientState"))
+local BiomeArt = require(script.Parent:WaitForChild("BiomeArt"))
 
 local RunPanel = {}
 
@@ -76,31 +77,6 @@ function RunPanel.PixelHeart(parent, pixel)
 	return frame
 end
 
--- "foto" do bioma: um modelo pequeno num ViewportFrame
-local function biomePicture(parent, index)
-	local holder = ReplicatedStorage:FindFirstChild("BiomeIcons")
-	local template = holder and holder:FindFirstChild(tostring(index))
-	if not template then
-		return
-	end
-	local viewport = Instance.new("ViewportFrame")
-	viewport.BackgroundTransparency = 1
-	viewport.Size = UDim2.fromScale(1, 1)
-	viewport.Ambient = Color3.fromRGB(190, 190, 200)
-	viewport.LightColor = Color3.new(1, 1, 1)
-	viewport.LightDirection = Vector3.new(-0.5, -1, -0.4)
-	local model = template:Clone()
-	model.Parent = viewport
-	local cf, size = model:GetBoundingBox()
-	local camera = Instance.new("Camera")
-	camera.FieldOfView = 30
-	local radius = math.max(size.X, size.Y, size.Z)
-	camera.CFrame = CFrame.lookAt(cf.Position + Vector3.new(radius * 0.9, radius * 0.45, radius * 1.6), cf.Position)
-	camera.Parent = viewport
-	viewport.CurrentCamera = camera
-	viewport.Parent = parent
-end
-
 function RunPanel.Init(gui)
 	-- lista da corrida (esquerda, quase transparente)
 	listFrame = UIKit.Frame(gui, {
@@ -129,41 +105,43 @@ function RunPanel.Init(gui)
 	-- barra de progresso com os biomas
 	bar = UIKit.Frame(gui, {
 		Name = "Progress",
-		Size = UDim2.fromOffset(520, 46),
+		Size = UDim2.fromOffset(540, 54),
 		Position = UDim2.new(0.5, 0, 0, 88),
 		AnchorPoint = Vector2.new(0.5, 0),
 		Transparency = 1,
 		Corner = false,
 	})
 	UIKit.AutoScale(bar)
+	-- um quadro por bioma (como na referência): nome em cima, borda colorida, imagem/cena
 	for i, area in ipairs(Track.Areas) do
 		local width = (area.Finish - area.Start) / Track.LENGTH
 		local x = area.Start / Track.LENGTH
 		local seg = UIKit.Frame(bar, {
 			Name = "Bioma" .. i,
-			Size = UDim2.new(width, -4, 1, 0),
-			Position = UDim2.new(x, 2, 0, 0),
+			Size = UDim2.new(width, -6, 1, 0),
+			Position = UDim2.new(x, 3, 0, 0),
 			Color = area.FogColor,
-			Transparency = 0.35,
-			Corner = 8,
-			Stroke = 2,
+			Corner = 7,
+			Stroke = 3,
+			StrokeColor = BiomeArt.BorderColors[i] or UIKit.White,
 		})
 		seg.ClipsDescendants = true
-		biomePicture(seg, i)
-		UIKit.Text(seg, { Text = area.Name, Size = UDim2.new(1, -8, 0, 14), Position = UDim2.new(0, 4, 1, -15), Align = Enum.TextXAlignment.Left, Max = 13, Stroke = 1.5 })
+		local art = BiomeArt.Picture(seg, i)
+		UIKit.Corner(art, 7)
+		UIKit.Text(seg, { Text = area.Name, Size = UDim2.new(1, -8, 0, 17), Position = UDim2.new(0, 4, 0, 2), Max = 16, Stroke = 2, ZIndex = 5 })
 	end
 	-- recorde: linha vertical dourada
-	bestLine = UIKit.Frame(bar, { Name = "Best", Size = UDim2.new(0, 4, 1, 12), Position = UDim2.new(0, 0, 0, -6), AnchorPoint = Vector2.new(0.5, 0), Color = RunPanel.BEST_COLOR, Corner = 2, Stroke = 1.5, ZIndex = 3 })
-	bestLabel = UIKit.Text(bestLine, { Text = "BEST", Size = UDim2.fromOffset(44, 14), Position = UDim2.new(0.5, 0, 1, 2), AnchorPoint = Vector2.new(0.5, 0), Color = RunPanel.BEST_COLOR, Max = 13, Stroke = 1.5, ZIndex = 3 })
+	bestLine = UIKit.Frame(bar, { Name = "Best", Size = UDim2.new(0, 4, 1, 8), Position = UDim2.new(0, 0, 0, -4), AnchorPoint = Vector2.new(0.5, 0), Color = RunPanel.BEST_COLOR, Corner = 2, Stroke = 1.5, ZIndex = 6 })
+	bestLabel = UIKit.Text(bestLine, { Text = "BEST", Size = UDim2.fromOffset(110, 16), Position = UDim2.new(0.5, 0, 1, 2), AnchorPoint = Vector2.new(0.5, 0), Color = RunPanel.BEST_COLOR, Max = 15, Stroke = 2, ZIndex = 6 })
 	-- jogador: linha branca com a foto do avatar em cima
-	marker = UIKit.Frame(bar, { Name = "Player", Size = UDim2.new(0, 4, 1, 12), Position = UDim2.new(0, 0, 0, -6), AnchorPoint = Vector2.new(0.5, 0), Color = UIKit.White, Corner = 2, Stroke = 1.5, ZIndex = 4 })
+	marker = UIKit.Frame(bar, { Name = "Player", Size = UDim2.new(0, 4, 1, 8), Position = UDim2.new(0, 0, 0, -4), AnchorPoint = Vector2.new(0.5, 0), Color = UIKit.White, Corner = 2, Stroke = 1.5, ZIndex = 7 })
 	local head = Instance.new("ImageLabel")
 	head.Name = "Head"
-	head.Size = UDim2.fromOffset(26, 26)
-	head.Position = UDim2.new(0.5, 0, 0, -2)
-	head.AnchorPoint = Vector2.new(0.5, 1)
+	head.Size = UDim2.fromOffset(28, 28)
+	head.Position = UDim2.new(0.5, 0, 1, 0)
+	head.AnchorPoint = Vector2.new(0.5, 0)
 	head.BackgroundColor3 = Color3.fromRGB(30, 40, 60)
-	head.ZIndex = 4
+	head.ZIndex = 7
 	head.Parent = marker
 	UIKit.Corner(head, 13)
 	UIKit.Stroke(head, 2, UIKit.White, Enum.ApplyStrokeMode.Border)
@@ -186,6 +164,12 @@ local function clearRows()
 	extraLabel.Visible = false
 end
 
+local function withCommas(n)
+	local text = tostring(n)
+	local out = text:reverse():gsub("(%d%d%d)", "%1,"):reverse()
+	return (out:gsub("^,", ""))
+end
+
 function RunPanel.Begin(bestDist)
 	if not listFrame then
 		return
@@ -193,8 +177,8 @@ function RunPanel.Begin(bestDist)
 	clearRows()
 	listTitle.Text = "THIS RUN"
 	bestLine.Visible = (bestDist or 0) > 0
-	bestLine.Position = UDim2.new(math.clamp((bestDist or 0) / Track.LENGTH, 0, 1), 0, 0, -6)
-	bestLabel.Text = "BEST"
+	bestLine.Position = UDim2.new(math.clamp((bestDist or 0) / Track.LENGTH, 0, 1), 0, 0, -4)
+	bestLabel.Text = "◆ BEST " .. withCommas(math.floor(bestDist or 0)) .. " m"
 end
 
 function RunPanel.AddTamed(entry, isNew)
@@ -246,12 +230,12 @@ function RunPanel.Update(dist)
 		return
 	end
 	local f = math.clamp(dist / Track.LENGTH, 0, 1)
-	marker.Position = UDim2.new(f, 0, 0, -6)
+	marker.Position = UDim2.new(f, 0, 0, -4)
 	-- passou do recorde nesta corrida: a linha vira "NEW BEST!" e acompanha o jogador
 	local data = ClientState.Data
 	local best = data and data.BestDist or 0
 	if bestLine.Visible and dist > best then
-		bestLabel.Text = "NEW BEST!"
+		bestLabel.Text = "◆ NEW BEST!"
 		bestLine.Position = marker.Position
 	end
 end

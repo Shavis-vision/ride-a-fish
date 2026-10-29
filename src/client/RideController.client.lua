@@ -463,10 +463,11 @@ local function setCollisionGroup(group)
 	end
 end
 
--- a mochila do Roblox (peixes guardados) some durante a corrida
-local function setBackpackVisible(visible)
+-- a mochila padrão do Roblox fica sempre desligada: a barra de peixes é a nossa (Hotbar),
+-- que some sozinha durante a corrida
+local function setBackpackVisible(_visible)
 	pcall(function()
-		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, visible)
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
 	end)
 end
 

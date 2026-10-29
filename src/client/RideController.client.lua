@@ -1121,16 +1121,10 @@ end
 
 local function updateAirborne(realDt, dt)
 	rider.Vel += Vector3.new(0, -RIDE.GRAVITY * dt, 0)
-	-- no ar, A/D não empurra mais o jogador: cada toque troca o peixe escolhido
-	local input = moveX()
-	local pressed = math.abs(input) > 0.5 and math.sign(input) or 0
-	if pressed ~= 0 and pressed ~= (rider.LastAirInput or 0) then
-		cycleTarget(pressed, os.clock())
-	end
-	rider.LastAirInput = pressed
-	rider.Steer = (rider.Steer or 0) * math.max(0, 1 - realDt * 6)
+	-- A/D move o jogador para os lados no ar (a troca de peixe é no Q/E ou clicando)
+	rider.Steer = (rider.Steer or 0) + (moveX() - (rider.Steer or 0)) * math.min(1, realDt * 7)
 	local steer = rider.Steer
-	local pos = rider.Pos + rider.Vel * dt
+	local pos = rider.Pos + rider.Vel * dt + Vector3.new(steer * RIDE.AIR_STEER_SPEED * realDt, 0, 0)
 	local limit = Track.HALF_WIDTH - 4
 	pos = Vector3.new(math.clamp(pos.X, -limit, limit), pos.Y, pos.Z)
 	rider.Pos = pos
@@ -1382,7 +1376,7 @@ local function updateHud(now)
 		if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
 			hint.Text = target and "Tap a fish to harpoon it  •  HARPOON: the yellow one" or "No fish in range..."
 		else
-			hint.Text = target and "SPACE: harpoon  •  A/D: change fish  •  or click a fish" or "No fish in range..."
+			hint.Text = target and "SPACE: harpoon  •  Q/E: change fish  •  or click a fish" or "No fish in range... (A/D to move)"
 		end
 	else
 		hint.Text = ""
@@ -1554,6 +1548,10 @@ UserInputService.InputBegan:Connect(function(input, processed)
 	end
 	if input.KeyCode == Enum.KeyCode.Space or input.KeyCode == Enum.KeyCode.ButtonA then
 		onAction()
+	elseif state == "Airborne" and (input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.ButtonL1) then
+		cycleTarget(-1, os.clock())
+	elseif state == "Airborne" and (input.KeyCode == Enum.KeyCode.E or input.KeyCode == Enum.KeyCode.ButtonR1) then
+		cycleTarget(1, os.clock())
 	elseif state == "Airborne" and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
 		local now = os.clock()
 		local picked = targetAtScreen(Vector2.new(input.Position.X, input.Position.Y), now)

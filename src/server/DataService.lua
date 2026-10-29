@@ -25,6 +25,8 @@
 --     Tamed = 0, -- total de peixes domados
 --     BestDist = 0, -- recorde de distância numa corrida (studs)
 --     Tut = 0, -- passos do tutorial já feitos (0 = jogador novo)
+--     Set = { Mu = 1, Fx = 1, Perf = false }, -- configurações: volume da música e dos efeitos
+--         -- (0 a 1) e modo performance
 --     Purchases = { "id-do-recibo" }, -- últimas compras com Robux (evita dar duas vezes)
 --     LastSave = 1760000000,
 -- }
@@ -67,8 +69,24 @@ local function newData()
 		Tamed = 0,
 		BestDist = 0,
 		Tut = 0,
+		Set = { Mu = 1, Fx = 1, Perf = false },
 		Purchases = {},
 	}
+end
+
+-- configurações vindas do cliente ou do DataStore: só números de 0 a 1 e um sim/não
+function DataService.CleanSettings(raw)
+	local clean = { Mu = 1, Fx = 1, Perf = false }
+	if type(raw) == "table" then
+		if type(raw.Mu) == "number" and raw.Mu == raw.Mu then
+			clean.Mu = math.clamp(raw.Mu, 0, 1)
+		end
+		if type(raw.Fx) == "number" and raw.Fx == raw.Fx then
+			clean.Fx = math.clamp(raw.Fx, 0, 1)
+		end
+		clean.Perf = raw.Perf == true
+	end
+	return clean
 end
 
 local function keyFor(player)
@@ -143,6 +161,7 @@ local function sanitize(raw)
 	data.BestDist = isNumber(raw.BestDist) and math.clamp(raw.BestDist, 0, 100000) or 0
 	-- quem já jogou antes do tutorial existir (já domou peixes) não precisa dele
 	data.Tut = isWhole(raw.Tut) and math.clamp(raw.Tut, 0, 99) or (data.Tamed > 0 and 99 or 0)
+	data.Set = DataService.CleanSettings(raw.Set)
 
 	-- peixes
 	local used = {}

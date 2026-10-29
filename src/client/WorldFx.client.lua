@@ -184,15 +184,24 @@ do
 	folder.Parent = Workspace
 end
 
+-- modo performance (Configurações): sem raios de luz, sem desfoque e sem bolhas na tela
+local function perfMode()
+	return player:GetAttribute("PerfMode") == true
+end
+player:GetAttributeChangedSignal("PerfMode"):Connect(function()
+	showRays(underwater and not perfMode())
+	blur.Enabled = underwater and not perfMode()
+end)
+
 local function setUnderwater(value)
 	if value == underwater then
 		return
 	end
 	underwater = value
 	SoundFx.SetUnderwater(value)
-	showRays(value)
+	showRays(value and not perfMode())
 	tint.Enabled = value
-	blur.Enabled = value
+	blur.Enabled = value and not perfMode()
 	fogBox.Parent = value and Workspace or nil
 	bubblesGui.Enabled = value
 	if value then
@@ -293,7 +302,7 @@ RunService.RenderStepped:Connect(function(dt)
 	blur.Size = 1
 
 	bubbleClock += dt
-	if bubbleClock > 0.22 then
+	if bubbleClock > 0.22 and not perfMode() then
 		bubbleClock = 0
 		spawnBubble()
 	end
@@ -611,6 +620,9 @@ for _, texture in ipairs(CollectionService:GetTagged("AguaMovendo")) do
 end
 CollectionService:GetInstanceAddedSignal("AguaMovendo"):Connect(trackWater)
 RunService.Heartbeat:Connect(function(dt)
+	if perfMode() then
+		return
+	end
 	for _, texture in ipairs(waterTextures) do
 		local u = texture:GetAttribute("SpeedU") or 1
 		local v = texture:GetAttribute("SpeedV") or 1

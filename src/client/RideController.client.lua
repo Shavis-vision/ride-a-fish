@@ -607,7 +607,7 @@ RunService.Stepped:Connect(function(_, dt)
 	if swimBubbles then
 		for _, emitter in ipairs(swimBubbles) do
 			if emitter.Parent then
-				emitter.Enabled = swimWanted and swimWeight > 0.4
+				emitter.Enabled = swimWanted and swimWeight > 0.4 and player:GetAttribute("PerfMode") ~= true
 			end
 		end
 	end

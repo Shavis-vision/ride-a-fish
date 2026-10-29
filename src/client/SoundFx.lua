@@ -7,6 +7,7 @@
 --
 --   SoundFx.Play("Splash")          -- efeito curto
 --   SoundFx.SetUnderwater(true)     -- a música fica abafada, como ouvida debaixo d'água
+--   SoundFx.SetVolumes(music, fx)   -- 0 a 1 (configurações do jogador)
 
 local SoundService = game:GetService("SoundService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -86,6 +87,12 @@ function SoundFx.Play(key)
 			copy:Destroy()
 		end
 	end)
+end
+
+-- volume escolhido pelo jogador (0 a 1), multiplicado pelo volume base do Config
+function SoundFx.SetVolumes(music, effects)
+	musicGroup.Volume = (SOUNDS.MusicVolume or 0.35) * math.clamp(music or 1, 0, 1)
+	effectsGroup.Volume = (SOUNDS.EffectsVolume or 0.6) * math.clamp(effects or 1, 0, 1)
 end
 
 function SoundFx.SetUnderwater(value)

@@ -53,6 +53,7 @@ Net.SetSnapshotBuilder(function(player)
 		Tamed = data.Tamed,
 		BestDist = data.BestDist,
 		Tut = data.Tut,
+		Set = data.Set,
 		Plot = PlotService.GetIndex(player),
 	}
 end)
@@ -69,6 +70,15 @@ BackpackService.PlaceInAquarium = ShopService.Equip
 PlotService.OnChanged = EconomyService.Publish
 
 -- Tutorial: o cliente avisa que o jogador terminou um passo (só aumenta).
+-- Configurações (volume e modo performance): o cliente já aplicou; aqui só guarda.
+Net.On("Settings", function(player, settings)
+	local data = DataService.Get(player)
+	if data then
+		data.Set = DataService.CleanSettings(settings)
+	end
+	return { ok = true }
+end)
+
 Net.On("Tutorial", function(player, step)
 	local data = DataService.Get(player)
 	if data and type(step) == "number" and step == math.floor(step) then

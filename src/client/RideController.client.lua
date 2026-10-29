@@ -570,7 +570,17 @@ local R6_JOINTS = {
 	Neck = { "Torso", "Neck" },
 }
 local swimJoints = nil
+local swimTargets = nil
 local harpoonProp = nil
+RunService.Stepped:Connect(function()
+	if swimTargets then
+		for joint, cf in pairs(swimTargets) do
+			if joint.Parent then
+				joint.Transform = cf
+			end
+		end
+	end
+end)
 local function findJoints()
 	if not character then
 		return {}
@@ -637,6 +647,7 @@ local function resetSwimPose()
 		end
 	end
 	swimJoints = nil
+	swimTargets = nil
 	showHarpoon(false)
 end
 
@@ -648,9 +659,13 @@ local function applySwimPose(t, aiming, zipping)
 	local j = swimJoints
 	local r6 = j._R6
 	local kick = math.sin(t * 9) * 0.45
+	-- guarda a pose; ela é aplicada no Stepped (depois que o Roblox aplica as animações,
+	-- senão ele sobrescreve as juntas e a pose não aparece)
+	swimTargets = swimTargets or {}
 	local function set(key, cf)
 		local joint = j[key]
 		if joint and joint.Parent then
+			swimTargets[joint] = cf
 			joint.Transform = cf
 		end
 	end

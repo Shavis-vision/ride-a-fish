@@ -85,6 +85,7 @@ local gridArea = UIKit.Frame(body, {
 	Corner = 10,
 	Stroke = 3,
 })
+UIKit.StudsFill(gridArea, { Spacing = 30, Transparency = 0.94 })
 local grid = UIKit.Scroll(gridArea, {
 	Size = UDim2.new(1, -12, 1, -12),
 	Position = UDim2.fromOffset(6, 6),
@@ -110,6 +111,7 @@ local footer = UIKit.Frame(body, {
 	Corner = 10,
 	Stroke = 3,
 })
+UIKit.StudsFill(footer, { Spacing = 26, Transparency = 0.93 })
 UIKit.Text(footer, { Text = "Total value:", Size = UDim2.fromOffset(240, 50), Position = UDim2.fromOffset(24, 17), Align = Enum.TextXAlignment.Left, Max = 40, Stroke = 3 })
 UIKit.Text(footer, { Text = "💵", Size = UDim2.fromOffset(56, 56), Position = UDim2.fromOffset(262, 14), Stroke = 1.5 })
 local totalLabel = UIKit.Text(footer, { Text = "$0", Size = UDim2.fromOffset(320, 50), Position = UDim2.fromOffset(326, 17), Align = Enum.TextXAlignment.Left, Max = 44, Stroke = 3 })

@@ -40,6 +40,7 @@ local card = UIKit.Frame(gui, {
 	StrokeColor = ARROW_COLOR,
 })
 UIKit.AutoScale(card)
+UIKit.Studs(card, Vector2.new(560, 92), { Spacing = 23, Transparency = 0.9, EdgeTransparency = 0.85 })
 card.Visible = false
 local stepLabel = UIKit.Text(card, { Text = "TUTORIAL", Size = UDim2.new(1, -20, 0, 20), Position = UDim2.fromOffset(12, 6), Align = Enum.TextXAlignment.Left, Color = ARROW_COLOR, Max = 18, Stroke = 2 })
 local textLabel = UIKit.Text(card, { Text = "", Rich = true, Size = UDim2.new(1, -24, 1, -34), Position = UDim2.fromOffset(12, 28), Align = Enum.TextXAlignment.Left, Max = 24, Stroke = 2 })

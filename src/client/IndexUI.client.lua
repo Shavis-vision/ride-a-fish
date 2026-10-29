@@ -79,6 +79,7 @@ local function fishCard(parent, species, order)
 	local card = UIKit.Frame(parent, { Name = species.Id, Color = UIKit.White, LayoutOrder = order, Corner = 10, Stroke = 3 })
 	local top = seen and rarity.Color:Lerp(Color3.new(1, 1, 1), 0.2) or Color3.fromRGB(110, 110, 120)
 	UIKit.Gradient(card, top, top:Lerp(Color3.new(0, 0, 0), 0.45), 90)
+	UIKit.StudsFill(card, { Spacing = 24, Transparency = 0.86, EdgeTransparency = 0.82 })
 
 	UIKit.Text(card, { Text = seen and species.Name or "???", Size = UDim2.new(1, -8, 0, 24), Position = UDim2.fromOffset(4, 4), Max = 20, ZIndex = 3 })
 	UIKit.Viewport(card, { S = species.Id, M = "Normal", Z = "Normal" }, {
@@ -140,31 +141,44 @@ local function biomeSection(area)
 		Corner = 12,
 		Stroke = 3,
 	})
+	UIKit.StudsFill(section, { Spacing = 30, Transparency = 0.93 })
 
-	-- quadro do bioma (lado esquerdo)
+	-- quadro do bioma (lado esquerdo): a imagem do bioma cobre o quadro todo, com os studs
+	-- por cima (como uma peça de Lego pintada) e a borda na cor do bioma
 	local art = UIKit.Frame(section, {
 		Name = "Quadro",
 		Size = UDim2.fromOffset(232, 290),
 		Position = UDim2.fromOffset(10, 10),
-		Color = UIKit.White,
+		Color = area.FogColor,
 		Corner = 10,
-		Stroke = 3,
+		Stroke = 4,
+		StrokeColor = BiomeArt.BorderColors[area.Index] or UIKit.White,
 	})
-	UIKit.Gradient(art, area.FogColor:Lerp(Color3.new(1, 1, 1), 0.35), area.FogColor:Lerp(Color3.new(0, 0, 0), 0.35), 90)
-	UIKit.Studs(art, Vector2.new(232, 290), { Spacing = 29, Transparency = 0.86, EdgeTransparency = 0.8 })
-	UIKit.Text(art, { Text = ("AREA %d"):format(area.Index), Size = UDim2.new(1, -16, 0, 28), Position = UDim2.fromOffset(8, 10), Color = Color3.fromRGB(230, 240, 255), Max = 24, ZIndex = 2 })
-	UIKit.Text(art, { Text = area.Name, Size = UDim2.new(1, -16, 0, 44), Position = UDim2.fromOffset(8, 38), Max = 36, Stroke = 3.5, ZIndex = 2 })
-	-- quadro do bioma (imagem pintada ou cena 3D), com a borda da cor do bioma
-	local pictureFrame = UIKit.Frame(art, { Name = "Imagem", Size = UDim2.fromOffset(200, 150), Position = UDim2.new(0.5, 0, 0, 88), AnchorPoint = Vector2.new(0.5, 0), Corner = 8, Stroke = 3, StrokeColor = BiomeArt.BorderColors[area.Index] or UIKit.White, ZIndex = 2 })
-	pictureFrame.ClipsDescendants = true
-	UIKit.Corner(BiomeArt.Picture(pictureFrame, area.Index, { ZIndex = 2, Zoom = 1.15 }), 8)
+	art.ClipsDescendants = true
+	local picture = BiomeArt.Picture(art, area.Index, { ZIndex = 1, Zoom = 1.15 })
+	UIKit.Corner(picture, 10)
+	-- escurece em cima e embaixo para os textos aparecerem bem em cima da imagem
+	local shade = UIKit.Frame(art, { Name = "Sombra", Color = Color3.new(0, 0, 0), Corner = 10, ZIndex = 2 })
+	local fade = Instance.new("UIGradient")
+	fade.Rotation = 90
+	fade.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.35),
+		NumberSequenceKeypoint.new(0.3, 1),
+		NumberSequenceKeypoint.new(0.75, 1),
+		NumberSequenceKeypoint.new(1, 0.3),
+	})
+	fade.Parent = shade
+	UIKit.Studs(art, Vector2.new(232, 290), { Spacing = 29, Transparency = 0.8, EdgeTransparency = 0.65, ZIndex = 3 })
+	UIKit.Text(art, { Text = ("AREA %d"):format(area.Index), Size = UDim2.new(1, -16, 0, 28), Position = UDim2.fromOffset(8, 10), Color = Color3.fromRGB(230, 240, 255), Max = 24, Stroke = 3, ZIndex = 4 })
+	UIKit.Text(art, { Text = area.Name, Size = UDim2.new(1, -16, 0, 44), Position = UDim2.fromOffset(8, 38), Max = 36, Stroke = 3.5, ZIndex = 4 })
 	UIKit.Text(art, {
 		Text = "⚡ " .. NumberFormat.Abbreviate(area.Recommended) .. " recommended",
 		Size = UDim2.new(1, -16, 0, 26),
 		Position = UDim2.new(0, 8, 1, -40),
 		Color = UIKit.StaminaYellow,
 		Max = 22,
-		ZIndex = 2,
+		Stroke = 3,
+		ZIndex = 4,
 	})
 
 	-- peixes (lado direito)

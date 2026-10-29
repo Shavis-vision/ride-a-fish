@@ -93,6 +93,7 @@ function RunPanel.Init(gui)
 	layout.Padding = UDim.new(0, 2)
 	layout.Parent = listFrame
 	UIKit.Padding(listFrame, 8)
+	UIKit.StudsFill(listFrame, { Spacing = 20, Transparency = 0.9, EdgeTransparency = 0.85 })
 	local auto = Instance.new("UISizeConstraint")
 	auto.MinSize = Vector2.new(250, 40)
 	auto.Parent = listFrame
@@ -128,6 +129,7 @@ function RunPanel.Init(gui)
 		seg.ClipsDescendants = true
 		local art = BiomeArt.Picture(seg, i)
 		UIKit.Corner(art, 7)
+		UIKit.StudsFill(seg, { Spacing = 13, Transparency = 0.8, EdgeTransparency = 0.7, ZIndex = 4 })
 		UIKit.Text(seg, { Text = area.Name, Size = UDim2.new(1, -8, 0, 17), Position = UDim2.new(0, 4, 0, 2), Max = 16, Stroke = 2, ZIndex = 5 })
 	end
 	-- recorde: linha vertical dourada

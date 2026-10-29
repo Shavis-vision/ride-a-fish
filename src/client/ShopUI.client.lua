@@ -59,6 +59,7 @@ for i, pass in ipairs(Config.GAMEPASSES) do
 	})
 	local colors = UIKit.Colors[style.Color]
 	UIKit.Gradient(card, colors[1], colors[2], 20)
+	UIKit.StudsFill(card, { Spacing = 28, Transparency = 0.86, EdgeTransparency = 0.8 })
 	UIKit.Text(card, { Text = style.Icon, Size = UDim2.fromOffset(130, 130), Position = UDim2.fromOffset(20, 20), Stroke = 2 })
 	UIKit.Text(card, {
 		Text = pass.Name,
@@ -105,6 +106,7 @@ for _, product in ipairs(Config.PRODUCTS) do
 		order += 1
 		local card = UIKit.Frame(grid, { Name = product.Key, Color = UIKit.White, LayoutOrder = order, Corner = 12, Stroke = 4 })
 		UIKit.Gradient(card, UIKit.Colors.Blue[1], UIKit.Colors.Blue[2], 90)
+		UIKit.StudsFill(card, { Spacing = 26, Transparency = 0.86, EdgeTransparency = 0.8 })
 		UIKit.Text(card, { Text = cashIcons[order] or "💵", Size = UDim2.new(1, 0, 0, 80), Position = UDim2.fromOffset(0, 10), Stroke = 2 })
 		local amount = UIKit.Text(card, {
 			Text = "+$0",

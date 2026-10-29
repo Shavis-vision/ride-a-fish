@@ -213,6 +213,7 @@ local topBar = UIKit.Frame(gui, {
 	Stroke = 3,
 })
 UIKit.AutoScale(topBar)
+UIKit.Studs(topBar, Vector2.new(520, 64), { Spacing = 22, Transparency = 0.9, EdgeTransparency = 0.85 })
 local areaLabel = UIKit.Text(topBar, { Text = "", Size = UDim2.new(1, -20, 0, 34), Position = UDim2.fromOffset(10, 4), Stroke = 3, Max = 32 })
 local distLabel = UIKit.Text(topBar, { Text = "", Size = UDim2.new(1, -20, 0, 22), Position = UDim2.fromOffset(10, 38), Color = Color3.fromRGB(170, 220, 255), Max = 22 })
 
@@ -292,6 +293,7 @@ local fallPanel = UIKit.Frame(gui, {
 	Stroke = 5,
 })
 UIKit.AutoScale(fallPanel, Vector2.new(520, 300))
+UIKit.Studs(fallPanel, Vector2.new(520, 300), { Spacing = 30, Transparency = 0.92 })
 fallPanel.Visible = false
 UIKit.Text(fallPanel, { Text = "YOU FELL!", Size = UDim2.new(1, -20, 0, 66), Position = UDim2.fromOffset(10, 14), Color = Color3.fromRGB(255, 90, 80), Stroke = 4, Max = 60 })
 local fallInfo = UIKit.Text(fallPanel, { Text = "", Size = UDim2.new(1, -30, 0, 34), Position = UDim2.fromOffset(15, 86), Max = 28 })

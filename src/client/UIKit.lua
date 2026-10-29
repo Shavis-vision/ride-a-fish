@@ -96,7 +96,7 @@ function UIKit.Studs(frame, size, props)
 	layer.Name = "Studs"
 	layer.BackgroundTransparency = 1
 	layer.Size = UDim2.fromScale(1, 1)
-	layer.ZIndex = 0
+	layer.ZIndex = props.ZIndex or 0
 	layer.ClipsDescendants = true
 	layer.Parent = frame
 	local cols = math.max(1, math.floor(size.X / spacing))
@@ -127,6 +127,47 @@ function UIKit.Studs(frame, size, props)
 		end
 	end
 	return layer
+end
+
+-- Studs para quadros com tamanho em escala (ou que mudam de tamanho): usa o tamanho real na
+-- tela e refaz quando ele muda.
+function UIKit.StudsFill(frame, props)
+	local layer = nil
+	local lastSize = nil
+	local pending = false
+	local function build()
+		pending = false
+		local size = frame.AbsoluteSize
+		if size.X < 4 or size.Y < 4 then
+			return
+		end
+		-- o tamanho na tela já vem com a escala da UI; volta para o tamanho "de projeto"
+		local scale = 1
+		local node = frame
+		while node and not node:IsA("LayerCollector") do
+			local uiScale = node:FindFirstChildOfClass("UIScale")
+			if uiScale and uiScale.Scale > 0 then
+				scale *= uiScale.Scale
+			end
+			node = node.Parent
+		end
+		local design = Vector2.new(math.floor(size.X / scale), math.floor(size.Y / scale))
+		if lastSize and math.abs(lastSize.X - design.X) < 6 and math.abs(lastSize.Y - design.Y) < 6 then
+			return -- (a animação de abrir janela muda a escala um pouquinho; não refaz por isso)
+		end
+		lastSize = design
+		if layer then
+			layer:Destroy()
+		end
+		layer = UIKit.Studs(frame, design, props)
+	end
+	frame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+		if not pending then
+			pending = true
+			task.delay(0.1, build)
+		end
+	end)
+	task.defer(build)
 end
 
 function UIKit.Tween(object, time, props, style, direction)

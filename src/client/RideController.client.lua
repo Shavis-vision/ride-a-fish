@@ -590,7 +590,8 @@ local function findJoints()
 	for key, path in pairs(isR6 and R6_JOINTS or JOINTS) do
 		local part = character:FindFirstChild(path[1])
 		local joint = part and part:FindFirstChild(path[2])
-		if joint and joint:IsA("Motor6D") then
+		-- avatares novos do Roblox usam AnimationConstraint no lugar de Motor6D (as duas têm .Transform)
+		if joint and (joint:IsA("Motor6D") or joint:IsA("AnimationConstraint")) then
 			found[key] = joint
 		end
 	end

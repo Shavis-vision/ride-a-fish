@@ -38,7 +38,7 @@ Config.AQUARIUM = {
 
 -- Corrida ----------------------------------------------------------------------------------
 Config.RIDE = {
-	HARPOON_RANGE = 62, -- distância máxima do arpão até o próximo peixe
+	HARPOON_RANGE = 44, -- distância máxima do arpão até o próximo peixe
 	-- Salto com mira (estilo Rodeo Stampede): ESPAÇO salta do peixe, o tempo fica um pouco
 	-- lento e o peixe mais perto fica amarelo. ESPAÇO de novo lança o arpão na hora; se não
 	-- apertar, ele sai sozinho depois de AUTO_HARPOON_AFTER segundos.

@@ -44,6 +44,7 @@ local RIDER_OFFSET = 1.9 -- altura do HumanoidRootPart acima da sela
 local SWIM = Track.FISH_SWIM_HEIGHT
 
 local character, humanoid, root, sitTrack
+local resetSwimPoseHook -- (ligada mais abaixo: tira a pose de nado e o arpão da mão)
 local poseTracks = {} -- animações de pose durante a corrida: sit, run, jump, fall
 local controls = nil
 task.spawn(function()
@@ -505,6 +506,9 @@ end
 
 local function restoreCharacter()
 	setBackpackVisible(true)
+	if resetSwimPoseHook then
+		resetSwimPoseHook()
+	end
 	for _, track in pairs(poseTracks) do
 		track:Stop(0.1)
 	end
@@ -543,6 +547,140 @@ local function setPose(name)
 		end
 	end
 end
+
+-- Pose "nadando com o arpão" (no ar e indo pela corda) -----------------------------------
+-- Sem animação pronta: mexemos nas juntas do personagem direto. Pernas batendo como quem
+-- nada, um braço para trás segurando o arpão (pronto para lançar) e o outro apontando para
+-- o peixe. Funciona com R15 e R6.
+local JOINTS = {
+	Waist = { "UpperTorso", "Waist" },
+	Neck = { "Head", "Neck" },
+	RightShoulder = { "RightUpperArm", "RightShoulder" },
+	LeftShoulder = { "LeftUpperArm", "LeftShoulder" },
+	RightHip = { "RightUpperLeg", "RightHip" },
+	LeftHip = { "LeftUpperLeg", "LeftHip" },
+	RightKnee = { "RightLowerLeg", "RightKnee" },
+	LeftKnee = { "LeftLowerLeg", "LeftKnee" },
+}
+local R6_JOINTS = {
+	RightShoulder = { "Torso", "Right Shoulder" },
+	LeftShoulder = { "Torso", "Left Shoulder" },
+	RightHip = { "Torso", "Right Hip" },
+	LeftHip = { "Torso", "Left Hip" },
+	Neck = { "Torso", "Neck" },
+}
+local swimJoints = nil
+local harpoonProp = nil
+local function findJoints()
+	if not character then
+		return {}
+	end
+	local found = {}
+	local isR6 = character:FindFirstChild("Torso") ~= nil
+	for key, path in pairs(isR6 and R6_JOINTS or JOINTS) do
+		local part = character:FindFirstChild(path[1])
+		local joint = part and part:FindFirstChild(path[2])
+		if joint and joint:IsA("Motor6D") then
+			found[key] = joint
+		end
+	end
+	found._R6 = isR6
+	return found
+end
+
+local function showHarpoon(visible)
+	if visible and not harpoonProp and character then
+		local hand = character:FindFirstChild("RightHand") or character:FindFirstChild("Right Arm")
+		if not hand then
+			return
+		end
+		local model = Instance.new("Model")
+		model.Name = "ArpaoNaMao"
+		local function part(size, color, offset, material)
+			local p = Instance.new("Part")
+			p.Size = size
+			p.Color = color
+			p.Material = material or Enum.Material.Plastic
+			p.CanCollide = false
+			p.CanQuery = false
+			p.CanTouch = false
+			p.Massless = true
+			p.CastShadow = false
+			p.CFrame = hand.CFrame * offset
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0 = hand
+			weld.Part1 = p
+			weld.Parent = p
+			p.Parent = model
+			return p
+		end
+		-- cabo de madeira, ponta de metal e farpas (de blocos, como o resto do jogo)
+		local down = CFrame.new(0, -hand.Size.Y / 2, 0)
+		part(Vector3.new(0.22, 0.22, 4.2), Color3.fromRGB(150, 100, 55), down * CFrame.new(0, 0, -0.9))
+		part(Vector3.new(0.38, 0.38, 0.7), Color3.fromRGB(200, 205, 215), down * CFrame.new(0, 0, -3.25), Enum.Material.Metal)
+		part(Vector3.new(0.12, 0.5, 0.3), Color3.fromRGB(200, 205, 215), down * CFrame.new(0, 0, -2.85), Enum.Material.Metal)
+		part(Vector3.new(0.3, 0.3, 0.3), Color3.fromRGB(255, 205, 60), down * CFrame.new(0, 0, 1.15))
+		model.Parent = character
+		harpoonProp = model
+	elseif not visible and harpoonProp then
+		harpoonProp:Destroy()
+		harpoonProp = nil
+	end
+end
+
+local function resetSwimPose()
+	if swimJoints then
+		for key, joint in pairs(swimJoints) do
+			if key ~= "_R6" and joint.Parent then
+				joint.Transform = CFrame.new()
+			end
+		end
+	end
+	swimJoints = nil
+	showHarpoon(false)
+end
+
+-- t = relógio; aiming = tem peixe na mira; zipping = indo pela corda
+local function applySwimPose(t, aiming, zipping)
+	if not swimJoints then
+		swimJoints = findJoints()
+	end
+	local j = swimJoints
+	local r6 = j._R6
+	local kick = math.sin(t * 9) * 0.45
+	local function set(key, cf)
+		local joint = j[key]
+		if joint and joint.Parent then
+			joint.Transform = cf
+		end
+	end
+	-- corpo inclinado para frente, como nadando
+	set("Waist", CFrame.Angles(-0.25, 0, 0))
+	set("Neck", CFrame.Angles(0.35, 0, 0))
+	-- pernas batendo (tesoura) com o joelho dobrando um pouco
+	set("RightHip", CFrame.Angles(kick, 0, 0))
+	set("LeftHip", CFrame.Angles(-kick, 0, 0))
+	set("RightKnee", CFrame.Angles(-0.35 - math.max(0, kick) * 0.6, 0, 0))
+	set("LeftKnee", CFrame.Angles(-0.35 - math.max(0, -kick) * 0.6, 0, 0))
+	if zipping then
+		-- os dois braços esticados para frente, puxados pela corda
+		set("RightShoulder", r6 and CFrame.Angles(0, 0, math.rad(150)) or CFrame.Angles(math.rad(160), 0, 0))
+		set("LeftShoulder", r6 and CFrame.Angles(0, 0, math.rad(-150)) or CFrame.Angles(math.rad(160), 0, 0))
+	elseif aiming then
+		-- braço direito para trás com o arpão (vai lançar), o esquerdo apontando para o peixe
+		local wind = math.sin(t * 3) * 0.08
+		set("RightShoulder", r6 and CFrame.Angles(0, 0, math.rad(170)) or CFrame.Angles(math.rad(165) + wind, 0, math.rad(-12)))
+		set("LeftShoulder", r6 and CFrame.Angles(0, 0, math.rad(-90)) or CFrame.Angles(math.rad(85), 0, math.rad(10)))
+	else
+		-- sem alvo: braçada (os braços abrem e fecham devagar)
+		local stroke = math.sin(t * 4)
+		set("RightShoulder", r6 and CFrame.Angles(0, 0, math.rad(90 + stroke * 40)) or CFrame.Angles(math.rad(100 + stroke * 30), 0, math.rad(-20)))
+		set("LeftShoulder", r6 and CFrame.Angles(0, 0, math.rad(-90 - stroke * 40)) or CFrame.Angles(math.rad(100 + stroke * 30), 0, math.rad(20)))
+	end
+	showHarpoon(not zipping)
+end
+
+resetSwimPoseHook = resetSwimPose
 
 local function placeRider(cframe, velocity)
 	if root and root.Parent then
@@ -1498,6 +1636,17 @@ RunService.RenderStepped:Connect(function(dt)
 			else
 				updateFreeFish(obj, dt, t)
 			end
+		end
+	end
+
+	-- pose nadando com o arpão no ar e na corda; nos outros estados, volta ao normal
+	if state == "Airborne" or state == "Zipping" then
+		setPose("swim") -- (não existe animação "swim": isso só para as outras e libera as juntas)
+		applySwimPose(now, target ~= nil, state == "Zipping")
+	elseif swimJoints then
+		resetSwimPose()
+		if state == "Riding" then
+			setPose("sit")
 		end
 	end
 

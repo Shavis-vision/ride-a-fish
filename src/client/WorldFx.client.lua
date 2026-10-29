@@ -106,6 +106,98 @@ local function showRays(visible)
 	raysFolder.Parent = visible and Workspace or nil
 end
 
+-- "Caixa de neblina": a neblina do Roblox não cobre o céu, então debaixo d'água dava para ver
+-- as nuvens e o fim do bloco de água. Seis paredes da cor da neblina seguem a câmera, um
+-- pouco antes do fim da neblina: elas somem na neblina e escondem tudo o que está além.
+local fogBox = Instance.new("Folder")
+fogBox.Name = "NeblinaSubmarina"
+local fogWalls = {}
+do
+	local faces = {
+		Vector3.new(1, 0, 0),
+		Vector3.new(-1, 0, 0),
+		Vector3.new(0, 1, 0),
+		Vector3.new(0, -1, 0),
+		Vector3.new(0, 0, 1),
+		Vector3.new(0, 0, -1),
+	}
+	for _, normal in ipairs(faces) do
+		local wall = Instance.new("Part")
+		wall.Name = "Parede"
+		wall.Anchored = true
+		wall.CanCollide = false
+		wall.CanQuery = false
+		wall.CanTouch = false
+		wall.CastShadow = false
+		wall.Material = Enum.Material.SmoothPlastic
+		wall.Parent = fogBox
+		table.insert(fogWalls, { Part = wall, Normal = normal })
+	end
+end
+local function updateFogBox(position, color, distance)
+	local side = math.min(2048, distance * 2 + 20)
+	for _, w in ipairs(fogWalls) do
+		local n = w.Normal
+		w.Part.Size = Vector3.new(n.X ~= 0 and 2 or side, n.Y ~= 0 and 2 or side, n.Z ~= 0 and 2 or side)
+		w.Part.Position = position + n * distance
+		w.Part.Color = color
+	end
+end
+
+-- Mar além da pista: o bloco de água acaba em x = ±360 e no fim da pista; daqui de fora
+-- dava para ver a borda dele no horizonte. Placas de mar (opacas) continuam a água até longe.
+do
+	local folder = Instance.new("Folder")
+	folder.Name = "MarAoLonge"
+	local function sea(x0, x1, z0, z1)
+		local tile = 2000
+		local x = x0
+		while x < x1 do
+			local w = math.min(tile, x1 - x)
+			local z = z0
+			while z < z1 do
+				local d = math.min(tile, z1 - z)
+				local part = Instance.new("Part")
+				part.Name = "Mar"
+				part.Anchored = true
+				part.CanCollide = false
+				part.CanQuery = false
+				part.CanTouch = false
+				part.CastShadow = false
+				part.Material = Enum.Material.SmoothPlastic
+				part.Color = Color3.fromRGB(30, 140, 225)
+				part.Size = Vector3.new(w, 1, d)
+				part.Position = Vector3.new(x + w / 2, Track.WATER_Y - 0.6, z + d / 2)
+				part.Parent = folder
+				z += d
+			end
+			x += w
+		end
+	end
+	local water = {}
+	local ocean = map:FindFirstChild("Oceano")
+	for _, child in ipairs(ocean and ocean:GetChildren() or {}) do
+		if child:IsA("BasePart") and child.Name == "Agua" then
+			table.insert(water, child)
+		end
+	end
+	if #water > 0 then
+		-- retângulo coberto pela água de verdade
+		local minX, maxX, minZ, maxZ = math.huge, -math.huge, math.huge, -math.huge
+		for _, part in ipairs(water) do
+			minX = math.min(minX, part.Position.X - part.Size.X / 2)
+			maxX = math.max(maxX, part.Position.X + part.Size.X / 2)
+			minZ = math.min(minZ, part.Position.Z - part.Size.Z / 2)
+			maxZ = math.max(maxZ, part.Position.Z + part.Size.Z / 2)
+		end
+		local far = 4000
+		sea(minX - far, minX, minZ - far, maxZ) -- lado esquerdo
+		sea(maxX, maxX + far, minZ - far, maxZ) -- lado direito
+		sea(minX, maxX, minZ - far, minZ) -- depois do fim da pista
+		folder.Parent = Workspace
+	end
+end
+
 local function setUnderwater(value)
 	if value == underwater then
 		return
@@ -115,6 +207,7 @@ local function setUnderwater(value)
 	showRays(value)
 	tint.Enabled = value
 	blur.Enabled = value
+	fogBox.Parent = value and Workspace or nil
 	bubblesGui.Enabled = value
 	if value then
 		if atmosphere then
@@ -202,6 +295,7 @@ RunService.RenderStepped:Connect(function(dt)
 	fogEnd += (area.FogEnd - fogEnd) * k
 	Lighting.FogColor = fogColor
 	Lighting.FogEnd = fogEnd
+	updateFogBox(position, fogColor, fogEnd * 0.94)
 	local depth = math.clamp((Track.WATER_Y - position.Y) / 140, 0, 1)
 	Lighting.Ambient = fogColor:Lerp(Color3.fromRGB(190, 200, 210), 0.6 - depth * 0.2)
 	Lighting.OutdoorAmbient = fogColor:Lerp(Color3.fromRGB(210, 225, 235), 0.6 - depth * 0.2)

@@ -93,7 +93,6 @@ function RunPanel.Init(gui)
 	layout.Padding = UDim.new(0, 2)
 	layout.Parent = listFrame
 	UIKit.Padding(listFrame, 8)
-	UIKit.StudsFill(listFrame, { Spacing = 20, Transparency = 0.9, EdgeTransparency = 0.85 })
 	local auto = Instance.new("UISizeConstraint")
 	auto.MinSize = Vector2.new(250, 40)
 	auto.Parent = listFrame

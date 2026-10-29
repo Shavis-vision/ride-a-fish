@@ -192,14 +192,40 @@ buildFromMesh = function(template, species, mutation, size, s, L, palette, opts,
 		return part
 	end
 	if opts.Saddle ~= false then
-		-- sela proporcional ao peixe (em peixe pequeno/estreito não fica gigante), deitada
-		-- sobre a superfície real do modelo (SeatY foi medido no Studio com raio)
-		local sw = math.min(W * 0.7, 2.6 * s)
-		local sl = math.min(Lm * 0.32, 2.1 * s)
-		local t = 0.22 * s
-		attach({ Name = "Blanket", Size = Vector3.new(sw + 0.3 * s, t, sl), CFrame = CFrame.new(0, seatY + t / 2, seatZ), Color = BLANKET })
-		attach({ Name = "Saddle", Size = Vector3.new(sw * 0.72, 0.4 * s, sl * 0.65), CFrame = CFrame.new(0, seatY + t + 0.2 * s, seatZ), Color = SADDLE })
-		attach({ Name = "SaddleBack", Size = Vector3.new(sw * 0.72, 0.45 * s, 0.3 * s), CFrame = CFrame.new(0, seatY + t + 0.42 * s, seatZ + sl * 0.3), Color = SADDLE })
+		-- sela do tamanho do peixe, encostada e INCLINADA como as costas dele (SeatY, SeatZ e
+		-- SeatPitch foram medidos no Studio com raios em cima do modelo)
+		local pitch = template:GetAttribute("SeatPitch") or 0
+		local seatCF = CFrame.new(0, seatY, seatZ) * CFrame.Angles(pitch, 0, 0)
+		local sw = math.min(W * 0.75, 2.8 * s) * (template:GetAttribute("SaddleScale") or 1)
+		local saddleTemplate = meshFolder():FindFirstChild("_Sela")
+		local saddleMesh = saddleTemplate and saddleTemplate:FindFirstChildWhichIsA("MeshPart", true)
+		if saddleMesh then
+			-- modelo 3D de sela (mesmo estilo low poly dos peixes)
+			local part = saddleMesh:Clone()
+			part.Name = "Saddle"
+			local k2 = sw / saddleMesh.Size.X
+			part.Size = saddleMesh.Size * k2
+			part.Anchored = false
+			part.CanCollide = false
+			part.CanTouch = false
+			part.CanQuery = false
+			part.Massless = true
+			local cf = seatCF * CFrame.new(0, part.Size.Y * 0.35, 0)
+			part.CFrame = cf
+			part.Parent = model
+			local weld = Instance.new("Weld")
+			weld.Part0 = body
+			weld.Part1 = part
+			weld.C0 = body.CFrame:Inverse() * cf
+			weld.Parent = part
+			seatY += part.Size.Y * 0.35
+		else
+			local sl = math.min(Lm * 0.32, 2.1 * s)
+			local t = 0.22 * s
+			attach({ Name = "Blanket", Size = Vector3.new(sw + 0.3 * s, t, sl), CFrame = seatCF * CFrame.new(0, t / 2, 0), Color = BLANKET })
+			attach({ Name = "Saddle", Size = Vector3.new(sw * 0.72, 0.4 * s, sl * 0.65), CFrame = seatCF * CFrame.new(0, t + 0.2 * s, 0), Color = SADDLE })
+			attach({ Name = "SaddleBack", Size = Vector3.new(sw * 0.72, 0.45 * s, 0.3 * s), CFrame = seatCF * CFrame.new(0, t + 0.42 * s, sl * 0.3), Color = SADDLE })
+		end
 	end
 
 	if palette.Sparkle then

@@ -19,6 +19,7 @@ local Net = require(script.Parent:WaitForChild("Net"))
 local DataService = require(script.Parent:WaitForChild("DataService"))
 local MapService = require(script.Parent:WaitForChild("MapService"))
 local MonetizationService = require(script.Parent:WaitForChild("MonetizationService"))
+local TreadmillLooks = require(script.Parent:WaitForChild("TreadmillLooks"))
 
 local PlotService = {}
 PlotService.OnChanged = nil :: ((Player) -> ())? -- o Main liga isto (atualiza dinheiro na tela)
@@ -179,7 +180,14 @@ function PlotService.RefreshSigns(player)
 	end
 
 	-- painel da própria esteira
+	local oldLevel = model:GetAttribute("TreadmillLevel")
 	model:SetAttribute("TreadmillLevel", level)
+	-- a esteira muda de visual em alguns níveis (Ship Deck, Seashell, Coral... Poseidon);
+	-- a festa (brilho + aviso) só aparece quando o jogador acabou de comprar a melhoria
+	local evolved = TreadmillLooks.Apply(model, level, oldLevel ~= nil and level > oldLevel)
+	if evolved then
+		Net.Notify(player, ("Your treadmill evolved: %s!"):format(evolved), "raro")
+	end
 	local console = model.Esteira:FindFirstChild("Painel")
 	local consoleFrame = console and console:FindFirstChild("Gui") and console.Gui:FindFirstChildOfClass("Frame")
 	if consoleFrame then
@@ -288,6 +296,8 @@ function PlotService.Release(player)
 	local model = MapService.GetPlotModel(index)
 	if model then
 		model:SetAttribute("Owner", nil)
+		model:SetAttribute("TreadmillLevel", nil)
+		TreadmillLooks.Apply(model, 1)
 		model.Aquario.Peixes:ClearAllChildren()
 		local gui = model.Aquario.NomeDono.Gui
 		gui.Owner.Text = "Free plot"
@@ -316,6 +326,7 @@ function PlotService.Start()
 	for index = 1, #Layout.Plots do
 		local model = MapService.GetPlotModel(index)
 		if model then
+			TreadmillLooks.Apply(model, 1)
 			for kind, signName in pairs({ Treadmill = "PlacaEsteira", Aquarium = "PlacaAquario" }) do
 				local button = model[signName]:FindFirstChild("Botao")
 				local click = button and button:FindFirstChild("Click")

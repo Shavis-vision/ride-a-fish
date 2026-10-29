@@ -555,14 +555,19 @@ end
 -- nada, um braço para trás segurando o arpão (pronto para lançar) e o outro apontando para
 -- o peixe. Funciona com R15 e R6.
 local JOINTS = {
+	Root = { "LowerTorso", "Root" },
 	Waist = { "UpperTorso", "Waist" },
 	Neck = { "Head", "Neck" },
 	RightShoulder = { "RightUpperArm", "RightShoulder" },
 	LeftShoulder = { "LeftUpperArm", "LeftShoulder" },
+	RightElbow = { "RightLowerArm", "RightElbow" },
+	LeftElbow = { "LeftLowerArm", "LeftElbow" },
 	RightHip = { "RightUpperLeg", "RightHip" },
 	LeftHip = { "LeftUpperLeg", "LeftHip" },
 	RightKnee = { "RightLowerLeg", "RightKnee" },
 	LeftKnee = { "LeftLowerLeg", "LeftKnee" },
+	RightAnkle = { "RightFoot", "RightAnkle" },
+	LeftAnkle = { "LeftFoot", "LeftAnkle" },
 }
 local R6_JOINTS = {
 	RightShoulder = { "Torso", "Right Shoulder" },
@@ -571,18 +576,42 @@ local R6_JOINTS = {
 	LeftHip = { "Torso", "Left Hip" },
 	Neck = { "Torso", "Neck" },
 }
-local swimJoints = nil
-local swimTargets = nil
+local swimJoints = nil -- juntas do personagem atual
+local swimTargets = nil -- [junta] = pose de nado deste quadro
+local swimWeight = 0 -- 0 = animação normal, 1 = pose de nado (a troca é suave)
+local swimWanted = false
+local swimPhase = 0 -- relógio da braçada (anda mais devagar na câmera lenta)
+local swimBubbles = nil -- bolhas saindo da boca e dos pés
 local harpoonProp = nil
-RunService.Stepped:Connect(function()
-	if swimTargets then
-		for joint, cf in pairs(swimTargets) do
-			if joint.Parent then
-				joint.Transform = cf
+
+-- A pose é aplicada no Stepped: o Roblox já aplicou as animações nesse ponto, então dá para
+-- misturar (Lerp) a animação de sentar com a de nadar, sem trancos na entrada e na saída.
+RunService.Stepped:Connect(function(_, dt)
+	if not swimTargets then
+		return
+	end
+	local goal = swimWanted and 1 or 0
+	local speed = swimWanted and 7 or 5
+	swimWeight += (goal - swimWeight) * math.min(1, dt * speed)
+	if not swimWanted and swimWeight < 0.02 then
+		swimWeight = 0
+		swimTargets = nil
+		return
+	end
+	for joint, cf in pairs(swimTargets) do
+		if joint.Parent then
+			joint.Transform = joint.Transform:Lerp(cf, swimWeight)
+		end
+	end
+	if swimBubbles then
+		for _, emitter in ipairs(swimBubbles) do
+			if emitter.Parent then
+				emitter.Enabled = swimWanted and swimWeight > 0.4
 			end
 		end
 	end
 end)
+
 local function findJoints()
 	if not character then
 		return {}
@@ -599,6 +628,47 @@ local function findJoints()
 	end
 	found._R6 = isR6
 	return found
+end
+
+-- bolhinhas: um fio saindo da boca (respiração) e uma nuvem pequena nos pés (pernada)
+local function makeBubbles()
+	if not character then
+		return nil
+	end
+	local list = {}
+	local function emitter(partName, offset, rate, size)
+		local part = character:FindFirstChild(partName)
+		if not part then
+			return
+		end
+		local attachment = Instance.new("Attachment")
+		attachment.Name = "BolhasNado"
+		attachment.Position = offset
+		attachment.Parent = part
+		local e = Instance.new("ParticleEmitter")
+		e.Name = "BolhasNado"
+		e.Rate = rate
+		e.Lifetime = NumberRange.new(0.8, 1.5)
+		e.Speed = NumberRange.new(1.5, 3)
+		e.SpreadAngle = Vector2.new(25, 25)
+		e.EmissionDirection = Enum.NormalId.Top
+		e.Acceleration = Vector3.new(0, 6, 0)
+		e.Drag = 1.5
+		e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, size * 0.5), NumberSequenceKeypoint.new(1, size) })
+		e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(0.8, 0.4), NumberSequenceKeypoint.new(1, 1) })
+		e.Color = ColorSequence.new(Color3.fromRGB(225, 248, 255))
+		e.LightEmission = 0.5
+		e.LockedToPart = false
+		e.Enabled = false
+		e.Parent = attachment
+		table.insert(list, e)
+	end
+	emitter("Head", Vector3.new(0, -0.2, -0.6), 7, 0.28)
+	emitter("RightFoot", Vector3.new(0, 0, 0.3), 9, 0.22)
+	emitter("LeftFoot", Vector3.new(0, 0, 0.3), 9, 0.22)
+	emitter("Right Leg", Vector3.new(0, -1, 0), 9, 0.22)
+	emitter("Left Leg", Vector3.new(0, -1, 0), 9, 0.22)
+	return list
 end
 
 local function showHarpoon(visible)
@@ -642,58 +712,82 @@ local function showHarpoon(visible)
 end
 
 local function resetSwimPose()
-	if swimJoints then
-		for key, joint in pairs(swimJoints) do
-			if key ~= "_R6" and joint.Parent then
-				joint.Transform = CFrame.new()
-			end
-		end
-	end
+	-- não zera as juntas na hora: o Stepped vai tirando a pose de nado aos poucos
+	swimWanted = false
 	swimJoints = nil
-	swimTargets = nil
 	showHarpoon(false)
 end
 
--- t = relógio; aiming = tem peixe na mira; zipping = indo pela corda
-local function applySwimPose(t, aiming, zipping)
+-- dt = tempo do quadro (já com a câmera lenta); aiming = tem peixe na mira; zipping = indo pela corda
+local function applySwimPose(dt, aiming, zipping)
 	if not swimJoints then
 		swimJoints = findJoints()
+		if swimBubbles then
+			for _, e in ipairs(swimBubbles) do
+				if e.Parent then
+					e.Parent:Destroy()
+				end
+			end
+		end
+		swimBubbles = makeBubbles()
 	end
+	swimWanted = true
+	swimPhase += dt
+	local p = swimPhase
 	local j = swimJoints
 	local r6 = j._R6
-	local kick = math.sin(t * 9) * 0.45
-	-- guarda a pose; ela é aplicada no Stepped (depois que o Roblox aplica as animações,
-	-- senão ele sobrescreve as juntas e a pose não aparece)
 	swimTargets = swimTargets or {}
 	local function set(key, cf)
 		local joint = j[key]
 		if joint and joint.Parent then
 			swimTargets[joint] = cf
-			joint.Transform = cf
 		end
 	end
-	-- corpo inclinado para frente, como nadando
-	set("Waist", CFrame.Angles(-0.25, 0, 0))
-	set("Neck", CFrame.Angles(0.35, 0, 0))
-	-- pernas batendo (tesoura) com o joelho dobrando um pouco
-	set("RightHip", CFrame.Angles(kick, 0, 0))
-	set("LeftHip", CFrame.Angles(-kick, 0, 0))
-	set("RightKnee", CFrame.Angles(-0.35 - math.max(0, kick) * 0.6, 0, 0))
-	set("LeftKnee", CFrame.Angles(-0.35 - math.max(0, -kick) * 0.6, 0, 0))
+	local A = CFrame.Angles
+
+	-- corpo deitado na água, balançando de leve (como quem nada de verdade)
+	local tilt = zipping and -1.3 or (aiming and -0.7 or -1.0)
+	local bob = math.sin(p * 2.2) * 0.06
+	local roll = math.sin(p * 1.3) * 0.09
+	set("Root", A(tilt + bob, 0, roll))
+	-- a onda do corpo: o tronco ondula junto com as pernas
+	set("Waist", A(-0.08 + math.sin(p * 6.5 + 1.2) * 0.07, 0, -roll * 0.5))
+	-- cabeça levantada, olhando para a frente (o corpo está deitado)
+	set("Neck", A(zipping and 0.85 or 0.6 + math.sin(p * 2.2) * 0.05, 0, 0))
+
+	-- pernada de nado (crawl): pernas alternando, joelho dobra na volta e o pé fica esticado
+	local freq = zipping and 9 or 6.5
+	local kick = math.sin(p * freq) * (zipping and 0.35 or 0.55)
+	set("RightHip", A(-0.1 + kick, 0, 0.05))
+	set("LeftHip", A(-0.1 - kick, 0, -0.05))
+	set("RightKnee", A(-0.2 - math.max(0, kick) * 0.9, 0, 0))
+	set("LeftKnee", A(-0.2 - math.max(0, -kick) * 0.9, 0, 0))
+	set("RightAnkle", A(-0.6, 0, 0))
+	set("LeftAnkle", A(-0.6, 0, 0))
+
 	if zipping then
-		-- os dois braços esticados para frente, puxados pela corda
-		set("RightShoulder", r6 and CFrame.Angles(0, 0, math.rad(150)) or CFrame.Angles(math.rad(160), 0, 0))
-		set("LeftShoulder", r6 and CFrame.Angles(0, 0, math.rad(-150)) or CFrame.Angles(math.rad(160), 0, 0))
+		-- "super-homem": os dois braços esticados para frente, puxados pela corda
+		local f = math.sin(p * 9) * 0.05
+		set("RightShoulder", r6 and A(0, 0, math.rad(150)) or A(2.95 + f, 0, 0.12))
+		set("LeftShoulder", r6 and A(0, 0, math.rad(-150)) or A(2.95 - f, 0, -0.12))
+		set("RightElbow", A(0.05, 0, 0))
+		set("LeftElbow", A(0.05, 0, 0))
 	elseif aiming then
-		-- braço direito para trás com o arpão (vai lançar), o esquerdo apontando para o peixe
-		local wind = math.sin(t * 3) * 0.08
-		set("RightShoulder", r6 and CFrame.Angles(0, 0, math.rad(170)) or CFrame.Angles(math.rad(165) + wind, 0, math.rad(-12)))
-		set("LeftShoulder", r6 and CFrame.Angles(0, 0, math.rad(-90)) or CFrame.Angles(math.rad(85), 0, math.rad(10)))
+		-- braço direito armado atrás da cabeça com o arpão; o esquerdo aponta para o peixe
+		local wind = math.sin(p * 3) * 0.1
+		set("RightShoulder", r6 and A(0, 0, math.rad(170)) or A(2.7 + wind, 0, 0.25))
+		set("RightElbow", A(0.9 - wind, 0, 0))
+		set("LeftShoulder", r6 and A(0, 0, math.rad(-90)) or A(2.3, 0, -0.1))
+		set("LeftElbow", A(0.1, 0, 0))
 	else
-		-- sem alvo: braçada (os braços abrem e fecham devagar)
-		local stroke = math.sin(t * 4)
-		set("RightShoulder", r6 and CFrame.Angles(0, 0, math.rad(90 + stroke * 40)) or CFrame.Angles(math.rad(100 + stroke * 30), 0, math.rad(-20)))
-		set("LeftShoulder", r6 and CFrame.Angles(0, 0, math.rad(-90 - stroke * 40)) or CFrame.Angles(math.rad(100 + stroke * 30), 0, math.rad(20)))
+		-- braçada de peito: os braços vão à frente, abrem para os lados e voltam dobrados
+		local c = p * 3.4
+		local open = (math.cos(c) + 1) / 2 -- 0 = juntos na frente, 1 = abertos
+		local reach = 2.55 - open * 0.75
+		set("RightShoulder", r6 and A(0, 0, math.rad(90 + math.sin(c) * 40)) or A(reach, 0, 0.15 + open * 0.75))
+		set("LeftShoulder", r6 and A(0, 0, math.rad(-90 - math.sin(c) * 40)) or A(reach, 0, -0.15 - open * 0.75))
+		set("RightElbow", A(0.2 + open * 0.9, 0, 0))
+		set("LeftElbow", A(0.2 + open * 0.9, 0, 0))
 	end
 	showHarpoon(not zipping)
 end
@@ -1660,7 +1754,7 @@ RunService.RenderStepped:Connect(function(dt)
 	-- pose nadando com o arpão no ar e na corda; nos outros estados, volta ao normal
 	if state == "Airborne" or state == "Zipping" then
 		setPose("swim") -- (não existe animação "swim": isso só para as outras e libera as juntas)
-		applySwimPose(now, target ~= nil, state == "Zipping")
+		applySwimPose(dt, target ~= nil, state == "Zipping")
 	elseif swimJoints then
 		resetSwimPose()
 		if state == "Riding" then

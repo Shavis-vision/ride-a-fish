@@ -143,8 +143,8 @@ local function biomeSection(area)
 	})
 	UIKit.StudsFill(section, { Spacing = 30, Transparency = 0.93 })
 
-	-- quadro do bioma (lado esquerdo): a imagem do bioma cobre o quadro todo, com os studs
-	-- por cima (como uma peça de Lego pintada) e a borda na cor do bioma
+	-- quadro do bioma (lado esquerdo): a imagem do bioma cobre o quadro todo (sem studs por
+	-- cima), com a borda na cor do bioma
 	local art = UIKit.Frame(section, {
 		Name = "Quadro",
 		Size = UDim2.fromOffset(232, 290),
@@ -168,7 +168,6 @@ local function biomeSection(area)
 		NumberSequenceKeypoint.new(1, 0.3),
 	})
 	fade.Parent = shade
-	UIKit.Studs(art, Vector2.new(232, 290), { Spacing = 29, Transparency = 0.8, EdgeTransparency = 0.65, ZIndex = 3 })
 	UIKit.Text(art, { Text = ("AREA %d"):format(area.Index), Size = UDim2.new(1, -16, 0, 28), Position = UDim2.fromOffset(8, 10), Color = Color3.fromRGB(230, 240, 255), Max = 24, Stroke = 3, ZIndex = 4 })
 	UIKit.Text(art, { Text = area.Name, Size = UDim2.new(1, -16, 0, 44), Position = UDim2.fromOffset(8, 38), Max = 36, Stroke = 3.5, ZIndex = 4 })
 	UIKit.Text(art, {

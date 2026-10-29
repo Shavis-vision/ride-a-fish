@@ -129,7 +129,6 @@ function RunPanel.Init(gui)
 		seg.ClipsDescendants = true
 		local art = BiomeArt.Picture(seg, i)
 		UIKit.Corner(art, 7)
-		UIKit.StudsFill(seg, { Spacing = 13, Transparency = 0.8, EdgeTransparency = 0.7, ZIndex = 4 })
 		UIKit.Text(seg, { Text = area.Name, Size = UDim2.new(1, -8, 0, 17), Position = UDim2.new(0, 4, 0, 2), Max = 16, Stroke = 2, ZIndex = 5 })
 	end
 	-- recorde: linha vertical dourada

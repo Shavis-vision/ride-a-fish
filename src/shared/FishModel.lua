@@ -438,9 +438,10 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		-- barbatanas
 		local dorsalH = H * (shark and 0.75 or look.TallFins and 0.9 or 0.5)
 		if look.Sail then
-			wedge("Dorsal", Vector3.new(0.3 * s, H * 1.1, L * 0.7), CFrame.new(0, H / 2 + H * 0.55, L * 0.02) * CFrame.Angles(0, math.pi, 0), "Fin")
+			wedge("Dorsal", Vector3.new(0.3 * s, H * 1.1, L * 0.5), CFrame.new(0, H / 2 + H * 0.55, L * 0.32) * CFrame.Angles(0, math.pi, 0), "Fin")
 		else
-			wedge("Dorsal", Vector3.new(0.35 * s, dorsalH, L * (shark and 0.3 or 0.4)), CFrame.new(0, H * 0.43 + dorsalH / 2, L * (shark and 0.02 or 0.08)), "Fin")
+			-- a barbatana de cima fica atrás da sela (antes ela atravessava a sela)
+			wedge("Dorsal", Vector3.new(0.35 * s, dorsalH, L * 0.3), CFrame.new(0, H * 0.43 + dorsalH / 2, L * 0.24), "Fin")
 		end
 		if look.TallFins then
 			wedge("Anal", Vector3.new(0.35 * s, dorsalH, L * 0.4), CFrame.new(0, -H * 0.43 - dorsalH / 2, L * 0.08) * CFrame.Angles(0, 0, math.pi), "Fin")
@@ -461,7 +462,7 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		local tailLength = (shark and 2.8 or 2.2) * s
 		forkTail(tail, jointZ, H * (shark and 1.5 or 1.3), tailLength, shark and 1.35 or 1)
 		totalLength += 1.1 * s + tailLength
-		seatY, seatZ = H * 0.43, -L * 0.02 -- no meio do bloco do corpo (o mais alto e largo)
+		seatY, seatZ = H * 0.49, -L * 0.04 -- em cima do bloco do corpo (o mais alto e largo)
 		seatW, seatL = W, L * 0.36
 	elseif family == "Baiacu" then
 		-- "bola" de blocos: três caixas cruzadas (cubo arredondado), pintas e espinhos
@@ -614,7 +615,7 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		eyes(W * 0.4, H * 0.2, -segL * 2.1, 0.6 * s)
 		box("Segment", Vector3.new(W * 0.75, H * 0.75, segL * 1.05), CFrame.new(0, 0, 0), "Body")
 		box("Belly", Vector3.new(W * 0.82, H * 0.24, segL * 3), CFrame.new(0, -H * 0.3, -segL), "Belly")
-		wedge("Dorsal", Vector3.new(0.25 * s, H * 0.3, segL * 3), CFrame.new(0, H * 0.52, -segL * 0.5), "Fin")
+		wedge("Dorsal", Vector3.new(0.25 * s, H * 0.3, segL * 1.4), CFrame.new(0, H * 0.52, segL * 0.55), "Fin")
 		local tail = tailJoint(segL * 0.5, 0)
 		for i = 1, 3 do
 			box("Segment", Vector3.new(W * (0.7 - i * 0.12), H * (0.7 - i * 0.12), segL * 1.05), CFrame.new(0, 0, segL * (0.5 + i - 0.5)), i % 2 == 0 and "Stripe" or "Body", { AttachTo = tail })
@@ -622,7 +623,7 @@ function FishModel.Build(speciesId, mutation, size, opts)
 		wedge("TailFin", Vector3.new(0.25 * s, H * 0.5, segL), CFrame.new(0, 0, segL * 3.9), "Fin", tail)
 		L = segL * n
 		totalLength = segL * 7
-		seatY, seatZ = H * 0.4, -segL * 0.6
+		seatY, seatZ = H * 0.4, -segL
 		seatW, seatL = W * 0.8, segL
 	else -- Lula
 		-- manto pontudo na frente, olhos grandes e tentáculos para trás (eles balançam)
